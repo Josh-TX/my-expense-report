@@ -1,0 +1,32 @@
+<div class="p-4">
+    <h1>Dashboard</h1>
+    <div class="grid grid-cols-2 gap-4">
+        <mat-card>
+            <mat-card-content>Metrics</mat-card-content>
+        </mat-card>
+        <mat-card>
+            <mat-card-content>
+                Import Transactions
+                <button mat-button (click)="importTransactions()">Start</button>
+            </mat-card-content>
+        </mat-card>
+        <mat-card>
+            <mat-card-content>
+                Fix Uncategorized Transactions
+                <button mat-button (click)="fixUncategorized()">Start</button>
+            </mat-card-content>
+        </mat-card>
+        <mat-card>
+            <mat-card-content>
+                Import Category Rules
+                <button mat-button (click)="importRules()">Start</button>
+            </mat-card-content>
+        </mat-card>
+        <mat-card>
+            <mat-card-content>
+                Export Data
+                <button mat-button (click)="exportData()">Start</button>
+            </mat-card-content>
+        </mat-card>
+    </div>
+</div>

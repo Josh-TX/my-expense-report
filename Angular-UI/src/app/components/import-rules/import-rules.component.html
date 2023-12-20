@@ -1,0 +1,53 @@
+<div style="display: flex; justify-content: space-between;">
+  <h2 class="mat-mdc-dialog-title mdc-dialog__title">Import Rules</h2>
+  @if (parsedRules && anyExistingRules){
+  <div style="padding: 24px;">
+    <mat-slide-toggle [(ngModel)]="replace" (ngModelChange)="replaceChanged()">replace existing Rules</mat-slide-toggle>
+  </div>
+  }
+</div>
+<mat-dialog-content class="mat-typography">
+  @if (parsedRules){
+  <table class="table mat-elevation-z4">
+    <tr>
+      <th>Category</th>
+      <th>Subcategory</th>
+      <th>match text</th>
+    </tr>
+    @for (parsedRule of parsedRules; track parsedRule){
+    <tr>
+      <td [class.text-muted]="parsedRule.isDuplicate || parsedRule.invalidIndexes.length"
+        [class.invalid-cell]="parsedRule.invalidIndexes.includes(0)">{{parsedRule.category}}</td>
+      <td [class.text-muted]="parsedRule.isDuplicate || parsedRule.invalidIndexes.length"
+        [class.invalid-cell]="parsedRule.invalidIndexes.includes(1)">{{parsedRule.subcategory}}</td>
+      <td [class.text-muted]="parsedRule.isDuplicate || parsedRule.invalidIndexes.length"
+        [class.invalid-cell]="parsedRule.invalidIndexes.includes(2)"
+        [class.warning-row]="!replace && !parsedRule.invalidIndexes.length && parsedRule.isDuplicate">
+        {{parsedRule.text}}
+      </td>
+    </tr>
+    }
+  </table>
+  } @else {
+  <mer-file-drop (import)="processFiles($event)" [multiple]="false"></mer-file-drop>
+  }
+
+
+
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  @if (duplicateCount || invalidCount){
+  @if (invalidCount){
+  <div class="invalid-cell ml-3 p-2">{{invalidCount}} invalid rows</div>
+  }
+  @if (duplicateCount){
+  <div class="warning-row ml-3 p-2">{{duplicateCount}} duplicate rows</div>
+  }
+  <div style="flex-grow: 1;"></div>
+  }
+  <button mat-raised-button mat-dialog-close>Close</button>
+  @if (parsedRules){
+  <button mat-raised-button (click)="backToStart()">Back</button>
+  <button mat-raised-button [color]="replace ? 'warn' : 'primary'" (click)="import()">Import ({{importCount}})</button>
+  }
+</mat-dialog-actions>

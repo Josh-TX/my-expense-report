@@ -1,0 +1,51 @@
+<div class="p-4">
+    <div style="display: flex; justify-content: space-between;">
+        @if (isYearly){
+        <h2>Yearly Report</h2>
+        } @else {
+        <h2>Monthly Report</h2>
+        }
+        <div style="padding-top: 0.4375rem">
+            <mat-slide-toggle [(ngModel)]="subcategories"
+                (ngModelChange)="subcategoriesChanged()">Subcategories</mat-slide-toggle>
+        </div>
+    </div>
+
+    @if (report){
+    <table class="table table-bordered mat-elevation-z4" [style.max-width.px]="getMaxWidth()">
+        @for (headerRow of report.headerRows; track headerRow; let index = $index){
+        <tr [class.sticky-table-header]="index == report.headerRows.length - 1">
+            <th>
+                @if (index == report.headerRows.length - 1){
+                Month
+                }
+            </th>
+            @for (header of headerRow; track header){
+            <th [attr.colspan]="header.width">{{header.name}}</th>
+            }
+            <th>Total</th>
+        </tr>
+        }
+        @for (row of report.rows; track row; ){
+        <tr>
+            @if (isYearly){
+            <td>{{row.date | date:'y'}}@if (row.extrapolated){*}
+            </td>
+            } @else {
+            <td>{{row.date | date:'MMM y'}}</td>
+            }
+            @for (cell of row.cells; track cell; let index = $index){
+            <td class="clickable-cell" [class.good-cell]="cell.deviation < 0" [class.bad-cell]="cell.deviation > 0"
+                [style]="getColorOpacity(cell)" [class.selected-cell]="cell == selectedCell" (click)="cellClicked(cell, row, index)">
+                {{cell.amount | number:'.0-0'}}
+            </td>
+            }
+            <td class="clickable-cell" [class.good-cell]="row.totalCell.deviation < 0" [class.selected-cell]="row.totalCell == selectedCell"
+                [class.bad-cell]="row.totalCell.deviation > 0" [style]="getColorOpacity(row.totalCell)" (click)="cellClicked(row.totalCell, row, null)">
+                {{row.totalCell.amount | number:'.0-0'}}
+            </td>
+        </tr>
+        }
+    </table>
+    }
+</div>

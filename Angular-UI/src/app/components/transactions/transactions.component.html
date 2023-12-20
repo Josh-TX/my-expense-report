@@ -1,0 +1,35 @@
+<div class="p-4">
+
+    <h2>Transactions</h2>
+
+    <table class="table table-striped mat-elevation-z4">
+        <tr class="sticky-table-header">
+            <th>Date</th>
+            <th>Name</th>
+            <th>Amount</th>
+            <th>Category</th>
+            <th>Subcategory</th>
+            <th>Imported From</th>
+            <th>Imported On</th>
+        </tr>
+        @for (trxn of filteredTransactions; track trxn){
+        <tr>
+            <td>{{trxn.trxnDate | date:'M/d/yy'}}</td>
+            <td>{{trxn.name}}</td>
+            <td>{{trxn.amount | currency}}</td>
+            <td>{{trxn.category}}</td>
+            <td>{{trxn.subcategory}}</td>
+            <td>{{trxn.importFile ? trxn.importFile : '(manually added)'}}</td>
+            <td>{{trxn.importDate | date:'M/d/yy, h:mm a'}}</td>
+        </tr>
+        }
+    </table>
+    @if (filteredTransactions.length < allTransactions.length){
+        <p class="text-center">Showing {{filteredTransactions.length}} of {{ allTransactions.length}} Transactions</p>
+        <div class="text-center mb-4">
+            <button mat-raised-button (click)="renderAll()">Render All</button>
+        </div>
+    } @else {
+        <p class="text-center">Showing {{filteredTransactions.length}} Transactions</p>
+    }
+</div>

@@ -1,0 +1,129 @@
+@use '@angular/material' as mat;
+@use "sass:map";
+@include mat.core();
+$my-primary: mat.define-palette(mat.$blue-palette, 500);
+$my-accent: mat.define-palette(mat.$green-palette, A200, A100, A400);
+
+// 50: #e3f2fd,
+// 100: #bbdefb,
+// 200: #90caf9,
+// 300: #64b5f6,
+// 400: #42a5f5,
+// 500: #2196f3,
+// 600: #1e88e5,
+// 700: #1976d2,
+// 800: #1565c0,
+// 900: #0d47a1,
+// A100: #82b1ff,
+// A200: #448aff,
+// A400: #2979ff,
+// A700: #2962ff,
+
+// The "warn" palette is optional and defaults to red if not specified.
+$my-warn: mat.define-palette(mat.$red-palette);
+
+$my-theme: mat.define-dark-theme((color: (primary: $my-primary,
+        accent: $my-accent,
+        warn: $my-warn,
+      ),
+      typography: mat.define-typography-config(),
+      density: 0,
+    ));
+@include mat.typography-hierarchy($my-theme);
+@include mat.all-component-themes($my-theme);
+
+.mer-menu-active>.mat-mdc-menu-item-text {
+  //color: var(--mat-tab-header-active-label-text-color) !important;
+  color: #42a5f5 !important;
+}
+
+.mat-mdc-dialog-surface {
+  background-color: #303030 !important;
+  color: map.get(mat.$dark-theme-foreground-palette, base) !important;
+}
+
+.text-body {
+  color: map.get(mat.$dark-theme-foreground-palette, base) !important;
+
+}
+
+.text-muted {
+  color: map.get(mat.$grey-palette, 500) !important;
+}
+
+.border-primary {
+  border: 1px solid  map.get(mat.$blue-palette, 500) !important;
+}
+
+#subtitle{
+  color: rgba(255, 255, 255, 0.25);
+  position: absolute;
+  right: 0;
+  top: calc(100% - 15px);
+  font-style: italic;
+  font-size: 0.875rem;
+}
+
+$table-background: #424242;
+$table-border-color: #595959;
+
+.table>tr {
+  background-color: $table-background;
+  border-bottom: 1px solid $table-border-color
+}
+
+.table>tr>th,
+.table>tr>td {
+  text-align: left;
+  padding: 0.5rem 0.5rem;
+  color: map.get(mat.$dark-theme-foreground-palette, base);
+}
+
+.table-striped>tr {
+  border-bottom-color: #515151 !important;
+}
+
+.table-striped>tr:nth-of-type(even) {
+  background-color: #313131;
+}
+
+.table-bordered>tr>th,
+.table-bordered>tr>td {
+  border-right: 1px solid $table-border-color;
+}
+
+.table-outline {
+  border: 1px solid $table-border-color;
+}
+
+
+.sticky-table-header>th,
+.sticky-table-header>td {
+  position: sticky;
+  top: 0;
+  background-color: $table-background;
+  z-index: 10;
+  &:after {
+    content: '';
+    position: absolute;
+    left: 0;
+    width: 100%;
+    bottom: -1px;
+    border-top: 1px solid $table-border-color
+  }
+}
+
+.bad-cell {
+  background-color: rgba(117, 25, 25, var(--report-cell-opacity)) !important;
+}
+
+.good-cell {
+  background-color: rgba(40, 100, 40, var(--report-cell-opacity)) !important;
+}
+
+.snackbar-error .mdc-snackbar__surface{
+  background-color: #852019 !important;
+}
+.snackbar-error .mdc-snackbar__label{
+  color: white !important;
+}

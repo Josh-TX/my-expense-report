@@ -1,0 +1,101 @@
+@use '@angular/material' as mat;
+@use "sass:map";
+@include mat.core();
+$my-primary: mat.define-palette(mat.$blue-palette, 500);
+$my-accent: mat.define-palette(mat.$green-palette, A200, A100, A400);
+
+// The "warn" palette is optional and defaults to red if not specified.
+$my-warn: mat.define-palette(mat.$red-palette);
+
+$my-theme: mat.define-light-theme((color: (primary: $my-primary,
+        accent: $my-accent,
+        warn: $my-warn,
+      ),
+      typography: mat.define-typography-config(),
+      density: 0,
+    ));
+@include mat.typography-hierarchy($my-theme);
+@include mat.all-component-themes($my-theme);
+
+.mer-menu-active>.mat-mdc-menu-item-text {
+  //color: var(--mat-tab-header-active-label-text-color) !important;
+  color: #2196f3 !important;
+}
+
+.mat-mdc-dialog-surface {
+  background-color: #fafafa !important;
+  color: map.get(mat.$light-theme-foreground-palette, base) !important;
+}
+
+
+.text-body {
+  color: map.get(mat.$light-theme-foreground-palette, base) !important;
+}
+
+.text-muted {
+  color: map.get(mat.$grey-palette, 500) !important;
+}
+
+.border-primary {
+  border: 1px solid  map.get(mat.$blue-palette, 500) !important;
+}
+
+#subtitle{
+  color: rgba(0, 0, 0, 0.25);
+}
+
+$table-background: #FFF;
+$table-border-color: #e0e0e0;
+.table>tr {
+  background-color: $table-background;
+  border-bottom: 1px solid $table-border-color
+}
+
+.table>tr>th,
+.table>tr>td {
+  text-align: left;
+  padding: 0.5rem 0.5rem;
+  color: map.get(mat.$light-theme-foreground-palette, base);
+}
+
+.table-striped>tr:nth-of-type(odd) {
+  background-color: #f5f5f5;
+}
+.table-bordered>tr>th,
+.table-bordered>tr>td {
+  border-right: 1px solid $table-border-color;
+}
+.table-outline {
+  border: 1px solid $table-border-color;
+}
+
+.sticky-table-header>th,
+.sticky-table-header>td {
+  position: sticky;
+  top: 0;
+  background-color: $table-background;
+  z-index: 10;
+  &:after {
+    content: '';
+    position: absolute;
+    left: 0;
+    width: 100%;
+    bottom: -1px;
+    border-top: 1px solid $table-border-color
+  }
+}
+
+.bad-cell {
+  background-color: rgba(255, 170, 170, var(--report-cell-opacity)) !important;
+}
+
+.good-cell {
+  background-color: rgba(190, 255, 190, var(--report-cell-opacity)) !important;
+}
+
+.snackbar-error .mdc-snackbar__surface{
+  background-color: #d92c20 !important;
+}
+.snackbar-error .mdc-snackbar__label{
+  color: white !important;
+}
