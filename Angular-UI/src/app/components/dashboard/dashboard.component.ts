@@ -6,11 +6,11 @@ import { ImportTransactionsComponent } from '@components/import-transactions/imp
 import { FixUncategorizedComponent } from '@components/fix-uncategorized/fix-uncategorized.component';
 import { ImportRulesComponent } from '@components/import-rules/import-rules.component';
 import { ExportDataComponent } from '@components/export-data/export-data.component';
-
+import { DashboardMetricsComponent } from '@components/dashboard-metrics/dashboard-metrics.component';
 
 @Component({
   standalone: true,
-  imports: [MatCardModule, MatButtonModule],
+  imports: [MatCardModule, MatButtonModule, DashboardMetricsComponent],
   templateUrl: './dashboard.component.html'
 })
 export class DashboardComponent {

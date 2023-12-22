@@ -239,6 +239,7 @@ export class ReportGenerator {
             //columnGroup.transactions.sort((z1, z2) => z2.trxnDate.getTime() - z1.trxnDate.getTime());
             var monthGroups = getTransactionMonthYearGroups(recentMonthYears, columnGroup.transactions);
             var monthAmounts = monthGroups.map(monthGroup => monthGroup.transactions.reduce((a, b) => a + b.amount, 0));
+            monthAmounts = monthAmounts.map(roundToCent);
             return getAvgSD(monthAmounts);
         });
         return avgSDs;
@@ -251,7 +252,7 @@ export class ReportGenerator {
             //columnGroup.transactions.sort((z1, z2) => z2.trxnDate.getTime() - z1.trxnDate.getTime());
             var yearGroups = getTransactionYearGroups(years, columnGroup.transactions);
             var yearAmounts = yearGroups.map(yearGroup => yearGroup.transactions.reduce((prev, trxn) => prev + trxn.amount * 12 / yearGroup.monthCount, 0));
-            yearAmounts = yearAmounts.map(z => Math.round(z * 100) / 100);
+            yearAmounts = yearAmounts.map(roundToCent);
             return getAvgSD(yearAmounts);
         });
         return avgSDs;
@@ -324,7 +325,7 @@ export class ReportGenerator {
             severity = severity * sign;
         }
         var cell: ReportCell = {
-            amount: amount,
+            amount: roundToCent(amount),
             percent: amount / rowSumAmount,
             deviation: severity
         }
@@ -468,4 +469,8 @@ function getMonthYear(date: Date): MonthYear {
         month: date.getMonth(),
         year: date.getFullYear()
     };
+}
+
+function roundToCent(num: number): number{
+    return Math.round(num * 100) / 100;
 }
