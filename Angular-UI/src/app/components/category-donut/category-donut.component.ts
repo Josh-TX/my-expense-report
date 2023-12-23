@@ -1,10 +1,12 @@
-import { Component, EventEmitter, Input, Output, SimpleChanges } from '@angular/core';
+import { Component, Input, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
-import { ActiveElement, ChartEvent, Interaction, InteractionItem, InteractionModeFunction, InteractionOptions } from 'chart.js';
+import { ChartEvent, Interaction, InteractionItem, InteractionOptions, Point } from 'chart.js';
 import { Chart, registerables } from 'chart.js';
 import { DatePipe, CurrencyPipe, DecimalPipe } from '@angular/common';
+import { CategoryInfo } from '@services/category.service';
+import { OuterLableDrawer } from './outer-label-drawer';
 Chart.register(...registerables);
 
 
@@ -25,10 +27,13 @@ export type DonutSubcategoryItem = {
     averageAmount: number
 };
 
-
-type Subcategory = {
-    subcategory: string,
-    category: string,
+type OuterLabelData = {
+    ctx: CanvasRenderingContext2D,
+    cx: number,
+    cy: number,
+    radius: number,
+    sideLength: number,
+    outLength: number,
 }
 
 @Component({
@@ -44,19 +49,20 @@ export class CategoryDonutComponent {
     private textMuted: string = "#AAAAAA"
 
     private categoryNames: string[] = [];
-    private subcategoryNames: Subcategory[] = [];
+    private subcategoryNames: CategoryInfo[] = [];
     private categoryAmounts: number[] = [];
     private subcategoryAmounts: number[] = [];
     private avgCategoryAmounts: number[] = [];
     private avgSubcategoryAmounts: number[] = [];
+    private colors: string[] = [];
 
     private date: string | undefined;
     private averageType: string | undefined;
-    private categoryPercentages: number[] = [];
-    private averagePercentages: number[] = [];
+
     private activeItems: InteractionItem[] = [];
     private clickedItems: InteractionItem[] = [];
     private clickActiveTimeout: any;
+    private categoryCircum: number = 360;
 
     constructor() {
         var intModes = (<any>Interaction.modes);
@@ -95,7 +101,7 @@ export class CategoryDonutComponent {
             //when you stop hovering over the canvas entirely, it auto-deactivates the elements
             //so I check 50ms to see if there's no active elements and if so activate clickedItems
             this.clickActiveTimeout = setInterval(() => {
-                if (chart.getActiveElements().length == 0){
+                if (this.clickedItems.length == 2 && chart.getActiveElements().length == 0){
                     chart.setActiveElements(this.clickedItems);
                     chart.update();
                 }
@@ -204,60 +210,18 @@ export class CategoryDonutComponent {
 
     //draws the labels the radiate outward
     private outerLabelBeforeDraw(chart: Chart<any>, args: { cancelable: true }, options: any): boolean | void {
-        var length1 = 25;
-        var ctx = chart.ctx;
-        var { top, bottom, left, right, width, height } = chart.chartArea;
-        var dataset = chart.data.datasets[0];
-        var meta = chart.getDatasetMeta(0);
-        for (var i = 0; i < meta.data.length; i++) {
-            var color = (<any>dataset.borderColor)[i];
-            var element = meta.data[i];
-            var { x, y } = element.tooltipPosition(false);
-            //get x y relative to center
-            var cx = x - (width / 2 + left);
-            var cy = y - (height / 2 + top);
-            var sign = cx > 0 ? 1 : -1;
-
-            var angle = Math.atan(cy / cx);
-            // if (Math.abs(angle) > Math.PI / 4){
-            //     angle = Math.PI / 4 * (angle > 0 ? 1 : -1);
-            // }
-            var degrees = angle * 180 / Math.PI;
-            var xdiff = Math.cos(angle) * length1 * sign;
-            var ydiff = Math.sin(angle) * length1 * sign;
-            var x2 = x + xdiff;
-            var y2 = y + ydiff;
-            var x3 = x2 + length1 * sign;
-            var y3 = y2;
-            if (Math.abs(angle) < Math.PI / 4) {
-                var ratio = Math.abs(angle) / (Math.PI / 4);
-                ratio = ratio + (1 - ratio) / 2;
-                x3 = x2 + length1 * ratio * sign;
-            }
-            // if (Math.abs(angle) < Math.PI / 4){
-            //     x3 = x + xdiff * 2;
-            //     y3 = y + ydiff * 2;
-            // }
-
-            //var xsign = x > width/2 ? 1 : -1;
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-            ctx.lineTo(x2, y2);
-            ctx.lineTo(x3, y3);
-            ctx.strokeStyle = color;
-            ctx.stroke();
-
-            var label = this.categoryNames[i];
-            var textWidth = ctx.measureText(label);
-            ctx.font = "14px Arial";
-            ctx.textBaseline = "middle";
-            ctx.textAlign = cx > 0 ? "left" : "right";
-            ctx.fillStyle = color;
-            ctx.fillText(label, x3 + 5 * sign, y3);
-        }
+        var drawer = new OuterLableDrawer(
+            chart.ctx,
+            chart.chartArea,
+            this.categoryNames,
+            this.subcategoryNames,
+            this.categoryAmounts,
+            this.subcategoryAmounts,
+            this.colors,
+            this.categoryCircum
+        )
+        drawer.drawLabels();
     }
-
-
 
     //private outerLabelAfterDraw(chart: Chart<TType>, args: EmptyObject, options: O)
 
@@ -281,25 +245,24 @@ export class CategoryDonutComponent {
 
         var categorySum = categoryItems.reduce((a, b) => a + b.amount, 0)
         var averageSum = categoryItems.reduce((a, b) => a + b.averageAmount, 0)
-        var categoryCircum = 360;
+        this.categoryCircum = 360;
         var averageCircum = 360;
         if (categorySum > averageSum) {
             averageCircum = 360 * averageSum / categorySum
         } else {
-            categoryCircum = 360 * categorySum / averageSum
+            this.categoryCircum = 360 * categorySum / averageSum
         }
 
-        var baseColors = ["rgb(230,0,73)", "rgb(11,180,255)", "rgb(80,233,145)", "rgb(230,216,0)", "rgb(155,25,245)", "rgb(255,163,0)", "rgb(220,10,180)", "rgb(179,212,255)", "rgb(0,191,160)"]
+        this.colors = ["rgb(230,0,73)", "rgb(11,180,255)", "rgb(80,233,145)", "rgb(230,216,0)", "rgb(155,25,245)", "rgb(255,163,0)", "rgb(220,10,180)", "rgb(179,212,255)", "rgb(0,191,160)"]
         var subBaseColors: string[] = [];
         for (var i = 0; i < categoryItems.length; i++) {
             for (var j = 0; j < categoryItems[i].items.length; j++) {
-                subBaseColors.push(baseColors[i % baseColors.length]);
+                subBaseColors.push(this.colors[i % this.colors.length]);
             }
         }
 
-
-        var background = baseColors.map(z => z.replace("(", "a(").replace(")", ",0.25)"));
-        var backgroundHover = baseColors.map(z => z.replace("(", "a(").replace(")", ",0.5)"));
+        var background = this.colors.map(z => z.replace("(", "a(").replace(")", ",0.25)"));
+        var backgroundHover = this.colors.map(z => z.replace("(", "a(").replace(")", ",0.5)"));
 
         var subBackground = subBaseColors.map(z => z.replace("(", "a(").replace(")", ",0.25)"));
         var subBackgroundHover = subBaseColors.map(z => z.replace("(", "a(").replace(")", ",0.5)"));
@@ -313,9 +276,9 @@ export class CategoryDonutComponent {
                     data: categoryItems.map(z => z.amount),
                     backgroundColor: background,
                     hoverBackgroundColor: backgroundHover,
-                    borderColor: baseColors,
+                    borderColor: this.colors,
                     borderWidth: 1,
-                    circumference: categoryCircum,
+                    circumference: this.categoryCircum,
                     weight: 1
                     //borderAlign: "inner"
                 },
@@ -325,7 +288,7 @@ export class CategoryDonutComponent {
                     hoverBackgroundColor: subBackgroundHover,
                     borderColor: subBaseColors,
                     borderWidth: 1,
-                    circumference: categoryCircum,
+                    circumference: this.categoryCircum,
                     weight: 1
                     //borderAlign: "inner"
                 },
@@ -344,7 +307,7 @@ export class CategoryDonutComponent {
                     data: categoryItems.map(z => z.averageAmount),
                     backgroundColor: background,
                     hoverBackgroundColor: backgroundHover,
-                    borderColor: baseColors,
+                    borderColor: this.colors,
                     borderWidth: 1,
                     circumference: averageCircum,
                     weight: 0.70
@@ -372,8 +335,8 @@ export class CategoryDonutComponent {
                     padding: {
                         left: 80,
                         right: 80,
-                        top: 15,
-                        bottom: 15
+                        top: 20,
+                        bottom: 20
                     }
                 },
                 //aspectRatio: 1.5,

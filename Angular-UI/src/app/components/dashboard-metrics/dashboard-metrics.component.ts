@@ -28,7 +28,7 @@ export class DashboardMetricsComponent {
     var generator = new ReportGenerator(transactions, settings);
     var report = generator.getMonthlySubcategoryReport();
     if (report.rows.length){
-      var rowIndex = 0;
+      var rowIndex = 4;
       var row = report.rows[rowIndex];
       var categoryItems: DonutCategoryItem[] = [];
       var sumWidth = 0;
