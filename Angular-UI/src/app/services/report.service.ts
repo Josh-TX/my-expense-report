@@ -1,5 +1,6 @@
-import { Settings } from "@services/settings.service";
-import { Transaction } from "@services/transaction.service";
+import { Injectable } from '@angular/core';
+import { Settings, SettingsService } from "@services/settings.service";
+import { Transaction, TransactionService } from "@services/transaction.service";
 
 export type Report = {
     headerRows: ReportHeader[][]
@@ -37,14 +38,21 @@ type SubcategoryContainer = {
     subcategories: string[]
 }
 
-export class ReportGenerator {
+@Injectable({
+    providedIn: 'root'
+})
+export class ReportService {
 
     private allTransactions: Transaction[] = [];
     private recentTransactions: Transaction[] = [];
+    private settings: Settings;
 
-    constructor(transactions: Transaction[], private settings: Settings) {
-        this.setupAllAndRecentTransactions(transactions);
+    constructor(private transactionsService: TransactionService, private settingsService: SettingsService) {
+        this.settings = this.settingsService.getSettings();
+        this.setupAllAndRecentTransactions();
     }
+
+    
 
 
     getMonthlyCategoryReport() {
@@ -282,7 +290,8 @@ export class ReportGenerator {
         return containers;
     }
 
-    private setupAllAndRecentTransactions(transactions: Transaction[]) {
+    private setupAllAndRecentTransactions() {
+        var transactions = this.transactionsService.getTransactions();
         //transactions are already sorted from recent to oldest
         if (!transactions.length) {
             return;

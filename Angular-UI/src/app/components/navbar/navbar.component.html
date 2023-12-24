@@ -38,6 +38,6 @@
     <mat-icon>settings</mat-icon>
   </button>
   <button mat-icon-button matTooltip="Toggle Dark Theme" (click)="toggleTheme()">
-    <mat-icon>{{isDarkTheme ? 'sunny' : 'nightlight'}}</mat-icon>
+    <mat-icon>{{darkMode$() ? 'sunny' : 'nightlight'}}</mat-icon>
   </button>
 </mat-toolbar>

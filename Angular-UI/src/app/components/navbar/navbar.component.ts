@@ -8,80 +8,57 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatDialog } from '@angular/material/dialog';
 import { LayoutModule, BreakpointObserver } from '@angular/cdk/layout';
-import {MatMenuModule} from '@angular/material/menu';
+import { MatMenuModule } from '@angular/material/menu';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs/operators';
 import { SettingsComponent } from '../settings/settings.component';
 import { RouterLink, RouterModule, ActivatedRoute, RouterOutlet } from '@angular/router';
 import { environment } from '../../../environments/environment';
+import { ThemeService } from '@services/theme.service';
 
 @Component({
-  selector: 'mer-navbar',
-  standalone: true,
-  imports: [CommonModule, RouterModule, RouterOutlet, MatToolbarModule, MatIconModule, MatButtonModule, 
-    MatTooltipModule, MatTabsModule, LayoutModule, MatMenuModule, SettingsComponent],
-  templateUrl: './navbar.component.html'
+    selector: 'mer-navbar',
+    standalone: true,
+    imports: [CommonModule, RouterModule, RouterOutlet, MatToolbarModule, MatIconModule, MatButtonModule,
+        MatTooltipModule, MatTabsModule, LayoutModule, MatMenuModule, SettingsComponent],
+    templateUrl: './navbar.component.html'
 })
 export class NavbarComponent {
-  mobileWidth: Signal<boolean> = toSignal(this.breakpointObserver.observe("(max-width: 903px)").pipe(map(z => z.matches)), { initialValue: true });
-  thinNavWidth: Signal<boolean> = toSignal(this.breakpointObserver.observe("(max-width: 599px)").pipe(map(z => z.matches)), { initialValue: true });
-  routePath: WritableSignal<string> = signal("null");
-  isHosted: boolean = environment.storageUrl != null;
+    mobileWidth: Signal<boolean> = toSignal(this.breakpointObserver.observe("(max-width: 903px)").pipe(map(z => z.matches)), { initialValue: true });
+    thinNavWidth: Signal<boolean> = toSignal(this.breakpointObserver.observe("(max-width: 599px)").pipe(map(z => z.matches)), { initialValue: true });
+    routePath: WritableSignal<string> = signal("null");
+    isHosted: boolean = environment.storageUrl != null;
 
-  isDarkTheme: boolean = false;
-  constructor(private breakpointObserver: BreakpointObserver, private dialog: MatDialog, private activatedRoute: ActivatedRoute) {
-    this.initializeTheme();
+    darkMode$: Signal<boolean>;
+    constructor(
+        private themeService: ThemeService,
+        private breakpointObserver: BreakpointObserver,
+        private dialog: MatDialog,
+        private activatedRoute: ActivatedRoute) {
 
-
-    //idk what on earth is going on, but the activated route isn't working
-    //the activatedRoute.url just isn't working... the only way to access the route is via this
-    setInterval(() => {
-      if (this.activatedRoute.children.length){
-        var snapshot = this.activatedRoute.children[0].snapshot;
-        var path = snapshot.url.length ? snapshot.url[0].path : '';
-        this.routePath.set(path);
-      }
-    }, 1)
-    //this.activatedRoute.root.snapshot
-  }
-
-  ngOnInit(){
-  }
-
-  openSettings(){
-    var dialogRef = this.dialog.open(SettingsComponent, {autoFocus: false})
-  } 
+        this.darkMode$ = this.themeService.getDarkMode$();
 
 
-
-  initializeTheme(){
-    var existingPreference = localStorage["darkMode"];
-    if (existingPreference != null) {
-      this.isDarkTheme = !!existingPreference;
+            //idk what on earth is going on, but the activated route isn't working
+            //the activatedRoute.url just isn't working... the only way to access the route is via this
+            setInterval(() => {
+                if (this.activatedRoute.children.length) {
+                    var snapshot = this.activatedRoute.children[0].snapshot;
+                    var path = snapshot.url.length ? snapshot.url[0].path : '';
+                    this.routePath.set(path);
+                }
+            }, 1)
+        //this.activatedRoute.root.snapshot
     }
-    else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      this.isDarkTheme = true;
-    }
-    this.updateTheme(false);
-  }
 
-  toggleTheme() {
-    this.isDarkTheme = !this.isDarkTheme;
-    this.updateTheme(true);
-  }
+    ngOnInit() {
+    }
 
-  private updateTheme(save: boolean) {
-    var themeName = this.isDarkTheme ? 'dark' : 'light';
-    var filename = `${themeName}-theme.css`;
-    var link = document.getElementById("css-theme");
-    link?.setAttribute("href", filename);
-    if (this.isDarkTheme){
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
+    openSettings() {
+        var dialogRef = this.dialog.open(SettingsComponent, { autoFocus: false })
     }
-    if (save) {
-      localStorage["darkMode"] = (this.isDarkTheme ? "1" : "");//truthy vs falsey
+
+    toggleTheme(){
+        this.themeService.toggleDarkMode();
     }
-  }
 }

@@ -1,12 +1,10 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SettingsService } from '@services/settings.service';
-import { TransactionService } from '@services/transaction.service';
-import { ReportGenerator, Report, ReportCell, ReportRow } from './report-generator';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { ReportCellComponent } from '@components/report-cell/report-cell.component';
 import { MatDialog } from '@angular/material/dialog';
+import { ReportService, Report, ReportCell, ReportRow } from '@services/report.service';
 
 
 @Component({
@@ -22,8 +20,7 @@ export class ReportComponent {
   selectedCell: ReportCell | null = null;
 
   constructor(
-    private transactionService: TransactionService,
-    private settingsService: SettingsService,
+    private reportService: ReportService,
     private dialog: MatDialog
     ){
   }
@@ -52,20 +49,17 @@ export class ReportComponent {
 
 
   updateReport(){
-    var transactions = this.transactionService.getTransactions();
-    var settings = this.settingsService.getSettings();
-    var generator = new ReportGenerator(transactions, settings);
     if (this.isYearly){
       if (this.subcategories){
-        this.report = generator.getYearlySubcategoryReport();
+        this.report = this.reportService.getYearlySubcategoryReport();
       } else {
-        this.report = generator.getYearlyCategoryReport();
+        this.report = this.reportService.getYearlyCategoryReport();
       }
     } else {
       if (this.subcategories){
-        this.report = generator.getMonthlySubcategoryReport();
+        this.report = this.reportService.getMonthlySubcategoryReport();
       } else {
-        this.report = generator.getMonthlyCategoryReport();
+        this.report = this.reportService.getMonthlyCategoryReport();
       }
     }
   }

@@ -20,12 +20,9 @@ export class TransactionsComponent {
 
   ) { }
   ngOnInit() {
-    var d1 = new Date();
     this.pageSize = this.settingsService.getSettings().maxRenderTransactionRows;
     this.allTransactions = this.transactionService.getTransactions();
     this.filteredTransactions = this.allTransactions.slice(0,this.pageSize);
-    var d2 = new Date();
-    console.log(d2.getTime() - d1.getTime());
   }
 
   renderAll(){

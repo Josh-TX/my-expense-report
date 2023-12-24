@@ -2,7 +2,7 @@ import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DatePipe } from '@angular/common';
 import { TransactionService, Transaction} from '@services/transaction.service';
-import { ReportColumn } from '@components/report/report-generator';
+import { ReportColumn } from '@services/report.service';
 import {
   MatDialogTitle,
   MatDialogContent,

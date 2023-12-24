@@ -1,4 +1,5 @@
 import { CategoryInfo } from "@services/category.service";
+import { Theme } from "@services/theme.service";
 import { ChartArea } from "chart.js";
 
 type LabelInfo = {
@@ -31,7 +32,7 @@ export class OuterLableDrawer{
         private subcategoryNames: CategoryInfo[],
         private categoryAmounts: number[], 
         private subcategoryAmounts: number[],
-        private colors: string[],
+        private theme: Theme,
         categoryCircumDegrees: number
         ){
             this.cx = chartArea.left + chartArea.width / 2;
@@ -65,7 +66,7 @@ export class OuterLableDrawer{
                 endAngle: currentAngle + angleRange,
                 label: this.categoryNames[i],
                 isSubcategory: false,
-                color: this.colors[i]
+                color: this.theme.text[i]
             });
             currentAngle += angleRange;
         }
@@ -87,7 +88,7 @@ export class OuterLableDrawer{
                 endAngle: currentAngle + angleRange,
                 label: this.subcategoryNames[i].subcategory,
                 isSubcategory: true,
-                color: this.colors[catIndex]
+                color: this.theme.text[catIndex]
             });
             currentAngle += angleRange;
         }

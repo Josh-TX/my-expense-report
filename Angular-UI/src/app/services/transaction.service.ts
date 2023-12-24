@@ -61,7 +61,7 @@ export class TransactionService {
     return this.storedTransactions.some(z => z.trxnDate.getTime() == date.getTime() && z.amount == amount && z.name.toLowerCase() == name.toLowerCase());
   }
 
-  getTransactions(filter: Filter | null = null): Transaction[] {
+  getTransactions(filter?: Filter | undefined): Transaction[] {
     var output: Transaction[] = [];
     var settings = this.settingsService.getSettings();
     for (var storedTrxn of this.storedTransactions) {
@@ -71,16 +71,11 @@ export class TransactionService {
         importFile: storedTrxn.importFile,
 
         trxnDate: storedTrxn.trxnDate,
-        name: storedTrxn.modifiedName || storedTrxn.name,
-        amount: storedTrxn.modifiedAmount || storedTrxn.amount,
+        name: storedTrxn.name,
+        amount: storedTrxn.amount,
 
-        category: storedTrxn.modifiedCategory || catInfo.category,
-        subcategory: storedTrxn.modifiedSubcategory || catInfo.subcategory,
-
-        isNameModified: !!storedTrxn.modifiedName,
-        isAmountModified: !!storedTrxn.modifiedAmount,
-        isCategoryModified: !!storedTrxn.modifiedCategory,
-        isSubcategoryModified: !!storedTrxn.modifiedSubcategory,
+        category: catInfo.category,
+        subcategory: catInfo.subcategory,
       };
       if (!filter || filter(outputTrxn)){
         output.push(outputTrxn);
@@ -98,9 +93,5 @@ type StoredTransaction = {
   importFile: string,
   trxnDate: Date,
   name: string,
-  amount: number,
-  modifiedName: string | undefined,
-  modifiedAmount: number | undefined,
-  modifiedCategory: string | undefined,
-  modifiedSubcategory: string | undefined
+  amount: number
 }
