@@ -51,7 +51,7 @@ export class ReportComponent {
   updateReport(){
     if (this.isYearly){
       if (this.subcategories){
-        this.report = this.reportService.getYearlySubcategoryReport();
+        this.report = this.reportService.getMonthlyCategoryReport();
       } else {
         this.report = this.reportService.getYearlyCategoryReport();
       }

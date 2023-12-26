@@ -3,31 +3,15 @@ import { Settings, SettingsService } from './settings.service';
 import { Transaction } from './transaction.service';
 import { StorageService } from './storage.service';
 
-export type CategoryInfo = {
-    category: string,
-    subcategory: string
-}
 
-export type CategoryMetrics = {
-    name: string,
-    subcategories: SubcategoryMetrics[]
-    totalAmount: number,
-    recentAmount: number,
-    totalTrxnCount: number,
-    recentTrxnCount: number
-}
-
-export type SubcategoryMetrics = {
-    name: string,
-    totalAmount: number,
-    recentAmount: number,
-    totalTrxnCount: number,
-    recentTrxnCount: number
+export type Subcategory = {
+    catName: string,
+    subcatName: string
 }
 
 export type CategoryRule = {
-    category: string,
-    subcategory: string,
+    catName: string,
+    subcatName: string,
     text: string
 }
 
@@ -35,18 +19,41 @@ export type CategoryRule = {
     providedIn: 'root'
 })
 export class CategoryService {
-    rules: CategoryRule[] = [];
-    allInfos: CategoryInfo[] = [];
+    private rules: CategoryRule[] = [];
+    private subcategories: Subcategory[] = [];
+
     constructor(
         private settingsService: SettingsService,
         private storageService: StorageService
 
     ) {
+        this.reset();
         var data = this.storageService.retrieve("category-rules.json");
         if (data && Array.isArray(data)) {
-            this.rules = data;
+            data.forEach((z: CategoryRule) => this._addRule(z));
         }
-        this.updateAllInfos()
+    }
+
+    private _addRule(newRule: CategoryRule){
+        var subcategory = this.subcategories.find(z => z.catName.toLowerCase() == newRule.catName.toLowerCase()
+            && z.subcatName.toLowerCase() == newRule.subcatName.toLowerCase());
+        if (subcategory == null){
+            subcategory = {
+                catName: newRule.catName,
+                subcatName: newRule.subcatName 
+            }
+            this.subcategories.push(subcategory)
+        }
+        this.rules.push({
+            catName: newRule.catName,
+            subcatName: newRule.subcatName,
+            text: newRule.text.toLowerCase()
+        });
+    }
+
+    private reset(){
+        this.rules = [];
+        this.subcategories = [{catName: "", subcatName: ""}];
     }
 
     doesRuleTextMatch(trxn: { name: string, amount: number }, ruleText: string): boolean {
@@ -62,34 +69,20 @@ export class CategoryService {
     }
 
     addRules(rules: CategoryRule[]) {
-        this.rules.push(...rules);
-        this.updateAllInfos();
+        rules.forEach(z => this._addRule(z));
         this.storageService.store("category-rules.json", this.rules);
     }
 
     replaceRules(rules: CategoryRule[]) {
-        this.rules = rules;
-        this.updateAllInfos();
-        this.storageService.store("category-rules.json", this.rules);
+        this.reset();
+        this.addRules(rules);
     }
 
-    private updateAllInfos() {
-        this.allInfos = [];
-        for (var rule of this.rules) {
-            if (!this.allInfos.some(info => info.category.toLowerCase() == rule.category.toLowerCase() && info.subcategory.toLowerCase() == rule.subcategory.toLowerCase())) {
-                this.allInfos.push({
-                    category: rule.category,
-                    subcategory: rule.subcategory
-                });
-            }
-        }
-    }
-
-    getTrxnCategoryInfo(trxn: { name: string, amount: number }, useIncomeCategory: boolean): CategoryInfo {
+    getTrxnSubcategory(trxn: { name: string, amount: number }, useIncomeCategory: boolean): Subcategory {
         if (trxn.amount < 0 && useIncomeCategory) {
             return {
-                category: "income",
-                subcategory: ""
+                catName: "income",
+                subcatName: "income"
             };
         }
         var foundRule = this.rules.find(rule => this.doesRuleTextMatch(trxn, rule.text));
@@ -97,12 +90,12 @@ export class CategoryService {
             return foundRule;
         }
         return {
-            category: "",
-            subcategory: ""
+            catName: "",
+            subcatName: ""
         };
     }
 
-    getAllCategoryInfos() {
-        return [...this.allInfos];
+    getSubcategories(): Subcategory[] {
+        return [...this.subcategories];
     }
 }

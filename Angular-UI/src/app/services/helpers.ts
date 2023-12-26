@@ -6,78 +6,43 @@ export function getSum(nums: number[]): number{
     return nums.reduce((a, b) => a + b, 0);
 }
 
+export function getSD(nums: number[], sum?: number | undefined): number | undefined {
+    if (!nums.length){
+        return undefined;
+    }
+    var mean = (sum == null ? getSum(nums) : sum) / nums.length
+    return Math.sqrt(nums.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b) / nums.length)
+}
+
+export function getCombinedSet(sets: Array<{n: number, sum: number, sd?: number | undefined}>): {n: number, sum: number, sd?: number | undefined} {
+    if (!sets.length){
+        return {
+            n: 0,
+            sum: 0,
+        };
+    }
+    if (sets.length == 1){
+        return { ...sets[0] };
+    }
+    var combinedN = getSum(sets.map(z => z.n));
+    var combinedSum = getSum(sets.map(z => z.sum));
+    var combinedMean = combinedSum/combinedN;
+    var weightedSumVariance = getSum(sets.map(z => z.sd == null ? 0 : z.n * z.sd * z.sd)) / combinedN;
+    var weightedSumSquaredDeviation = getSum(sets.map(z => z.n * Math.pow(z.n / z.sum - combinedMean, 2))) / combinedN;
+    var combinedSd = Math.sqrt(weightedSumVariance + weightedSumSquaredDeviation);
+    return {
+        n: combinedN,
+        sum: combinedSum,
+        sd: combinedSd
+    };
+}
+
+
 //solution from https://stackoverflow.com/questions/50851263
 type FilterProperties<T, TFilter> = { [K in keyof T as (T[K] extends TFilter ? K : never)]: T[K] }
 export function getSumByProp<T>(items: T[], key: keyof FilterProperties<T, number>): number{
     //typescript can't figure out that T[key] is a number, so cast to <any>
     return items.reduce((a, b) => a + (<any>b[key]), 0);
-}
-
-export type Stat = {
-    n: number,
-    sum: number,
-    mean: number,
-    sd?: number | undefined
-}
-
-export function getStat(amounts: number[]): Stat {
-    if (!amounts.length) {
-        return {
-            n: 0,
-            mean: 0,
-            sum: 0
-            //sd undefined
-        };
-    }
-    if (!amounts.length || amounts.length == 1) {
-        return {
-            n: 1,
-            mean: amounts[0],
-            sum: amounts[0],
-            //sd undefined
-        };
-    }
-    var n = amounts.length
-    var sum = getSum(amounts);
-    var mean = sum / n
-    var sd = Math.sqrt(amounts.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b) / n)
-    return { 
-        n, 
-        sum: sum,
-        mean: roundToCent(mean), 
-        sd 
-    };
-}
-
-export function getStatByProp<T>(items: T[], key: keyof FilterProperties<T, number>): Stat{
-    return getStat(items.map(z => <any>z[key]))
-}
-
-export function getCombinedStat(stats: Stat[]): Stat {
-    stats = stats.filter(z => z.n > 0);
-    if (!stats.length){
-        return {
-            n: 0,
-            mean: 0,
-            sum: 0
-            //sd undefined
-        };
-    }
-    if (stats.length == 1){
-        return stats[0];
-    }
-    var n = getSum(stats.map(z => z.n));
-    var sum = getSum(stats.map(z => z.sum));
-    var mean = sum/n;
-    var weightedSumVariance = getSum(stats.map(z => z.sd == null ? 0 : z.n * z.sd * z.sd));
-    var weightedSumSquaredDeviation = getSum(stats.map(z => z.n * Math.pow(z.mean - mean, 2)));
-    var sd = Math.sqrt((weightedSumVariance + weightedSumSquaredDeviation) / n);
-    return { 
-        n, 
-        sum: sum,
-        mean: roundToCent(mean), 
-        sd 
-    };
 }
 
 
@@ -177,4 +142,12 @@ export function getStartOfMonth(date: Date): Date {
     d.setHours(0, 0, 0, 0)
     d.setDate(1);
     return d;
+}
+
+export function sortBy<T>(items: T[], selectorFunc: (t:T) => number){
+    items.sort((t1, t2) => selectorFunc(t1) - selectorFunc(t2));
+}
+
+export function sortByDesc<T>(items: T[], selectorFunc: (t:T) => number){
+    items.sort((t1, t2) => selectorFunc(t2) - selectorFunc(t1));
 }

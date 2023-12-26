@@ -11,8 +11,8 @@ export type Transaction = {
   name: string,
   amount: number,
 
-  category: string,
-  subcategory: string,
+  catName: string,
+  subcatName: string,
 
   isNameModified: boolean,
   isAmountModified: boolean,
@@ -65,7 +65,7 @@ export class TransactionService {
     var output: Transaction[] = [];
     var settings = this.settingsService.getSettings();
     for (var storedTrxn of this.storedTransactions) {
-      var catInfo = this.categoryService.getTrxnCategoryInfo(storedTrxn, settings.useIncomeCategory);
+      var catInfo = this.categoryService.getTrxnSubcategory(storedTrxn, settings.useIncomeCategory);
       var outputTrxn = <Transaction>{
         importDate: storedTrxn.importDate,
         importFile: storedTrxn.importFile,
@@ -74,8 +74,8 @@ export class TransactionService {
         name: storedTrxn.name,
         amount: storedTrxn.amount,
 
-        category: catInfo.category,
-        subcategory: catInfo.subcategory,
+        catName: catInfo.catName,
+        subcatName: catInfo.subcatName,
       };
       if (!filter || filter(outputTrxn)){
         output.push(outputTrxn);

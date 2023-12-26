@@ -8,6 +8,8 @@ import { TransactionService } from '@services/transaction.service';
 import { SettingsService } from '@services/settings.service';
 import { DonutData, DonutSubcategoryItem, DonutCategoryItem } from "@components/category-donut/category-donut.component";
 import { BarCategoryItem, BarData, BarDateItem, CategoryBarComponent } from "@components/category-bar/category-bar.component";
+import { StatService } from '@services/stat.service';
+import { groupBySelectorFunc } from '@services/helpers';
 
 @Component({
     selector: 'mer-dashboard-metrics',
@@ -19,7 +21,8 @@ export class DashboardMetricsComponent {
     donutData: DonutData | undefined;
     barData: BarData | undefined;
     constructor(
-        private reportService: ReportService
+        private reportService: ReportService,
+        private statService: StatService,
     ) {
 
     }
@@ -30,17 +33,17 @@ export class DashboardMetricsComponent {
     }
 
     private CalcBarData(){
-        var report = this.reportService.getMonthlyCategoryReport();
-        var dateItems: BarDateItem[] = [];
-        if (report.rows.length) {
+        var stats = this.statService.getCatMonthStats();
+        if (stats.length) {
             var dateItems: BarDateItem[] = [];
-            for (var row of report.rows){
-                var catItems: BarCategoryItem[] = row.cells.map((cell, i) => ({
-                    category: report.headerRows[0][i].name,
-                    amount: cell.amount
+            var monthGroups = groupBySelectorFunc(stats, z => z.month);
+            for (var monthGroup of monthGroups){
+                var catItems: BarCategoryItem[] = monthGroup.items.map(catMonthStat => ({
+                    catName: catMonthStat.catName,
+                    amount: catMonthStat.sumAmount
                 }));
                 dateItems.push({
-                    date: row.date,
+                    date: monthGroup.key,
                     items: catItems
                 });
             }
@@ -50,44 +53,47 @@ export class DashboardMetricsComponent {
             };
         }
     }
-
     private CalcDonutData(){
-        var report = this.reportService.getMonthlySubcategoryReport();
-        if (report.rows.length) {
-            var rowIndex = 0;
-            var row = report.rows[rowIndex];
-            var categoryItems: DonutCategoryItem[] = [];
-            var sumWidth = 0;
-            for (var catIndex = 0; catIndex < report.headerRows[0].length; catIndex++) {
-                var colIndexes: number[] = [];
-                for (var colIndex = sumWidth; colIndex < sumWidth + report.headerRows[0][catIndex].width; colIndex++) {
-                    colIndexes.push(colIndex);
-                }
-                var subcategoryNames = report.headerRows[1].filter((z, i) => colIndexes.includes(i)).map(z => z.name);
-                var subcategoryAmounts = row.cells.filter((z, i) => colIndexes.includes(i)).map(z => z.amount);
-                var subcategoryAverageAmounts = report.averages.filter((z, i) => colIndexes.includes(i));
-                var subcategoryItems = row.cells.filter((z, i) => colIndexes.includes(i)).map((z, i) => <DonutSubcategoryItem>{
-                    subcategory: subcategoryNames[i],
-                    amount: subcategoryAmounts[i],
-                    averageAmount: subcategoryAverageAmounts[i]
-                });
-                var categoryAmount = subcategoryAmounts.reduce((a, b) => a + b, 0);
-                var categoryAverageAmount = subcategoryAverageAmounts.reduce((a, b) => a + b, 0);
-
-                categoryItems.push({
-                    category: report.headerRows[0][catIndex].name,
-                    amount: categoryAmount,
-                    averageAmount: categoryAverageAmount,
-                    items: subcategoryItems
-                });
-                sumWidth += report.headerRows[0][catIndex].width;
-
-            }
-            this.donutData = {
-                isYearly: false,
-                date: row.date,
-                items: categoryItems
-            };
+        var currentMonth = this.statService.getCurrentMonth();
+        if (!currentMonth) {
+            return;
         }
+        var currentCatStats = this.statService.getCatStats(currentMonth);
+        if (currentCatStats.length == 1){
+            return;
+        }
+        var recentCutoff = this.statService.getRecentCutoff();
+        var recentCatStats = this.statService.getCatStats(currentMonth, recentCutoff);
+        var currentSubcatStats = this.statService.getSubcatStats(currentMonth);
+        var recentSubcatStats = this.statService.getSubcatStats(currentMonth, recentCutoff);
+
+        var catItems: DonutCategoryItem[] = [];
+        for (var currentCatStat of currentCatStats){
+            var catName = currentCatStat.catName;
+            var recentCatStat = recentCatStats.find(z => z.catName == catName)!;
+            var matchingCurrentSubcatStats = currentSubcatStats.filter(z => z.subcategory.catName == catName);
+            var matchingRecentSubcatStats = recentSubcatStats.filter(z => z.subcategory.catName == catName);
+            var subcatItems: DonutSubcategoryItem[] = [];
+            for (var currentSubcatStat of matchingCurrentSubcatStats){
+                var recentSubcatStat = matchingRecentSubcatStats.find(z => z.subcategory.subcatName == currentSubcatStat.subcategory.subcatName)!;
+                subcatItems.push({
+                    subcategory: currentSubcatStat.subcategory,
+                    amount: currentCatStat.sumAmount,
+                    averageAmount: recentSubcatStat.sumAmount / recentSubcatStat.monthCount
+                });
+            }
+            catItems.push({
+                catName: catName,
+                amount: currentCatStat.sumAmount,
+                averageAmount: recentCatStat.sumAmount / recentCatStat.monthCount,
+                subcategoryItems: subcatItems
+            });
+        }
+
+        this.donutData = {
+            isYearly: false,
+            date: currentMonth,
+            categoryItems: catItems
+        };
     }
 }

@@ -43,8 +43,8 @@
                         <td>{{conflict.trxnDate | date:'M/d/yy'}}</td>
                         <td>{{conflict.amount | currency}}</td>
                         <td>{{conflict.name}}</td>
-                        <td>{{conflict.category}}</td>
-                        <td>{{conflict.subcategory}}</td>
+                        <td>{{conflict.catName}}</td>
+                        <td>{{conflict.subcatName}}</td>
                     </tr>
                     }
                 </table>
@@ -87,8 +87,8 @@
                 @for (categoryInfo of filteredCategoryInfos; track categoryInfo) {
                 <mat-option [value]="categoryInfo">
                     <div style="line-height: 1.125rem;">
-                        <div style="font-size: 0.875rem;" class="text-muted mb-0">{{categoryInfo.category}}</div>
-                        {{categoryInfo.subcategory}}
+                        <div style="font-size: 0.875rem;" class="text-muted mb-0">{{categoryInfo.catName}}</div>
+                        {{categoryInfo.subcatName}}
                     </div>
                 </mat-option>
                 }

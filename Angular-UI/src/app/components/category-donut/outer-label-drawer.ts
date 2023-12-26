@@ -1,4 +1,4 @@
-import { CategoryInfo } from "@services/category.service";
+import { Subcategory } from "@services/category.service";
 import { Theme } from "@services/theme.service";
 import { ChartArea } from "chart.js";
 
@@ -29,7 +29,7 @@ export class OuterLableDrawer{
         private ctx: CanvasRenderingContext2D,
         chartArea: ChartArea,
         private categoryNames: string[], 
-        private subcategoryNames: CategoryInfo[],
+        private subcategories: Subcategory[],
         private categoryAmounts: number[], 
         private subcategoryAmounts: number[],
         private theme: Theme,
@@ -77,16 +77,16 @@ export class OuterLableDrawer{
         var subcategoryLabels: LabelInfo[] = [];
         var sumAmount = this.subcategoryAmounts.reduce((a, b) => a + b, 0);
         var currentAngle = 0;
-        for (var i = 0; i < this.subcategoryNames.length; i++){
+        for (var i = 0; i < this.subcategories.length; i++){
             var angleRange = this.subcategoryAmounts[i] / sumAmount * Math.PI * 2 * this.circumRatio;
             if (angleRange < .0174){ //less than 1 degree
                 continue;
             }
-            var catIndex = this.categoryNames.indexOf(this.subcategoryNames[i].category);
+            var catIndex = this.categoryNames.indexOf(this.subcategories[i].catName);
             subcategoryLabels.push({
                 startAngle: currentAngle,
                 endAngle: currentAngle + angleRange,
-                label: this.subcategoryNames[i].subcategory,
+                label: this.subcategories[i].subcatName,
                 isSubcategory: true,
                 color: this.theme.text[catIndex]
             });

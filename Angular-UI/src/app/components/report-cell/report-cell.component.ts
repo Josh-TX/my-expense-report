@@ -39,10 +39,10 @@ export class ReportCellComponent {
         return false;
       }
       if (column){
-        if (trxn.category != column.category){
+        if (trxn.catName != column.catName){
           return false
         }
-        return column.subcategory == null || column.subcategory == trxn.subcategory;
+        return column.subcatName == null || column.subcatName == trxn.subcatName;
       }
       return true;
     })
@@ -52,12 +52,12 @@ export class ReportCellComponent {
     if (!column){
       return "";
     }
-    if (column.category === ""){
+    if (column.catName === ""){
       return " - (uncategorized)"
     }
-    if (!column.subcategory){
-      return " - " + column.category
+    if (!column.subcatName){
+      return " - " + column.catName
     }
-    return " - " + column.category + " - " + column.subcategory;
+    return " - " + column.catName + " - " + column.subcatName;
   }
 }

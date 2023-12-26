@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ChartDataset, ChartEvent, Interaction, InteractionItem, InteractionOptions, Point } from 'chart.js';
 import { Chart, registerables } from 'chart.js';
 import { DatePipe, CurrencyPipe, DecimalPipe } from '@angular/common';
-import { CategoryInfo } from '@services/category.service';
+import { Subcategory } from '@services/category.service';
 Chart.register(...registerables);
 
 
@@ -16,7 +16,7 @@ export type BarDateItem = {
     items: BarCategoryItem[]
 };
 export type BarCategoryItem = {
-    category: string,
+    catName: string,
     amount: number
 };
 
@@ -33,7 +33,6 @@ export class CategoryBarComponent {
     private textMuted: string = "#AAAAAA"
 
     private categoryNames: string[] = [];
-    private subcategoryNames: CategoryInfo[] = [];
     private categoryAmounts: number[] = [];
     private subcategoryAmounts: number[] = [];
     private avgCategoryAmounts: number[] = [];
@@ -67,7 +66,7 @@ export class CategoryBarComponent {
     //private outerLabelAfterDraw(chart: Chart<TType>, args: EmptyObject, options: O)
 
     private renderChart(data: BarData) {
-        var categoryNames = data.items[0].items.map(z => z.category);
+        var categoryNames = data.items[0].items.map(z => z.catName);
         var allItems = data.items.flatMap(z => z.items);
         var datepipe = new DatePipe("en-US");
         var dateStrings = data.items.map(z => datepipe.transform(z.date, "MMM y")!);
@@ -77,8 +76,7 @@ export class CategoryBarComponent {
         this.colors = ["rgb(230,0,73)", "rgb(11,180,255)", "rgb(80,233,145)", "rgb(230,216,0)", "rgb(155,25,245)", "rgb(255,163,0)", "rgb(220,10,180)", "rgb(179,212,255)", "rgb(0,191,160)"]
         var background = this.colors.map(z => z.replace("(", "a(").replace(")", ",0.25)"));
         var backgroundHover = this.colors.map(z => z.replace("(", "a(").replace(")", ",0.5)"));
-        background[1] = "#007FFF01 ";
-
+        
         var datasets: ChartDataset<any, number[]>[] =  categoryNames.map((name, i) => ({
             label: name,
             data: [],

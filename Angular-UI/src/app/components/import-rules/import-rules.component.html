@@ -17,9 +17,9 @@
     @for (parsedRule of parsedRules; track parsedRule){
     <tr>
       <td [class.text-muted]="parsedRule.isDuplicate || parsedRule.invalidIndexes.length"
-        [class.invalid-cell]="parsedRule.invalidIndexes.includes(0)">{{parsedRule.category}}</td>
+        [class.invalid-cell]="parsedRule.invalidIndexes.includes(0)">{{parsedRule.catName}}</td>
       <td [class.text-muted]="parsedRule.isDuplicate || parsedRule.invalidIndexes.length"
-        [class.invalid-cell]="parsedRule.invalidIndexes.includes(1)">{{parsedRule.subcategory}}</td>
+        [class.invalid-cell]="parsedRule.invalidIndexes.includes(1)">{{parsedRule.subcatName}}</td>
       <td [class.text-muted]="parsedRule.isDuplicate || parsedRule.invalidIndexes.length"
         [class.invalid-cell]="parsedRule.invalidIndexes.includes(2)"
         [class.warning-row]="!replace && !parsedRule.invalidIndexes.length && parsedRule.isDuplicate">

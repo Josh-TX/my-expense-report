@@ -17,8 +17,8 @@
             <td>{{trxn.trxnDate | date:'M/d/yy'}}</td>
             <td>{{trxn.name}}</td>
             <td>{{trxn.amount | currency}}</td>
-            <td>{{trxn.category}}</td>
-            <td>{{trxn.subcategory}}</td>
+            <td>{{trxn.catName}}</td>
+            <td>{{trxn.subcatName}}</td>
             <td>{{trxn.importFile ? trxn.importFile : '(manually added)'}}</td>
             <td>{{trxn.importDate | date:'M/d/yy, h:mm a'}}</td>
         </tr>

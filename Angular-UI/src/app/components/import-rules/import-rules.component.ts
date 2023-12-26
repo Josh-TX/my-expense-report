@@ -31,7 +31,7 @@ export class ImportRulesComponent {
     private categoryService: CategoryService,  
     private dialogRef: MatDialogRef<ImportRulesComponent>,
     private snackBar: MatSnackBar) { 
-    if (categoryService.allInfos.length){
+    if (categoryService.getRules().length){
       this.anyExistingRules = true;
     }
   }
@@ -79,8 +79,8 @@ export class ImportRulesComponent {
   import(){
     var rulesToAdd = this.parsedRules!.filter(z => !z.invalidIndexes.length && (this.replace || !z.isDuplicate))
       .map(z => <CategoryRule>{
-        category: z.category,
-        subcategory: z.subcategory,
+        catName: z.catName,
+        subcatName: z.subcatName,
         text: z.text
       });
     if (this.replace){
@@ -108,8 +108,8 @@ export class ImportRulesComponent {
         row[j] = row[j] ? row[j].trim() : "";
       }
       var parsedRule: ParsedRule = {
-        category: row[0],
-        subcategory: row[1],
+        catName: row[0],
+        subcatName: row[1],
         text: row[2],
         invalidIndexes: [],
         isDuplicate: false
@@ -131,8 +131,8 @@ export class ImportRulesComponent {
 }
 
 type ParsedRule = {
-  category: string,
-  subcategory: string,
+  catName: string,
+  subcatName: string,
   text: string,
   invalidIndexes: number[]
   isDuplicate: boolean;

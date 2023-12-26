@@ -10,7 +10,7 @@ import {
 } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { TransactionService, Transaction } from '@services/transaction.service';
-import { CategoryInfo, CategoryService } from '@services/category.service';
+import { Subcategory, CategoryService } from '@services/category.service';
 import {MatInputModule} from '@angular/material/input'
 import {MatAutocompleteModule} from '@angular/material/autocomplete';
 import {MatSnackBar} from '@angular/material/snack-bar';
@@ -34,10 +34,10 @@ export class FixUncategorizedComponent {
   filteredCategories: string[] = [];
   category: string | null = "";
 
-  allCategoryInfos: CategoryInfo[] = [];
-  filteredCategoryInfos: CategoryInfo[] = [];
+  allCategoryInfos: Subcategory[] = [];
+  filteredCategoryInfos: Subcategory[] = [];
   subcategoryText: string | null = "";
-  selectedInfo: CategoryInfo | null = null;
+  selectedInfo: Subcategory | null = null;
 
   constructor(
     private transactionService: TransactionService, 
@@ -56,8 +56,8 @@ export class FixUncategorizedComponent {
     this.selectedInfo = null;
     this.subcategoryText = null;
     var allTransactions = this.transactionService.getTransactions();
-    this.catTransactions = allTransactions.filter(z => z.category != "");
-    this.uncatTransactions = allTransactions.slice(this.skipCount).filter(z => z.category == "");
+    this.catTransactions = allTransactions.filter(z => z.catName != "");
+    this.uncatTransactions = allTransactions.slice(this.skipCount).filter(z => z.catName == "");
     this.currentUncatTransaction = this.uncatTransactions[0];
     if (this.currentUncatTransaction) {
       var suggestionStrings = getSuggestionStrings(this.currentUncatTransaction.name);
@@ -72,8 +72,8 @@ export class FixUncategorizedComponent {
       }
       this.selectSuggestion(this.suggestionInfos[0]);
     }
-    this.allCategoryInfos = this.categoryService.getAllCategoryInfos();
-    this.allCategories = [...new Set(this.allCategoryInfos .map(z => z.category).filter(z => z))];
+    this.allCategoryInfos = this.categoryService.getSubcategories();
+    this.allCategories = [...new Set(this.allCategoryInfos .map(z => z.catName).filter(z => z))];
     this.filteredCategories = this.allCategories;
     this.filteredCategoryInfos = this.allCategoryInfos;
   }
@@ -108,28 +108,28 @@ export class FixUncategorizedComponent {
       this.snackBar.open("proposed rule doesn't match current transaction", "", { panelClass: "snackbar-error", duration: 3000 });
       return;
     }
-    var subcategory = this.selectedInfo ? this.selectedInfo.subcategory : (this.subcategoryText ?? "");
+    var subcategory = this.selectedInfo ? this.selectedInfo.subcatName : (this.subcategoryText ?? "");
     this.categoryService.addRules([{
-      category: this.category,
-      subcategory: subcategory,
+      catName: this.category,
+      subcatName: subcategory,
       text: this.ruleTextInput
     }]);
     this.update();
   }
 
 
-  subcategoryChange(event: string | CategoryInfo){
+  subcategoryChange(event: string | Subcategory){
     if (typeof event == "string"){
       var filter = event;
       this.filteredCategoryInfos = this.allCategoryInfos;
       if (this.category){
-        this.filteredCategoryInfos = this.allCategoryInfos.filter(info => info.category.toLowerCase() == this.category!.toLowerCase())
+        this.filteredCategoryInfos = this.allCategoryInfos.filter(info => info.catName.toLowerCase() == this.category!.toLowerCase())
       }
       if (filter){
-        this.filteredCategoryInfos = this.filteredCategoryInfos.filter(info => filterMatchesTarget(filter, [info.category, info.subcategory]));
+        this.filteredCategoryInfos = this.filteredCategoryInfos.filter(info => filterMatchesTarget(filter, [info.catName, info.subcatName]));
       }
     } else { //event is CategoryInfo
-      this.category = event.category;
+      this.category = event.catName;
       this.filteredCategoryInfos = [event];
       this.selectedInfo = event;
     }
@@ -137,17 +137,17 @@ export class FixUncategorizedComponent {
 
   categoryChange(filter: string){
     this.filteredCategories = this.allCategories.filter(z => z.toLowerCase().startsWith(filter.toLowerCase()));
-    if (this.selectedInfo && filter.toLowerCase() != this.selectedInfo.category.toLowerCase()){
+    if (this.selectedInfo && filter.toLowerCase() != this.selectedInfo.catName.toLowerCase()){
       this.selectedInfo = null;
       this.subcategoryText = "";
     }
     if (filter){
-      this.filteredCategoryInfos = this.allCategoryInfos.filter(info => info.category.toLowerCase() == filter.toLowerCase());
+      this.filteredCategoryInfos = this.allCategoryInfos.filter(info => info.catName.toLowerCase() == filter.toLowerCase());
     }
   }
   
-  displayFn(info: CategoryInfo): string {
-    return info ? info.subcategory : "";
+  displayFn(info: Subcategory): string {
+    return info ? info.subcatName : "";
   }
 }
 

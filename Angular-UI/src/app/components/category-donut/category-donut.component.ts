@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ChartEvent, Interaction, InteractionItem, InteractionOptions, Point } from 'chart.js';
 import { Chart, registerables } from 'chart.js';
 import { DatePipe, CurrencyPipe, DecimalPipe } from '@angular/common';
-import { CategoryInfo } from '@services/category.service';
+import { Subcategory } from '@services/category.service';
 import { OuterLableDrawer } from './outer-label-drawer';
 import { Theme, ThemeService } from '@services/theme.service';
 import { getDistinctByProp } from '@services/helpers';
@@ -13,28 +13,19 @@ Chart.register(...registerables);
 export type DonutData = {
     isYearly: boolean,
     date: Date,
-    items: DonutCategoryItem[]
+    categoryItems: DonutCategoryItem[]
 };
 export type DonutCategoryItem = {
-    category: string,
+    catName: string,
     amount: number,
     averageAmount: number
-    items: DonutSubcategoryItem[]
+    subcategoryItems: DonutSubcategoryItem[]
 };
 export type DonutSubcategoryItem = {
-    subcategory: string,
+    subcategory: Subcategory,
     amount: number,
     averageAmount: number
 };
-
-type OuterLabelData = {
-    ctx: CanvasRenderingContext2D,
-    cx: number,
-    cy: number,
-    radius: number,
-    sideLength: number,
-    outLength: number,
-}
 
 @Component({
     selector: 'mer-category-donut',
@@ -50,7 +41,7 @@ export class CategoryDonutComponent {
     private theme: Theme | undefined;
 
     private categoryNames: string[] = [];
-    private subcategoryNames: CategoryInfo[] = [];
+    private subcategories: Subcategory[] = [];
     private categoryAmounts: number[] = [];
     private subcategoryAmounts: number[] = [];
     private avgCategoryAmounts: number[] = [];
@@ -128,7 +119,7 @@ export class CategoryDonutComponent {
             isAverage = items[0].datasetIndex > 2; //the first activeItem
             index = items[0].index;//both activeItems should have the same index
             if (isSubcategory){
-                var catIndex = getDistinctByProp(this.subcategoryNames.slice(0, index + 1), "category").length - 1;
+                var catIndex = getDistinctByProp(this.subcategories.slice(0, index + 1), "catName").length - 1;
                 color = this.theme!.text[catIndex];
             } else {
                 color = this.theme!.text[index];
@@ -137,7 +128,6 @@ export class CategoryDonutComponent {
 
 
         var { top, bottom, left, right, width, height } = chart.chartArea;
-        var radius = height * parseFloat(<any>chart.options.cutout) / 200
         var cx = left + width / 2;
         var cy = top + height / 2;
 
@@ -147,15 +137,20 @@ export class CategoryDonutComponent {
         var xOffset = +45;
         var yOffset = -60;
         if (index != null) {
-            if (isSubcategory) {
+            var primaryLabel = isSubcategory 
+                ? this.subcategories[index].subcatName || this.subcategories[index].catName
+                : this.categoryNames[index];
+            var secondaryLabel = isSubcategory ? this.subcategories[index].catName : null;
+            if (secondaryLabel) {
                 ctx.font = "12px Arial";
-                ctx.fillText(this.subcategoryNames[index].category, cx + xOffset, cy + yOffset - 18);
-                ctx.font = "20px Arial";
-                ctx.fillText(this.subcategoryNames[index].subcategory, cx + xOffset, cy + yOffset);
-            } else {
-                ctx.font = "20px Arial";
-                ctx.fillText(this.categoryNames[index], cx + xOffset, cy + yOffset);
+                ctx.fillText(this.subcategories[index].catName, cx + xOffset, cy + yOffset - 18);
+            } 
+            if (!primaryLabel){
+                ctx.fillStyle = this.theme!.mutedText;
+                primaryLabel = "uncategorized"
             }
+            ctx.font = "20px Arial";
+            ctx.fillText(primaryLabel, cx + xOffset, cy + yOffset);
         } else { //since index is null, display the total
             ctx.font = "20px Arial";
             ctx.fillText("Total", cx + xOffset, cy + yOffset);
@@ -221,7 +216,7 @@ export class CategoryDonutComponent {
             chart.ctx,
             chart.chartArea,
             this.categoryNames,
-            this.subcategoryNames,
+            this.subcategories,
             this.categoryAmounts,
             this.subcategoryAmounts,
             this.theme!,
@@ -232,13 +227,10 @@ export class CategoryDonutComponent {
 
     private renderChart(data: DonutData) {
         this.clickedItems = [];
-        var categoryItems = [...data.items];
-        categoryItems.sort((z1, z2) => z2.amount - z1.amount);
-        categoryItems.forEach(z => z.items.sort((z1, z2) => z2.amount - z1.amount));
-        var subcategoryItems = categoryItems.flatMap(z => z.items);
-
-        this.categoryNames = categoryItems.map(z => z.category);
-        this.subcategoryNames = categoryItems.flatMap(catItem => catItem.items.map(z => ({ category: catItem.category, subcategory: z.subcategory })));
+        var categoryItems = [...data.categoryItems];
+        var subcategoryItems = categoryItems.flatMap(z => z.subcategoryItems);
+        this.categoryNames = categoryItems.map(z => z.catName);
+        this.subcategories = subcategoryItems.map(z => z.subcategory);
         this.categoryAmounts = categoryItems.map(z => z.amount);
         this.subcategoryAmounts = subcategoryItems.map(z => z.amount);
         this.avgCategoryAmounts = categoryItems.map(z => z.averageAmount);
@@ -262,7 +254,7 @@ export class CategoryDonutComponent {
         var subcatHovers: string[] = [];
         var colorLen = this.theme!.borders.length;
         for (var i = 0; i < categoryItems.length; i++) {
-            for (var j = 0; j < categoryItems[i].items.length; j++) {
+            for (var j = 0; j < categoryItems[i].subcategoryItems.length; j++) {
                 subcatBorders.push(this.theme!.borders[i % colorLen]);
                 subcatBackgrounds.push(this.theme!.backgrounds[i % colorLen]);
                 subcatHovers.push(this.theme!.hovers[i % colorLen]);

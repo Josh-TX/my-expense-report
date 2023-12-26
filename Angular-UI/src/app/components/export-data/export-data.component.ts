@@ -29,7 +29,7 @@ export class ExportDataComponent {
     var datePipe = new DatePipe('en-US');
     var currencyPipe = new CurrencyPipe('en-US');
     var headers = ["Date", "Description", "Amount", "Category", "Subcategory"];
-    var transactionRows = transactions.map(z => [datePipe.transform(z.trxnDate, 'M/d/yy'), z.name, currencyPipe.transform(z.amount), z.category, z.subcategory]);
+    var transactionRows = transactions.map(z => [datePipe.transform(z.trxnDate, 'M/d/yy'), z.name, currencyPipe.transform(z.amount), z.catName, z.subcatName]);
     var transactionCSV = Papa.unparse( [headers, ...transactionRows]);
     this.exportToFile("transactions.csv", transactionCSV);
   }
@@ -37,7 +37,7 @@ export class ExportDataComponent {
   exportRules(){
     var rules = this.categoryService.getRules();
     var headers = ["Category", "Subcategory", "Match Text"];
-    var rows = rules.map(z => [z.category, z.subcategory, z.text]);
+    var rows = rules.map(z => [z.catName, z.subcatName, z.text]);
     var ruleCSV = Papa.unparse( [headers, ...rows]);
     this.exportToFile("category-rules.csv", ruleCSV);
   }
