@@ -3,7 +3,7 @@ import { Settings, SettingsService } from "@services/settings.service";
 import { Transaction, TransactionService } from "@services/transaction.service";
 import { StatService } from './stat.service';
 import { CategoryService, Subcategory } from './category.service';
-import { getSum, groupBySelectorFunc, getDistinct, getDistinctBySelectorFunc, areValuesSame } from '@services/helpers';
+import { getSum, groupBy, getDistinct, getDistinctBySelectorFunc, areValuesSame } from '@services/helpers';
 
 export type Report = {
     headerRows: ReportHeader[][]
@@ -67,7 +67,7 @@ export class ReportService {
         var headerRows: ReportHeader[][] = [recentCatStats.map(z => ({ width: 1, name: z.catName }))];
         var columns: ReportColumn[] = recentCatStats.map(z => ({ catName: z.catName }));
         var rows: ReportRow[] = [];
-        var statMonthGroups = groupBySelectorFunc(catMonthStats, z => z.month);
+        var statMonthGroups = groupBy(catMonthStats, z => z.month);
         for (var statMonthGroup of statMonthGroups){
             var cells: ReportCell[] = [];
             for (var recentCatStat of recentCatStats){
@@ -107,18 +107,18 @@ export class ReportService {
             return null;
         }
         var recentSubcatStats = this.statService.getRecentSubcatStats();
-        var categoryGroups = groupBySelectorFunc(this.categoryService.getSubcategories(), z => z.catName);
+        var categoryGroups = groupBy(recentSubcatStats.map(z => z.subcategory), z => z.catName);
         var recentTotalStat = this.statService.getRecentTotalStat();
-        var headerFirstRow: ReportHeader[] = recentSubcatStats.map(z => ({ 
-            width: categoryGroups.find(zz => zz.key == z.subcategory.catName)!.items.length, 
-            name: z.subcategory.catName }));
+        var headerFirstRow: ReportHeader[] = categoryGroups.map(z => ({ 
+            width: z.items.length, 
+            name: z.key }));
         var headerRows: ReportHeader[][] = [
             headerFirstRow,
-            recentSubcatStats.map(z => ({ width: 1, name: z.subcategory.catName }))
+            recentSubcatStats.map(z => ({ width: 1, name: z.subcategory.subcatName }))
         ];
         var columns: ReportColumn[] = recentSubcatStats.map(z => ({ catName: z.subcategory.catName, subcatName: z.subcategory.subcatName }));
         var rows: ReportRow[] = [];
-        var statMonthGroups = groupBySelectorFunc(subcatMonthStats, z => z.month);
+        var statMonthGroups = groupBy(subcatMonthStats, z => z.month);
         for (var statMonthGroup of statMonthGroups){
             var cells: ReportCell[] = [];
             for (var recentSubcatStat of recentSubcatStats){

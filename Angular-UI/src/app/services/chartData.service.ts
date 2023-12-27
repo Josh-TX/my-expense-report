@@ -3,7 +3,7 @@ import { Settings, SettingsService } from "@services/settings.service";
 import { Transaction, TransactionService } from "@services/transaction.service";
 import { StatService } from './stat.service';
 import { CategoryService, Subcategory } from './category.service';
-import { getSum, groupBySelectorFunc, getDistinct, getDistinctBySelectorFunc, areValuesSame } from '@services/helpers';
+import { getSum, groupBy, getDistinct, getDistinctBySelectorFunc, areValuesSame } from '@services/helpers';
 
 export type DonutData = {
     isYearly: boolean,
@@ -20,6 +20,19 @@ export type DonutSubcategoryItem = {
     subcategory: Subcategory,
     amount: number,
     averageAmount: number
+};
+
+export type BarData = {
+    isYearly: boolean,
+    items: BarDateItem[]
+};
+export type BarDateItem = {
+    date: Date,
+    items: BarCategoryItem[]
+};
+export type BarCategoryItem = {
+    catName: string,
+    amount: number
 };
 
 @Injectable({
@@ -45,6 +58,12 @@ export class chartDataService {
         var recentCatStats = this.statService.getRecentCatStats();
         var currentSubcatStats = this.statService.getSubcatStats(month);
         var recentSubcatStats = this.statService.getRecentSubcatStats();
+
+        //filter out negative categories (negative based on recent, not necessarily current)
+        var incomeCatNames = recentCatStats.filter(z => z.sumAmount < 0).map(z => z.catName);
+        currentCatStats = currentCatStats.filter(z => !incomeCatNames.includes(z.catName));
+        currentSubcatStats = currentSubcatStats.filter(z => !incomeCatNames.includes(z.subcategory.subcatName));
+        recentSubcatStats = recentSubcatStats.filter(z => !incomeCatNames.includes(z.subcategory.subcatName));
 
         var catItems: DonutCategoryItem[] = [];
         for (var currentCatStat of currentCatStats){
@@ -73,5 +92,28 @@ export class chartDataService {
             date: month,
             categoryItems: catItems
         }; 
+    }
+
+    getMonthlyBarData(){
+        var stats = this.statService.getCatMonthStats();
+        if (!stats.length) {
+            return
+        }
+        var dateItems: BarDateItem[] = [];
+        var monthGroups = groupBy(stats, z => z.month);
+        for (var monthGroup of monthGroups){
+            var catItems: BarCategoryItem[] = monthGroup.items.map(catMonthStat => ({
+                catName: catMonthStat.catName,
+                amount: catMonthStat.sumAmount
+            }));
+            dateItems.push({
+                date: monthGroup.key,
+                items: catItems
+            });
+        }
+        return {
+            isYearly: false,
+            items: dateItems
+        };
     }
 }

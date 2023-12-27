@@ -6,9 +6,9 @@ import { CategoryDonutComponent } from '@components/category-donut/category-donu
 import { ReportService, Report, ReportCell, ReportRow } from '@services/report.service';
 import { TransactionService } from '@services/transaction.service';
 import { SettingsService } from '@services/settings.service';
-import { BarCategoryItem, BarData, BarDateItem, CategoryBarComponent } from "@components/category-bar/category-bar.component";
+import { CategoryBarComponent } from "@components/category-bar/category-bar.component";
 import { StatService } from '@services/stat.service';
-import { groupBySelectorFunc } from '@services/helpers';
+import { groupBy } from '@services/helpers';
 
 @Component({
     selector: 'mer-dashboard-metrics',
@@ -17,7 +17,6 @@ import { groupBySelectorFunc } from '@services/helpers';
     templateUrl: './dashboard-metrics.component.html'
 })
 export class DashboardMetricsComponent {
-    barData: BarData | undefined;
     constructor(
         private reportService: ReportService,
         private statService: StatService,
@@ -25,29 +24,7 @@ export class DashboardMetricsComponent {
 
     }
     ngOnInit() {
-        this.CalcBarData();
 
     }
 
-    private CalcBarData(){
-        var stats = this.statService.getCatMonthStats();
-        if (stats.length) {
-            var dateItems: BarDateItem[] = [];
-            var monthGroups = groupBySelectorFunc(stats, z => z.month);
-            for (var monthGroup of monthGroups){
-                var catItems: BarCategoryItem[] = monthGroup.items.map(catMonthStat => ({
-                    catName: catMonthStat.catName,
-                    amount: catMonthStat.sumAmount
-                }));
-                dateItems.push({
-                    date: monthGroup.key,
-                    items: catItems
-                });
-            }
-            this.barData = {
-                isYearly: false,
-                items: dateItems
-            };
-        }
-    }
 }

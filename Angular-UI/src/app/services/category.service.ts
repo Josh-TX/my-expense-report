@@ -55,7 +55,11 @@ export class CategoryService {
 
     private reset(){
         this.rules$.set([]);
-        this.subcategories$.set([{catName: "", subcatName: ""}]);
+        var defaultSubcategories = [{catName: "", subcatName: ""}];
+        if (this.settingsService.getSettings().useIncomeCategory){
+            defaultSubcategories.push({catName: "income", subcatName: "income"})
+        }
+        this.subcategories$.set(defaultSubcategories);
     }
 
     doesRuleTextMatch(trxn: { name: string, amount: number }, ruleText: string): boolean {

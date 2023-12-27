@@ -2,7 +2,7 @@ import { Injectable, Signal, WritableSignal, computed, signal } from '@angular/c
 import { Settings, SettingsService } from "@services/settings.service";
 import { Transaction, TransactionService } from "@services/transaction.service";
 import { CategoryService, Subcategory } from "@services/category.service";
-import { getStartOfMonth, getDistinctBySelectorFunc, groupBySelectorFunc, getSum, sortBy, sortByDesc, areValuesSame, roundToCent, getSD, getCombinedSet } from "@services/helpers";
+import { getStartOfMonth, getDistinctBySelectorFunc, groupBy, getSum, sortBy, sortByDesc, areValuesSame, roundToCent, getSD, getCombinedSet } from "@services/helpers";
 
 export type Stat = {
     trxnCount: number,
@@ -37,7 +37,10 @@ export type SubcatMonthStat = Stat & {
     subcategory: Subcategory
 }
 
-type CatSumAmount = {catName: string, sumAmount: number};
+type VariousStatsContainer = {
+    subcatMonthStats: SubcatMonthStat[],
+    catMonthStats: CatMonthStat[]
+}
 
 @Injectable({
     providedIn: 'root'
@@ -54,13 +57,9 @@ export class StatService {
         ) {
         this.catMonthStats$ = signal([]);
         this.subcatMonthStats$ = signal([]);
-        var unsortedSubcatMonthStats$ = computed(() => this.getUnsortedSubcatMonthStats(this.transactionsService.getTransactions(), this.settingsService.getSettings()));
-        var unsortedCatMonthStats$ = computed(() => this.getUnsortedCatMonthStats(unsortedSubcatMonthStats$()));
-        var catSumAmounts$ = computed(() => this.getRecentCatSumAmounts(unsortedCatMonthStats$(), this.settingsService.getSettings()));
-        this.catMonthStats$ = computed(() => this.sortCatMonthStats(unsortedCatMonthStats$(), catSumAmounts$()));
-        this.subcatMonthStats$ = computed(() => this.sortSubcatMonthStats(unsortedSubcatMonthStats$(), catSumAmounts$(), this.settingsService.getSettings()));
-        console.log(this.getCatStats(this.getCurrentMonth()!));
-        console.log(this.getSubcatStats(this.getCurrentMonth()!));
+        var variousStatsContainer$ = computed(() => this.updateVariousStatsContainer(this.transactionsService.getTransactions(), this.settingsService.getSettings()));
+        this.catMonthStats$ = computed(() => variousStatsContainer$().catMonthStats);
+        this.subcatMonthStats$ = computed(() => variousStatsContainer$().subcatMonthStats);
     }
 
     getCurrentMonth(): Date | undefined {
@@ -129,7 +128,7 @@ export class StatService {
         var catMonthStatsInRange = this.catMonthStats$().filter(z => z.month.getTime() <= recentDate.getTime());
         var oldCutoff = oldestDate != null ? oldestDate : recentDate;
         catMonthStatsInRange = catMonthStatsInRange.filter(z => z.month.getTime() >= oldCutoff.getTime());
-        var catGroups = groupBySelectorFunc(catMonthStatsInRange, z => z.catName);
+        var catGroups = groupBy(catMonthStatsInRange, z => z.catName);
         var output = catGroups.map(g => ({
             catName: g.key,
             monthCount: g.items.length,
@@ -143,7 +142,7 @@ export class StatService {
         var subcatMonthStatsInRange = this.subcatMonthStats$().filter(z => z.month.getTime() <= recentDate.getTime());
         var oldCutoff = oldestDate != null ? oldestDate : recentDate;
         subcatMonthStatsInRange = subcatMonthStatsInRange.filter(z => z.month.getTime() >= oldCutoff.getTime());
-        var subcatGroups = groupBySelectorFunc(subcatMonthStatsInRange, z => z.subcategory);
+        var subcatGroups = groupBy(subcatMonthStatsInRange, z => z.subcategory);
         return subcatGroups.map(g => ({
             subcategory: g.key,
             monthCount: g.items.length,
@@ -152,15 +151,19 @@ export class StatService {
         }));
     }
 
-    private getUnsortedSubcatMonthStats(transactions: Transaction[], settings: Settings): SubcatMonthStat[] {
-        var subcatMonthStats = [];
+    private updateVariousStatsContainer(transactions: Transaction[], settings: Settings): VariousStatsContainer {
         var transactions = this.filterOutNewTransactions(transactions);
         if (!transactions.length) {
-            return [];
+            return {
+                catMonthStats: [],
+                subcatMonthStats: []
+            };
         }
+        //first compute subcatMonthStats from the transactions
+        var subcatMonthStats = [];
         var subcategories = this.categoryService.getSubcategories();
         var getMonthsInRange = this.getMonthsInRange(transactions[0].date, transactions[transactions.length - 1].date);
-        var monthTrxnGroups = groupBySelectorFunc(transactions, t => getStartOfMonth(t.date).getTime());
+        var monthTrxnGroups = groupBy(transactions, t => getStartOfMonth(t.date).getTime());
         for (var month of getMonthsInRange) {
             var monthTransactions = monthTrxnGroups.find(z => z.key == month.getTime())?.items ?? [];
             for (var subcategory of subcategories) {
@@ -173,13 +176,9 @@ export class StatService {
                 });
             }
         }
-        return subcatMonthStats;
-    }
-
-    
-    private getUnsortedCatMonthStats(subcatMonthStats:  SubcatMonthStat[]): CatMonthStat[] {
+        //use the subcatMonthStats to compute the catMonthStats
         var catMonthStats = [];
-        var catMonthGroups = groupBySelectorFunc(subcatMonthStats, g => ({catName: g.subcategory.catName, month: g.month}));
+        var catMonthGroups = groupBy(subcatMonthStats, g => ({catName: g.subcategory.catName, month: g.month}));
         for (var group of catMonthGroups){
             var stat = this.getCombinedStat(group.items);
             catMonthStats.push({
@@ -188,41 +187,45 @@ export class StatService {
                 ...stat
             });
         }
-        return catMonthStats;
-    }
+        //filter out catMonthStats & subcatMonthStats when the category has $0 total (considering all months)
+        //this is mostly for possibly filtering out the income category or the uncategorized category
+        var catNamesWithZero = groupBy(catMonthStats, g => g.catName)
+            .filter(group => getSum(group.items.map(zz => zz.sumAmount)) == 0)
+            .map(group => group.key);
+        catMonthStats = catMonthStats.filter(z => !catNamesWithZero.includes(z.catName));
+        subcatMonthStats = subcatMonthStats.filter(z => !catNamesWithZero.includes(z.subcategory.catName));
 
-    private getRecentCatSumAmounts(catMonthStats: CatMonthStat[], settings: Settings): CatSumAmount[] {
-        if (!catMonthStats.length){
-            return [];
-        }
+        //sort the catMonthStats based on the category's total among just the recent months
         var recentCutoff = new Date(catMonthStats[0].month);
         recentCutoff.setMonth(recentCutoff.getMonth() - settings.recentMonthCount);
         var recentCatMonthStats = catMonthStats.filter(z => z.month >= recentCutoff);
-        var recentCatSums = groupBySelectorFunc(recentCatMonthStats, g => g.catName)
+        var recentCatSumAmounts = groupBy(recentCatMonthStats, g => g.catName)
             .map(z => ({catName: z.key, sumAmount: getSum(z.items.map(zz => zz.sumAmount))}));
-        return recentCatSums;
-    }
-
-    private sortCatMonthStats(catMonthStats: CatMonthStat[], recentCatSumAmounts: CatSumAmount[]): CatMonthStat[]{
+        //by sorting multiple times, it's similar to LINQ's OrderBy().ThenBy().ThenBy()
+        //this is because when the compare function returns 0, it'll keep the relative positions of such items the same
+        //The last sort will have the highest priorty, meaning it'll be sorted by month.
+        //but among categories with the same month, the catMonth whose category has the higher amount will be first (except uncategorized). 
         sortByDesc(catMonthStats, z => recentCatSumAmounts.find(zz => zz.catName == z.catName)!.sumAmount);
         sortByDesc(catMonthStats, z => z.catName == "" ? -1 : 0);
         sortByDesc(catMonthStats, z => z.month.getTime());
-        return catMonthStats;
-    }
 
-    private sortSubcatMonthStats(subcatMonthStats: SubcatMonthStat[], recentCatSumAmounts: CatSumAmount[], settings: Settings): SubcatMonthStat[]{
-        var recentCutoff = new Date(subcatMonthStats[0].month);
-        recentCutoff.setMonth(recentCutoff.getMonth() - settings.recentMonthCount);
+        //subcatMonthStats will be sorted very similar to catMonthStats
+        //but the subcategories within each category are also sorted from highest to lowest (though category has more precedence)
         var recentSubcatMonthStats = subcatMonthStats.filter(z => z.month >= recentCutoff);
-        var recentSubcatSumAmounts = groupBySelectorFunc(recentSubcatMonthStats, g => g.subcategory)
+        var recentSubcatSumAmounts = groupBy(recentSubcatMonthStats, g => g.subcategory)
             .map(z => ({subcategory: z.key, sumAmount: getSum(z.items.map(zz => zz.sumAmount))}));
 
         sortByDesc(subcatMonthStats, z => recentSubcatSumAmounts.find(zz => areValuesSame(z.subcategory, zz.subcategory))!.sumAmount);
         sortByDesc(subcatMonthStats, z => recentCatSumAmounts.find(zz => zz.catName == z.subcategory.catName)!.sumAmount);
         sortByDesc(subcatMonthStats, z => z.subcategory.catName == "" ? -1 : 0);
         sortByDesc(subcatMonthStats, z => z.month.getTime());
-        return subcatMonthStats;
+
+        return {
+            catMonthStats: catMonthStats,
+            subcatMonthStats: subcatMonthStats,
+        }
     }
+
 
     private filterOutNewTransactions(transactions: Transaction[]): Transaction[] {
         //transactions are already sorted from recent to oldest

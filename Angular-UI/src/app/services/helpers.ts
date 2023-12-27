@@ -107,23 +107,7 @@ export type Group<T, U> = {
 };
 
 /** uses areValuesSame for equality checks */
-export function groupByProp<K extends keyof T, U extends T[K], T>(items: T[], prop: K): Group<T,U>[] {
-    var groups: Array<{ key: U, items: T[]}> = [];
-    for (var item of items){
-        var key = item[prop];
-        var foundGroup = groups.find(z => areValuesSame(z.key, key));
-        if (foundGroup){
-            foundGroup.items.push(item);
-        } else {
-            //typescript can't figure out that T[K] is U, so cast to <any>
-            groups.push({key: <any>key, items: [item]});
-        }
-    }
-    return groups;
-}
-
-/** uses areValuesSame for equality checks */
-export function groupBySelectorFunc<T, U>(items: T[], selectorFunc: (t1: T) => U): Group<T,U>[]{
+export function groupBy<T, U>(items: T[], selectorFunc: (t1: T) => U): Group<T,U>[]{
     var groups: Array<{ key: U, items: T[]}> = [];
     for (var item of items){
         var key = selectorFunc(item);

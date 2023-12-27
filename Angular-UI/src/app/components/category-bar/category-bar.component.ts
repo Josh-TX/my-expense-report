@@ -1,24 +1,13 @@
-import { Component, Input, SimpleChanges } from '@angular/core';
+import { Component, Input, SimpleChanges, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ChartDataset, ChartEvent, Interaction, InteractionItem, InteractionOptions, Point } from 'chart.js';
 import { Chart, registerables } from 'chart.js';
 import { DatePipe, CurrencyPipe, DecimalPipe } from '@angular/common';
 import { Subcategory } from '@services/category.service';
+import { BarData, chartDataService } from '@services/chartData.service';
+import { Theme, ThemeService } from '@services/theme.service';
 Chart.register(...registerables);
 
-
-export type BarData = {
-    isYearly: boolean,
-    items: BarDateItem[]
-};
-export type BarDateItem = {
-    date: Date,
-    items: BarCategoryItem[]
-};
-export type BarCategoryItem = {
-    catName: string,
-    amount: number
-};
 
 @Component({
     selector: 'mer-category-bar',
@@ -30,24 +19,17 @@ export class CategoryBarComponent {
     @Input("data") inputData: BarData | undefined;
     chart: Chart<"bar", number[], string> | undefined;
     private initCalled: boolean = false;
-    private textMuted: string = "#AAAAAA"
+    private theme: Theme;
 
-    private categoryNames: string[] = [];
-    private categoryAmounts: number[] = [];
-    private subcategoryAmounts: number[] = [];
-    private avgCategoryAmounts: number[] = [];
-    private avgSubcategoryAmounts: number[] = [];
-    private colors: string[] = [];
-
-    private date: string | undefined;
-    private averageType: string | undefined;
-
-    private activeItems: InteractionItem[] = [];
-    private clickedItems: InteractionItem[] = [];
-    private clickActiveTimeout: any;
-    private categoryCircum: number = 360;
-
-    constructor() {
+    constructor(private themeService: ThemeService, private chartDataService: chartDataService) {
+        this.theme = this.themeService.getTheme();
+        effect(() => {
+            this.theme = this.themeService.getTheme();
+            var chartData = this.chartDataService.getMonthlyBarData();
+            if (chartData){
+                this.renderChart(chartData);
+            }
+        })
     }
 
     ngOnChanges(simpleChanges: SimpleChanges) {
@@ -67,22 +49,15 @@ export class CategoryBarComponent {
 
     private renderChart(data: BarData) {
         var categoryNames = data.items[0].items.map(z => z.catName);
-        var allItems = data.items.flatMap(z => z.items);
         var datepipe = new DatePipe("en-US");
         var dateStrings = data.items.map(z => datepipe.transform(z.date, "MMM y")!);
-
-
-
-        this.colors = ["rgb(230,0,73)", "rgb(11,180,255)", "rgb(80,233,145)", "rgb(230,216,0)", "rgb(155,25,245)", "rgb(255,163,0)", "rgb(220,10,180)", "rgb(179,212,255)", "rgb(0,191,160)"]
-        var background = this.colors.map(z => z.replace("(", "a(").replace(")", ",0.25)"));
-        var backgroundHover = this.colors.map(z => z.replace("(", "a(").replace(")", ",0.5)"));
         
         var datasets: ChartDataset<any, number[]>[] =  categoryNames.map((name, i) => ({
             label: name,
             data: [],
-            backgroundColor: background[i % background.length],
-            hoverBackgroundColor: backgroundHover[i % backgroundHover.length],
-            borderColor: this.colors[i % this.colors.length],
+            backgroundColor: this.theme.backgrounds[i % this.theme.backgrounds.length],
+            hoverBackgroundColor: this.theme.hovers[i % this.theme.hovers.length],
+            borderColor: this.theme.borders[i % this.theme.borders.length],
             borderWidth: 1,
             borderSkipped: false
         }));
@@ -91,9 +66,6 @@ export class CategoryBarComponent {
                 datasets[i].data.push(dateItem.items[i].amount);
             }
         }
-
-
-
         if (this.chart) {
             this.chart.destroy();
         }
