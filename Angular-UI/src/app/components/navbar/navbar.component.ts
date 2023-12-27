@@ -36,7 +36,7 @@ export class NavbarComponent {
         private dialog: MatDialog,
         private activatedRoute: ActivatedRoute) {
 
-        this.darkMode$ = this.themeService.getDarkMode$();
+        this.darkMode$ = computed(() => this.themeService.getDarkMode());
 
 
             //idk what on earth is going on, but the activated route isn't working

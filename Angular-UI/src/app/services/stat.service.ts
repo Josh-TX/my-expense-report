@@ -1,5 +1,5 @@
-import { Injectable } from '@angular/core';
-import { SettingsService } from "@services/settings.service";
+import { Injectable, Signal, WritableSignal, computed, signal } from '@angular/core';
+import { Settings, SettingsService } from "@services/settings.service";
 import { Transaction, TransactionService } from "@services/transaction.service";
 import { CategoryService, Subcategory } from "@services/category.service";
 import { getStartOfMonth, getDistinctBySelectorFunc, groupBySelectorFunc, getSum, sortBy, sortByDesc, areValuesSame, roundToCent, getSD, getCombinedSet } from "@services/helpers";
@@ -37,38 +37,53 @@ export type SubcatMonthStat = Stat & {
     subcategory: Subcategory
 }
 
+type CatSumAmount = {catName: string, sumAmount: number};
+
 @Injectable({
     providedIn: 'root'
 })
 export class StatService {
-    private catMonthStats: CatMonthStat[] = [];
-    private subcatMonthStats: SubcatMonthStat[] = [];
-    private recentCutoff: Date = new Date();
+
+    private catMonthStats$: Signal<CatMonthStat[]>;
+    private subcatMonthStats$: Signal<SubcatMonthStat[]>;
 
     constructor(
         private transactionsService: TransactionService, 
         private categoryService: CategoryService, 
         private settingsService: SettingsService
         ) {
-        this.update();
+        this.catMonthStats$ = signal([]);
+        this.subcatMonthStats$ = signal([]);
+        var unsortedSubcatMonthStats$ = computed(() => this.getUnsortedSubcatMonthStats(this.transactionsService.getTransactions(), this.settingsService.getSettings()));
+        var unsortedCatMonthStats$ = computed(() => this.getUnsortedCatMonthStats(unsortedSubcatMonthStats$()));
+        var catSumAmounts$ = computed(() => this.getRecentCatSumAmounts(unsortedCatMonthStats$(), this.settingsService.getSettings()));
+        this.catMonthStats$ = computed(() => this.sortCatMonthStats(unsortedCatMonthStats$(), catSumAmounts$()));
+        this.subcatMonthStats$ = computed(() => this.sortSubcatMonthStats(unsortedSubcatMonthStats$(), catSumAmounts$(), this.settingsService.getSettings()));
+        console.log(this.getCatStats(this.getCurrentMonth()!));
+        console.log(this.getSubcatStats(this.getCurrentMonth()!));
     }
 
     getCurrentMonth(): Date | undefined {
-        if (this.catMonthStats.length){
-            return this.catMonthStats[0].month;
+        if (this.catMonthStats$().length){
+            return this.catMonthStats$()[0].month;
         }
         return undefined;
     }
 
-    getRecentCutoff(): Date {
-        return new Date(this.recentCutoff.getTime());
+    getRecentCutoff(): Date | undefined{
+        if (this.catMonthStats$().length){
+            var recentCutoff = new Date(this.catMonthStats$()[0].month);
+            recentCutoff.setMonth(recentCutoff.getMonth() - this.settingsService.getSettings().recentMonthCount);
+            return recentCutoff;
+        }
+        return undefined
     }
 
     getCatMonthStats(): CatMonthStat[]{
-        return this.catMonthStats;
+        return this.catMonthStats$();
     }
     getSubcatMonthStats(): SubcatMonthStat[]{
-        return this.subcatMonthStats;
+        return this.subcatMonthStats$();
     }
 
     getRecentTotalStat(): TotalStat {
@@ -111,7 +126,7 @@ export class StatService {
     }
 
     getCatStats(recentDate: Date, oldestDate?: Date | undefined): CatStat[] {
-        var catMonthStatsInRange = this.catMonthStats.filter(z => z.month.getTime() <= recentDate.getTime());
+        var catMonthStatsInRange = this.catMonthStats$().filter(z => z.month.getTime() <= recentDate.getTime());
         var oldCutoff = oldestDate != null ? oldestDate : recentDate;
         catMonthStatsInRange = catMonthStatsInRange.filter(z => z.month.getTime() >= oldCutoff.getTime());
         var catGroups = groupBySelectorFunc(catMonthStatsInRange, z => z.catName);
@@ -125,7 +140,7 @@ export class StatService {
     }
 
     getSubcatStats(recentDate: Date, oldestDate?: Date | undefined): SubcatStat[] {
-        var subcatMonthStatsInRange = this.subcatMonthStats.filter(z => z.month.getTime() <= recentDate.getTime());
+        var subcatMonthStatsInRange = this.subcatMonthStats$().filter(z => z.month.getTime() <= recentDate.getTime());
         var oldCutoff = oldestDate != null ? oldestDate : recentDate;
         subcatMonthStatsInRange = subcatMonthStatsInRange.filter(z => z.month.getTime() >= oldCutoff.getTime());
         var subcatGroups = groupBySelectorFunc(subcatMonthStatsInRange, z => z.subcategory);
@@ -137,58 +152,76 @@ export class StatService {
         }));
     }
 
-
-
-    private update() {
-        this.subcatMonthStats = [];
-        var transactions = this.transactionsService.getTransactions();
+    private getUnsortedSubcatMonthStats(transactions: Transaction[], settings: Settings): SubcatMonthStat[] {
+        var subcatMonthStats = [];
         var transactions = this.filterOutNewTransactions(transactions);
         if (!transactions.length) {
-            return;
+            return [];
         }
         var subcategories = this.categoryService.getSubcategories();
-        var getMonthsInRange = this.getMonthsInRange(transactions[0].trxnDate, transactions[transactions.length - 1].trxnDate);
-        var monthTrxnGroups = groupBySelectorFunc(transactions, t => getStartOfMonth(t.trxnDate).getTime());
+        var getMonthsInRange = this.getMonthsInRange(transactions[0].date, transactions[transactions.length - 1].date);
+        var monthTrxnGroups = groupBySelectorFunc(transactions, t => getStartOfMonth(t.date).getTime());
         for (var month of getMonthsInRange) {
             var monthTransactions = monthTrxnGroups.find(z => z.key == month.getTime())?.items ?? [];
             for (var subcategory of subcategories) {
                 var subcatMonthTransactions = monthTransactions.filter(trxn => trxn.catName == subcategory.catName && trxn.subcatName == subcategory.subcatName);
                 var stat = this.getStat(subcatMonthTransactions.map(z => z.amount));
-                this.subcatMonthStats.push({
+                subcatMonthStats.push({
                     month: month, 
                     subcategory: subcategory,
                     ...stat
                 });
             }
         }
-        this.catMonthStats = [];
-        var catMonthGroups = groupBySelectorFunc(this.subcatMonthStats, g => ({catName: g.subcategory.catName, month: g.month}));
+        return subcatMonthStats;
+    }
+
+    
+    private getUnsortedCatMonthStats(subcatMonthStats:  SubcatMonthStat[]): CatMonthStat[] {
+        var catMonthStats = [];
+        var catMonthGroups = groupBySelectorFunc(subcatMonthStats, g => ({catName: g.subcategory.catName, month: g.month}));
         for (var group of catMonthGroups){
             var stat = this.getCombinedStat(group.items);
-            this.catMonthStats.push({
+            catMonthStats.push({
                 month: group.key.month, 
                 catName: group.key.catName, 
                 ...stat
             });
         }
+        return catMonthStats;
+    }
 
-        this.recentCutoff = new Date(this.catMonthStats[0].month);
-        this.recentCutoff.setMonth(this.recentCutoff .getMonth() - this.settingsService.getSettings().recentMonthCount);
-        var recentCatMonthStats = this.catMonthStats.filter(z => z.month >= this.recentCutoff);
+    private getRecentCatSumAmounts(catMonthStats: CatMonthStat[], settings: Settings): CatSumAmount[] {
+        if (!catMonthStats.length){
+            return [];
+        }
+        var recentCutoff = new Date(catMonthStats[0].month);
+        recentCutoff.setMonth(recentCutoff.getMonth() - settings.recentMonthCount);
+        var recentCatMonthStats = catMonthStats.filter(z => z.month >= recentCutoff);
         var recentCatSums = groupBySelectorFunc(recentCatMonthStats, g => g.catName)
             .map(z => ({catName: z.key, sumAmount: getSum(z.items.map(zz => zz.sumAmount))}));
-        var recentSubcatMonthStats = this.subcatMonthStats.filter(z => z.month >= this.recentCutoff);
-        var recentSubcatSums = groupBySelectorFunc(recentSubcatMonthStats, g => g.subcategory)
+        return recentCatSums;
+    }
+
+    private sortCatMonthStats(catMonthStats: CatMonthStat[], recentCatSumAmounts: CatSumAmount[]): CatMonthStat[]{
+        sortByDesc(catMonthStats, z => recentCatSumAmounts.find(zz => zz.catName == z.catName)!.sumAmount);
+        sortByDesc(catMonthStats, z => z.catName == "" ? -1 : 0);
+        sortByDesc(catMonthStats, z => z.month.getTime());
+        return catMonthStats;
+    }
+
+    private sortSubcatMonthStats(subcatMonthStats: SubcatMonthStat[], recentCatSumAmounts: CatSumAmount[], settings: Settings): SubcatMonthStat[]{
+        var recentCutoff = new Date(subcatMonthStats[0].month);
+        recentCutoff.setMonth(recentCutoff.getMonth() - settings.recentMonthCount);
+        var recentSubcatMonthStats = subcatMonthStats.filter(z => z.month >= recentCutoff);
+        var recentSubcatSumAmounts = groupBySelectorFunc(recentSubcatMonthStats, g => g.subcategory)
             .map(z => ({subcategory: z.key, sumAmount: getSum(z.items.map(zz => zz.sumAmount))}));
 
-        sortByDesc(this.catMonthStats, z => recentCatSums.find(zz => zz.catName == z.catName)!.sumAmount);
-        sortByDesc(this.catMonthStats, z => z.catName == "" ? -1 : 0);
-        sortByDesc(this.catMonthStats, z => z.month.getTime());
-
-        sortByDesc(this.subcatMonthStats, z => recentSubcatSums.find(zz => areValuesSame(z.subcategory, zz.subcategory))!.sumAmount);
-        sortByDesc(this.subcatMonthStats, z => recentCatSums.find(zz => zz.catName == z.subcategory.catName)!.sumAmount);
-        sortByDesc(this.catMonthStats, z => z.catName == "" ? -1 : 0);
-        sortByDesc(this.subcatMonthStats, z => z.month.getTime());
+        sortByDesc(subcatMonthStats, z => recentSubcatSumAmounts.find(zz => areValuesSame(z.subcategory, zz.subcategory))!.sumAmount);
+        sortByDesc(subcatMonthStats, z => recentCatSumAmounts.find(zz => zz.catName == z.subcategory.catName)!.sumAmount);
+        sortByDesc(subcatMonthStats, z => z.subcategory.catName == "" ? -1 : 0);
+        sortByDesc(subcatMonthStats, z => z.month.getTime());
+        return subcatMonthStats;
     }
 
     private filterOutNewTransactions(transactions: Transaction[]): Transaction[] {
@@ -196,9 +229,9 @@ export class StatService {
         if (!transactions.length) {
             return [];
         }
-        if (transactions[0].trxnDate.getDate() < this.settingsService.getSettings().requiredDaysForLatestMonth) {
-            var tooNewCuttoff = getStartOfMonth(transactions[0].trxnDate);
-            transactions = transactions.filter(z => z.trxnDate.getTime() < tooNewCuttoff.getTime());
+        if (transactions[0].date.getDate() < this.settingsService.getSettings().requiredDaysForLatestMonth) {
+            var tooNewCuttoff = getStartOfMonth(transactions[0].date);
+            transactions = transactions.filter(z => z.date.getTime() < tooNewCuttoff.getTime());
         }
         return transactions;
     }

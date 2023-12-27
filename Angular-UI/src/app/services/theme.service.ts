@@ -31,12 +31,12 @@ export class ThemeService {
         this.localSettingsService.setValue("darkMode", !this.darkMode$());
     }
 
-    getDarkMode$(): Signal<boolean> {
-        return this.darkMode$;
+    getDarkMode(): boolean {
+        return this.darkMode$();
     }
 
-    getTheme$(): Signal<Theme> {
-        return this.currentTheme$;
+    getTheme(): Theme {
+        return this.currentTheme$();
     }
 
     private createLightTheme(): Theme {

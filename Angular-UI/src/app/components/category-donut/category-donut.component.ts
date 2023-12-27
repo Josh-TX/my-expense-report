@@ -7,25 +7,9 @@ import { Subcategory } from '@services/category.service';
 import { OuterLableDrawer } from './outer-label-drawer';
 import { Theme, ThemeService } from '@services/theme.service';
 import { getDistinctByProp } from '@services/helpers';
+import { DonutData, chartDataService } from '@services/chartData.service';
 Chart.register(...registerables);
 
-
-export type DonutData = {
-    isYearly: boolean,
-    date: Date,
-    categoryItems: DonutCategoryItem[]
-};
-export type DonutCategoryItem = {
-    catName: string,
-    amount: number,
-    averageAmount: number
-    subcategoryItems: DonutSubcategoryItem[]
-};
-export type DonutSubcategoryItem = {
-    subcategory: Subcategory,
-    amount: number,
-    averageAmount: number
-};
 
 @Component({
     selector: 'mer-category-donut',
@@ -34,8 +18,8 @@ export type DonutSubcategoryItem = {
     templateUrl: './category-donut.component.html'
 })
 export class CategoryDonutComponent {
-    @Input("data") inputData: DonutData | undefined;
-    private inputData$: WritableSignal<DonutData | undefined>;
+    @Input("month") inputMonth: Date | undefined;
+    private month$: WritableSignal<Date | undefined>;
 
     chart: Chart<"doughnut", number[], string> | null = null;
     private theme: Theme | undefined;
@@ -55,24 +39,21 @@ export class CategoryDonutComponent {
     private clickActiveTimeout: any;
     private categoryCircum: number = 360;
 
-    constructor(private themeService: ThemeService) {
+    constructor(private themeService: ThemeService, private chartDataService: chartDataService) {
+        this.month$ = signal(undefined);
         var intModes = (<any>Interaction.modes);
         intModes.myCustomMode = this.interactionModeFunc.bind(this);
-        
-        this.inputData$ = signal(undefined);
         effect(() => {
-            this.theme = this.themeService.getTheme$()();
-            var inputData = this.inputData$();
-            if (inputData){
-                this.renderChart(inputData);
+            this.theme = this.themeService.getTheme();
+            var chartData = this.chartDataService.getMonthlyDonutData(this.month$());
+            if (chartData){
+                this.renderChart(chartData);
             }
         })
     }
 
     ngOnChanges(simpleChanges: SimpleChanges) {
-        if (this.inputData) {
-            this.inputData$.set(this.inputData);
-        }
+        this.month$.set(this.inputMonth);
     }
 
     //causes the category arc and average arc to both highlight when either is hovered

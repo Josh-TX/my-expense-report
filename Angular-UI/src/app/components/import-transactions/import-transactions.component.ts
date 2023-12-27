@@ -133,7 +133,7 @@ export class ImportTransactionsComponent {
     var trxnsToAdd = this.currentGrid!.rows.filter((z,i) => !z.invalidIndexes.length && !this.duplicateRowIndexes.includes(i)).map(z => <TransactionToAdd>{
       name: z.cells[this.currentGrid!.nameColumnIndex],
       amount: z.cells[this.currentGrid!.amountColumnIndex],
-      trxnDate: z.cells[this.currentGrid!.dateColumnIndex],
+      date: z.cells[this.currentGrid!.dateColumnIndex],
     });
     this.transactionService.addTransactions(trxnsToAdd, this.currentGrid!.filename)
     this.snackBar.open("Imported " + trxnsToAdd.length + " Transactions", "", { duration: 3000 });

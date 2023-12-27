@@ -1,6 +1,4 @@
 <div class="grid grid-cols-2">
-    @if(donutData){
-        <mer-category-donut [data]="donutData"></mer-category-donut>
-    }
-    <mer-category-bar [data]="barData" [class.col-span-2]="!donutData"></mer-category-bar>
+    <mer-category-donut></mer-category-donut>
+    <mer-category-bar [data]="barData"></mer-category-bar>
 </div>

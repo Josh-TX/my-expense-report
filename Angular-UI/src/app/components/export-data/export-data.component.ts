@@ -29,7 +29,7 @@ export class ExportDataComponent {
     var datePipe = new DatePipe('en-US');
     var currencyPipe = new CurrencyPipe('en-US');
     var headers = ["Date", "Description", "Amount", "Category", "Subcategory"];
-    var transactionRows = transactions.map(z => [datePipe.transform(z.trxnDate, 'M/d/yy'), z.name, currencyPipe.transform(z.amount), z.catName, z.subcatName]);
+    var transactionRows = transactions.map(z => [datePipe.transform(z.date, 'M/d/yy'), z.name, currencyPipe.transform(z.amount), z.catName, z.subcatName]);
     var transactionCSV = Papa.unparse( [headers, ...transactionRows]);
     this.exportToFile("transactions.csv", transactionCSV);
   }

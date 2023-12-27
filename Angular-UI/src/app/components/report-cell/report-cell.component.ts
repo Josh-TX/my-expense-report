@@ -34,8 +34,8 @@ export class ReportCellComponent {
     } else {
       endDate.setMonth(date.getMonth() + 1);
     }
-    this.transactions = this.transactionService.getTransactions(trxn => {
-      if (trxn.trxnDate < date || trxn.trxnDate >= endDate){
+    this.transactions = this.transactionService.getTransactions().filter(trxn => {
+      if (trxn.date < date || trxn.date >= endDate){
         return false;
       }
       if (column){

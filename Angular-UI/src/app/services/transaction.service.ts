@@ -1,97 +1,117 @@
-import { Injectable } from '@angular/core';
-import { CategoryService } from './category.service';
+import { Injectable, Signal, WritableSignal, computed, effect, signal } from '@angular/core';
+import { CategoryRule, CategoryService, Subcategory } from './category.service';
 import { StorageService } from './storage.service';
-import { SettingsService } from './settings.service';
+import { Settings, SettingsService } from './settings.service';
 
 export type Transaction = {
-  importDate: Date,
-  importFile: string,
+    importDate: Date,
+    importFile: string,
 
-  trxnDate: Date,
-  name: string,
-  amount: number,
+    date: Date,
+    name: string,
+    amount: number,
 
-  catName: string,
-  subcatName: string,
-
-  isNameModified: boolean,
-  isAmountModified: boolean,
-  isCategoryModified: boolean,
-  isSubcategoryModified: boolean,
+    catName: string,
+    subcatName: string
 }
 
 export type TransactionToAdd = {
-  trxnDate: Date,
-  name: string,
-  amount: number,
+    date: Date,
+    name: string,
+    amount: number,
 }
 
 type Filter = (trxn: Transaction) => boolean;
 
 @Injectable({
-  providedIn: 'root'
+    providedIn: 'root'
 })
 export class TransactionService {
-  private storedTransactions: StoredTransaction[] = [];
-  constructor(
-    private categoryService: CategoryService,
-    private storageService: StorageService,
-    private settingsService: SettingsService
+    private tranasctions$: Signal<Transaction[]>;
+    private storedTransactions$: WritableSignal<StoredTransaction[]>;
+    constructor(
+        private categoryService: CategoryService,
+        private storageService: StorageService,
+        private settingsService: SettingsService
     ) {
-    var data = this.storageService.retrieve("transactions.json");
-    if (data && Array.isArray(data)){
-      this.storedTransactions = data
+        this.tranasctions$ = computed(() => this.getComputedTrxns(this.storedTransactions$(), this.settingsService.getSettings(), this.categoryService.getRules()))
+        var data = this.storageService.retrieve("transactions.json");
+        var storedTransactions: StoredTransaction[] = data && Array.isArray(data) ? data : [];
+        this.storedTransactions$ = signal(storedTransactions);
+        effect(() => this.storageService.store("transactions.json", this.storedTransactions$()))
     }
-  }
 
-  addTransactions(trxns: TransactionToAdd[], filename: string) {
-    var importDate = new Date();
-    for (var trxn of trxns) {
-      var storedTrxn = <StoredTransaction>{
-        ...trxn,
-        importDate: importDate,
-        importFile: filename
-      };
-      this.storedTransactions.push(storedTrxn);
+    addTransactions(trxns: TransactionToAdd[], filename: string) {
+        var importDate = new Date();
+        var translatedTrxns = trxns.map(z => ({
+            name: z.name,
+            amount: z.amount,
+            date: z.date,
+            importDate: importDate,
+            importFile: filename
+        }));
+        var storedTransactions = [ ...this.storedTransactions$(), ...translatedTrxns ]
+        this.storedTransactions$.set(storedTransactions);
+        this.storageService.store("transactions.json", this.storedTransactions$());
     }
-    this.storageService.store("transactions.json", this.storedTransactions);
-  }
 
-  isDuplicate(date: Date, name: string, amount: number) {
-    return this.storedTransactions.some(z => z.trxnDate.getTime() == date.getTime() && z.amount == amount && z.name.toLowerCase() == name.toLowerCase());
-  }
-
-  getTransactions(filter?: Filter | undefined): Transaction[] {
-    var output: Transaction[] = [];
-    var settings = this.settingsService.getSettings();
-    for (var storedTrxn of this.storedTransactions) {
-      var catInfo = this.categoryService.getTrxnSubcategory(storedTrxn, settings.useIncomeCategory);
-      var outputTrxn = <Transaction>{
-        importDate: storedTrxn.importDate,
-        importFile: storedTrxn.importFile,
-
-        trxnDate: storedTrxn.trxnDate,
-        name: storedTrxn.name,
-        amount: storedTrxn.amount,
-
-        catName: catInfo.catName,
-        subcatName: catInfo.subcatName,
-      };
-      if (!filter || filter(outputTrxn)){
-        output.push(outputTrxn);
-      }
+    isDuplicate(date: Date, name: string, amount: number) {
+        return this.storedTransactions$().some(z => z.date.getTime() == date.getTime() && z.amount == amount && z.name.toLowerCase() == name.toLowerCase());
     }
-    output.sort((z1, z2) => z2.trxnDate.getTime() - z1.trxnDate.getTime());
-    return output;
-  }
+
+    getTransactions(): Transaction[] {
+        return this.tranasctions$();
+    }
+
+
+    private getComputedTrxns(storedTransactions: StoredTransaction[], settings: Settings, categoryRules: CategoryRule[]): Transaction[] {
+        var output: Transaction[] = [];
+        for (var storedTrxn of storedTransactions) {
+            var subcategory = this.getTrxnSubcategory(storedTrxn, categoryRules, settings.useIncomeCategory);
+            output.push({
+                importDate: storedTrxn.importDate,
+                importFile: storedTrxn.importFile,
+                date: storedTrxn.date,
+                name: storedTrxn.name,
+                amount: storedTrxn.amount,
+
+                catName: subcategory.catName,
+                subcatName: subcategory.subcatName,
+            });
+        }
+        output.sort((z1, z2) => z2.date.getTime() - z1.date.getTime());
+        return output;
+    }
+
+    private getTrxnSubcategory(trxn: StoredTransaction, categoryRules: CategoryRule[], useIncomeCategory: boolean): Subcategory {
+        if (trxn.amount < 0 && useIncomeCategory) {
+            return {
+                catName: "income",
+                subcatName: "income"
+            };
+        }
+        var lower = trxn.name.toLowerCase()
+        var foundRule = categoryRules.find(rule => lower.startsWith(rule.text));
+        if (foundRule) {
+            return foundRule;
+        }
+        foundRule = categoryRules.find(rule => lower.includes(rule.text));
+        if (foundRule) {
+            return foundRule;
+        }
+        return {
+            catName: "",
+            subcatName: ""
+        };
+    }
 
 
 }
 
 type StoredTransaction = {
-  importDate: Date,
-  importFile: string,
-  trxnDate: Date,
-  name: string,
-  amount: number
+    date: Date,
+    name: string,
+    amount: number,
+    importDate: Date,
+    importFile: string,
 }

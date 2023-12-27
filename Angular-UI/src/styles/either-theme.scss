@@ -126,6 +126,16 @@ html {
      height: 56px !important;
 }
 
+//used to display a button half the height of an autocomplete option
+.btn-sm{
+     font-size: 12px !important;
+     line-height: 12px !important;
+     height: 24px !important;
+     & .mat-mdc-button-touch-target {
+          height: 24px !important;
+     }
+}
+
 .dropzone {
      border: 0.2rem dashed #6583fe;
      padding: 2rem;

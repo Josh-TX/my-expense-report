@@ -14,7 +14,7 @@
         </tr>
         @for (trxn of filteredTransactions; track trxn){
         <tr>
-            <td>{{trxn.trxnDate | date:'M/d/yy'}}</td>
+            <td>{{trxn.date | date:'M/d/yy'}}</td>
             <td>{{trxn.name}}</td>
             <td>{{trxn.amount | currency}}</td>
             <td>{{trxn.catName}}</td>
