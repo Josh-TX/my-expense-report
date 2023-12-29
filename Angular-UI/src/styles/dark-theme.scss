@@ -96,6 +96,19 @@ $table-border-color: #595959;
   border: 1px solid $table-border-color;
 }
 
+//needed for the mat-table to have a border on the sticky headers
+.mat-mdc-table-sticky{
+  overflow: visible !important;
+  &:after {
+    content: '';
+    position: absolute;
+    left: 0;
+    width: 100%;
+    bottom: -1px;
+    z-index: 1000;
+    border-bottom: 1px solid $table-border-color
+  }
+}
 
 .sticky-table-header>th,
 .sticky-table-header>td {

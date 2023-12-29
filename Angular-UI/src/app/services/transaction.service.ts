@@ -4,6 +4,7 @@ import { StorageService } from './storage.service';
 import { Settings, SettingsService } from './settings.service';
 
 export type Transaction = {
+    id: number,
     importDate: Date,
     importFile: string,
 
@@ -21,29 +22,42 @@ export type TransactionToAdd = {
     amount: number,
 }
 
-type Filter = (trxn: Transaction) => boolean;
+type StoredTransaction = {
+    date: Date,
+    name: string,
+    amount: number,
+    importDate: Date,
+    importFile: string,
+
+    subcategory?: Subcategory | undefined
+}
+
+type StoredTransactionPlusId = StoredTransaction & { id: number }
 
 @Injectable({
     providedIn: 'root'
 })
 export class TransactionService {
+    private id: number = 1;
     private tranasctions$: Signal<Transaction[]>;
-    private storedTransactions$: WritableSignal<StoredTransaction[]>;
+    private storedTransactions$: WritableSignal<StoredTransactionPlusId[]>;
+    private effectFired: boolean = false;
+
     constructor(
         private categoryService: CategoryService,
         private storageService: StorageService,
         private settingsService: SettingsService
     ) {
         this.tranasctions$ = computed(() => this.getComputedTrxns(this.storedTransactions$(), this.settingsService.getSettings(), this.categoryService.getRules()))
-        var data = this.storageService.retrieve("transactions.json");
-        var storedTransactions: StoredTransaction[] = data && Array.isArray(data) ? data : [];
-        this.storedTransactions$ = signal(storedTransactions);
-        effect(() => this.storageService.store("transactions.json", this.storedTransactions$()))
+        this.storedTransactions$ = signal(this.getStoredTrxns());
+        effect(() => this.setStoredTrxns(this.storedTransactions$()))
     }
 
     addTransactions(trxns: TransactionToAdd[], filename: string) {
         var importDate = new Date();
-        var translatedTrxns = trxns.map(z => ({
+        importDate.setMilliseconds(0);//needed for filters to work on transactions page
+        var translatedTrxns = trxns.map(z => (<StoredTransactionPlusId>{
+            id: this.id++,
             name: z.name,
             amount: z.amount,
             date: z.date,
@@ -52,7 +66,6 @@ export class TransactionService {
         }));
         var storedTransactions = [ ...this.storedTransactions$(), ...translatedTrxns ]
         this.storedTransactions$.set(storedTransactions);
-        this.storageService.store("transactions.json", this.storedTransactions$());
     }
 
     isDuplicate(date: Date, name: string, amount: number) {
@@ -63,12 +76,30 @@ export class TransactionService {
         return this.tranasctions$();
     }
 
+    deleteTrxns(trxns: Transaction[]){
+        var trxnIds = trxns.map(z => z.id);
+        var remainingStoredTrxns = this.storedTransactions$().filter(z => !trxnIds.includes(z.id));
+        this.storedTransactions$.set(remainingStoredTrxns);
+    }
 
-    private getComputedTrxns(storedTransactions: StoredTransaction[], settings: Settings, categoryRules: CategoryRule[]): Transaction[] {
+    negateAmounts(trxns: Transaction[]){
+        var storedTrxns = trxns.map(trxn => this.storedTransactions$().find(z => z.id == trxn.id)!);
+        storedTrxns.forEach(z => z.amount = -z.amount);
+        this.storedTransactions$.set([...this.storedTransactions$()]);
+    }
+
+    editSubcategories(trxns: Transaction[], subcategory: Subcategory){
+        var storedTrxns = trxns.map(trxn => this.storedTransactions$().find(z => z.id == trxn.id)!);
+        storedTrxns.forEach(z => z.subcategory = subcategory);
+        this.storedTransactions$.set([...this.storedTransactions$()]);
+    }
+
+    private getComputedTrxns(storedTransactions: StoredTransactionPlusId[], settings: Settings, categoryRules: CategoryRule[]): Transaction[] {
         var output: Transaction[] = [];
         for (var storedTrxn of storedTransactions) {
             var subcategory = this.getTrxnSubcategory(storedTrxn, categoryRules, settings.useIncomeCategory);
             output.push({
+                id: storedTrxn.id,
                 importDate: storedTrxn.importDate,
                 importFile: storedTrxn.importFile,
                 date: storedTrxn.date,
@@ -90,6 +121,9 @@ export class TransactionService {
                 subcatName: "income"
             };
         }
+        if (trxn.subcategory != null){
+            return trxn.subcategory;
+        }
         var lower = trxn.name.toLowerCase()
         var foundRule = categoryRules.find(rule => lower.startsWith(rule.text));
         if (foundRule) {
@@ -105,13 +139,25 @@ export class TransactionService {
         };
     }
 
-
-}
-
-type StoredTransaction = {
-    date: Date,
-    name: string,
-    amount: number,
-    importDate: Date,
-    importFile: string,
+    private getStoredTrxns(): StoredTransactionPlusId[] {
+        var data = this.storageService.retrieve("transactions.json");
+        var storedTransactions: StoredTransaction[] = data && Array.isArray(data) ? data : [];
+        return storedTransactions.map(z => ({...z, id: this.id++}))
+    }
+    private setStoredTrxns(storedTransactions: StoredTransactionPlusId[]){
+        if (this.effectFired){ 
+            //the effect will fire once just when the signal is initialized
+            //we only need to store on subsequent signal calls. Not important for browser only
+            var trxnsWithoutId: StoredTransaction[] = storedTransactions.map(z => ({
+                date: z.date,
+                amount: z.amount,
+                name: z.name,
+                importDate: z.importDate,
+                importFile: z.importFile,
+                subcategory: z.subcategory
+            }))
+            this.storageService.store("transactions.json", trxnsWithoutId)
+        } 
+        this.effectFired = true;
+    }
 }

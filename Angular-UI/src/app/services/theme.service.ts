@@ -40,10 +40,17 @@ export class ThemeService {
     }
 
     private createLightTheme(): Theme {
-        //Dutch Field Categorical Pallette
-        var dutchFieldPallette = ["#e60049", "#0bb4ff", "#50e991", "#e6d800", "#9b19f5", "#ffa300", "#dc0ab4", "#b3d4ff", "#00bfa0"];
-        var colors = ["#e60049", "#0bb4ff", "#50e991", "#ffa300", "#9b19f5", "#e6d800", "#dc0ab4", "#b3d4ff", "#00bfa0"];
-        //colors =  ["#fd7f6f", "#7eb0d5", "#b2e061", "#bd7ebe", "#ffb55a", "#ffee65", "#beb9db", "#fdcce5", "#8bd3c7"];
+        var colors = [
+            "#e60049", //red
+            "#0077fd", //blue
+            "#00bb4f", //green
+            "#9119f5", //purple
+            "#ffa300", //orange
+            "#00bfb7", //turquoise
+            "#dc0acd", //magenta
+            "#e3d500", //yellow
+            "#777777"  //gray
+        ];
         return {
             borders: colors,
             backgrounds: colors.map(z => this.getAlphaColor(z, 0.25)) ,
@@ -55,8 +62,17 @@ export class ThemeService {
     }
 
     private createDarkTheme(): Theme { 
-        var colors = ['#ff3e87', '#2bd4ff', '#50e991', '#ff8f26', '#8a5dff', '#ffff35', '#ff45ef', '#b3d4ff', '#00aebf'];
-        var colors = ['#ff3e87', '#2bbeff', '#50e991', '#ff8f26', '#8a5dff', '#ffff35', '#ff81f4', '#0ac3c3', '#b3d4ff'];
+        var colors = [
+            '#ff5271', //red
+            '#51a3ff', //blue
+            '#50e991', //green
+            '#9269ff', //purple
+            '#ff9b3e', //orange
+            '#0ac3c3', //turquoise
+            '#ff81f4', //pink
+            '#ffff35', //yellow
+            '#cccccc', //gray
+        ];
         return {
             borders: colors,
             backgrounds: colors.map(z => this.getAlphaColor(z, 0.15)) ,

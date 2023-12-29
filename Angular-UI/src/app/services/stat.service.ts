@@ -218,8 +218,6 @@ export class StatService {
         sortByDesc(subcatMonthStats, z => recentSubcatSumAmounts.find(zz => areValuesSame(z.subcategory, zz.subcategory))!.sumAmount);
         sortByDesc(subcatMonthStats, z => recentCatSumAmounts.find(zz => zz.catName == z.subcategory.catName)!.sumAmount);
         sortByDesc(subcatMonthStats, z => z.subcategory.catName == "" ? -1 : 0);
-        sortByDesc(subcatMonthStats, z => z.month.getTime());
-
         return {
             catMonthStats: catMonthStats,
             subcatMonthStats: subcatMonthStats,

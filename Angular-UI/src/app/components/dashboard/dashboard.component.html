@@ -1,9 +1,8 @@
 <div class="p-4">
     <h1>Dashboard</h1>
     <div class="grid grid-cols-2 gap-4">
-        <div class="col-span-2">
-            <mer-dashboard-metrics></mer-dashboard-metrics>
-        </div>
+        <mer-category-donut [currentDate]="donutCurrentDate"></mer-category-donut>
+        <mer-category-bar (dateClick)="barClicked($event)"></mer-category-bar>
         <mat-card>
             <mat-card-content>
                 Import Transactions

@@ -2,8 +2,15 @@ export function roundToCent(num: number): number{
     return Math.round(num * 100) / 100;
 }
 
+export function removeFloatArtifact(num: number): number{
+    if (num < 9000000000){ //max safe integer is 9,007,199,254,740,992 (9 quadrillion). Therefore 9 billion * 1 million stays in range
+        return Math.round(num * 1000000) / 1000000;
+    }
+    return Math.round(num * 100) / 100;
+}
+
 export function getSum(nums: number[]): number{
-    return nums.reduce((a, b) => a + b, 0);
+    return removeFloatArtifact(nums.reduce((a, b) => a + b, 0));
 }
 
 export function getSD(nums: number[], sum?: number | undefined): number | undefined {

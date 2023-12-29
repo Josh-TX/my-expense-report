@@ -40,7 +40,7 @@ export function parseTransactions(rows: string[][], filename: string): ParsedTra
         if (!row[colIndexes.name].text.length){
             invalidIndexes.push(colIndexes.name);
         }
-        if (row[colIndexes.amount].money == null){
+        if (!row[colIndexes.amount].money){
             invalidIndexes.push(colIndexes.amount);
         }
         if (row[colIndexes.date].date == null){

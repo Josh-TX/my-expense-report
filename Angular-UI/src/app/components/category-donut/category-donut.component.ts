@@ -6,7 +6,7 @@ import { DatePipe, CurrencyPipe, DecimalPipe } from '@angular/common';
 import { Subcategory } from '@services/category.service';
 import { OuterLableDrawer } from './outer-label-drawer';
 import { Theme, ThemeService } from '@services/theme.service';
-import { getDistinctByProp } from '@services/helpers';
+import { getDistinctByProp, getSum } from '@services/helpers';
 import { DonutData, chartDataService } from '@services/chartData.service';
 Chart.register(...registerables);
 
@@ -18,7 +18,7 @@ Chart.register(...registerables);
     templateUrl: './category-donut.component.html'
 })
 export class CategoryDonutComponent {
-    @Input("month") inputMonth: Date | undefined;
+    @Input("currentDate") inputCurrentDate: Date | undefined;
     private month$: WritableSignal<Date | undefined>;
 
     chart: Chart<"doughnut", number[], string> | null = null;
@@ -30,6 +30,7 @@ export class CategoryDonutComponent {
     private subcategoryAmounts: number[] = [];
     private avgCategoryAmounts: number[] = [];
     private avgSubcategoryAmounts: number[] = [];
+    private maxTotal: number = 0;
 
     private date: string | undefined;
     private averageType: string | undefined;
@@ -37,12 +38,15 @@ export class CategoryDonutComponent {
     private activeItems: InteractionItem[] = [];
     private clickedItems: InteractionItem[] = [];
     private clickActiveTimeout: any;
-    private categoryCircum: number = 360;
+    private outerCircum: number = 360;
+    private innerCircum: number = 360;
+    private chartRenderStartTime: number = 0;
+    private innerRotation: number = 0;
 
     constructor(private themeService: ThemeService, private chartDataService: chartDataService) {
         this.month$ = signal(undefined);
         var intModes = (<any>Interaction.modes);
-        intModes.myCustomMode = this.interactionModeFunc.bind(this);
+        intModes.currentAverageSync = this.interactionModeFunc.bind(this);
         effect(() => {
             this.theme = this.themeService.getTheme();
             var chartData = this.chartDataService.getMonthlyDonutData(this.month$());
@@ -53,10 +57,11 @@ export class CategoryDonutComponent {
     }
 
     ngOnChanges(simpleChanges: SimpleChanges) {
-        this.month$.set(this.inputMonth);
+        this.month$.set(this.inputCurrentDate);
     }
 
-    //causes the category arc and average arc to both highlight when either is hovered
+    //ChartJs' interactionModes are used to determine what sets of things are highlighted when there's a mouse event
+    //This custom interactionMode causes the current arc and the corresponding average arc to both highlight when either is hovered
     private interactionModeFunc(chart: Chart, e: ChartEvent, options: InteractionOptions, useFinalPosition?: boolean): InteractionItem[] {
         var indexItems = Interaction.modes.index(chart, e, options, useFinalPosition);
         var pointItems = Interaction.modes.point(chart, e, options, useFinalPosition);
@@ -68,6 +73,7 @@ export class CategoryDonutComponent {
         }
         if (e.type == "click"){
             this.clickedItems = this.activeItems;
+            this.rotateAverage(<any>chart);
         }
         //if nothing is hovered and there are clickedItems, then make the clicked items appear active
         clearInterval(this.clickActiveTimeout)
@@ -83,7 +89,6 @@ export class CategoryDonutComponent {
             return this.clickedItems
         } 
         return this.activeItems;
-
     }
 
     //draws the labels in the center of the donut
@@ -193,6 +198,9 @@ export class CategoryDonutComponent {
 
     //draws the labels the radiate outward
     private outerLabelBeforeDraw(chart: Chart<any>, args: { cancelable: true }, options: any): boolean | void {
+        var elapsedTime = new Date().getTime() - this.chartRenderStartTime;
+        var animationTime = 900;
+        var animationProgress = elapsedTime > animationTime ? 1 : elapsedTime / animationTime;
         var drawer = new OuterLableDrawer(
             chart.ctx,
             chart.chartArea,
@@ -201,12 +209,39 @@ export class CategoryDonutComponent {
             this.categoryAmounts,
             this.subcategoryAmounts,
             this.theme!,
-            this.categoryCircum
+            this.outerCircum,
+            animationProgress
         )
         drawer.drawLabels();
     }
 
+    private rotateAverage(chart: Chart<"doughnut", number[], unknown>){
+        var targetRotation = this.innerRotation;
+        if (!this.clickedItems.length){
+            targetRotation = 0;
+        } else {
+            var item = this.clickedItems[0];
+            if (item.datasetIndex == 0 || item.datasetIndex == 3){
+                var amount = getSum(this.categoryAmounts.slice(0, item.index));
+                var avgAmount = getSum(this.avgCategoryAmounts.slice(0, item.index));
+                targetRotation = (amount - avgAmount) / this.maxTotal * 360
+            }
+            if (item.datasetIndex == 1 || item.datasetIndex == 4){
+                var amount = getSum(this.subcategoryAmounts.slice(0, item.index));
+                var avgAmount = getSum(this.avgSubcategoryAmounts.slice(0, item.index));
+                targetRotation = (amount - avgAmount) / this.maxTotal * 360
+            }
+        }
+        if (targetRotation != this.innerRotation){
+            this.innerRotation = targetRotation;
+            chart.data.datasets[3].rotation = targetRotation;
+            chart.data.datasets[4].rotation = targetRotation;
+            chart.update();
+        }
+    }
+
     private renderChart(data: DonutData) {
+        this.chartRenderStartTime = new Date().getTime();
         this.clickedItems = [];
         var categoryItems = [...data.categoryItems];
         var subcategoryItems = categoryItems.flatMap(z => z.subcategoryItems);
@@ -222,12 +257,13 @@ export class CategoryDonutComponent {
 
         var categorySum = categoryItems.reduce((a, b) => a + b.amount, 0)
         var averageSum = categoryItems.reduce((a, b) => a + b.averageAmount, 0)
-        this.categoryCircum = 360;
-        var averageCircum = 360;
+        this.maxTotal = Math.max(categorySum, averageSum);
+        this.outerCircum = 360;
+        this.innerCircum = 360;
         if (categorySum > averageSum) {
-            averageCircum = 360 * averageSum / categorySum
+            this.innerCircum = 360 * averageSum / categorySum
         } else {
-            this.categoryCircum = 360 * categorySum / averageSum
+            this.outerCircum = 360 * categorySum / averageSum
         }
 
         var subcatBorders: string[] = [];
@@ -253,9 +289,8 @@ export class CategoryDonutComponent {
                     hoverBackgroundColor: this.theme?.hovers,
                     borderColor: this.theme?.borders,
                     borderWidth: 1,
-                    circumference: this.categoryCircum,
+                    circumference: this.outerCircum,
                     weight: 1
-                    //borderAlign: "inner"
                 },
                 {
                     data: subcategoryItems.map(z => z.amount),
@@ -263,9 +298,8 @@ export class CategoryDonutComponent {
                     hoverBackgroundColor: subcatHovers,
                     borderColor: subcatBorders,
                     borderWidth: 1,
-                    circumference: this.categoryCircum,
+                    circumference: this.outerCircum,
                     weight: 1
-                    //borderAlign: "inner"
                 },
                 {
                     data: [],
@@ -275,7 +309,6 @@ export class CategoryDonutComponent {
                     borderWidth: 1,
                     circumference: 0,
                     weight: 0.35
-                    //borderAlign: "inner"
                 },
 
                 {
@@ -284,9 +317,8 @@ export class CategoryDonutComponent {
                     hoverBackgroundColor: this.theme?.hovers,
                     borderColor: this.theme?.borders,
                     borderWidth: 1,
-                    circumference: averageCircum,
+                    circumference: this.innerCircum,
                     weight: 0.70
-                    //borderAlign: "inner"
                 },
                 {
                     data: subcategoryItems.map(z => z.averageAmount),
@@ -294,16 +326,15 @@ export class CategoryDonutComponent {
                     hoverBackgroundColor: subcatHovers,
                     borderColor: subcatBorders,
                     borderWidth: 1,
-                    circumference: averageCircum,
+                    circumference: this.innerCircum,
                     weight: 0.70
-                    //borderAlign: "inner"
                 }
 
                 ]
             },
             options: {
                 interaction: {
-                    mode: <any>"myCustomMode"
+                    mode: <any>"currentAverageSync"
                 },
                 maintainAspectRatio: false,
                 layout: {
@@ -314,7 +345,6 @@ export class CategoryDonutComponent {
                         bottom: 22
                     }
                 },
-                //aspectRatio: 1.5,
                 cutout: "60%",
                 plugins: {
                     tooltip: {
