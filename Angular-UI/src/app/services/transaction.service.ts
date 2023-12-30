@@ -4,7 +4,7 @@ import { StorageService } from './storage.service';
 import { Settings, SettingsService } from './settings.service';
 
 export type Transaction = {
-    id: number,
+    tempId: number,
     importDate: Date,
     importFile: string,
 
@@ -32,14 +32,14 @@ type StoredTransaction = {
     subcategory?: Subcategory | undefined
 }
 
-type StoredTransactionPlusId = StoredTransaction & { id: number }
+type StoredTransactionPlusId = StoredTransaction & { tempId: number }
 
 @Injectable({
     providedIn: 'root'
 })
 export class TransactionService {
-    private id: number = 1;
-    private tranasctions$: Signal<Transaction[]>;
+    private nextTempId: number = 1;
+    private transactions$: Signal<Transaction[]>;
     private storedTransactions$: WritableSignal<StoredTransactionPlusId[]>;
     private effectFired: boolean = false;
 
@@ -48,16 +48,16 @@ export class TransactionService {
         private storageService: StorageService,
         private settingsService: SettingsService
     ) {
-        this.tranasctions$ = computed(() => this.getComputedTrxns(this.storedTransactions$(), this.settingsService.getSettings(), this.categoryService.getRules()))
+        this.transactions$ = computed(() => this.getComputedTrxns(this.storedTransactions$()))
         this.storedTransactions$ = signal(this.getStoredTrxns());
         effect(() => this.setStoredTrxns(this.storedTransactions$()))
     }
 
     addTransactions(trxns: TransactionToAdd[], filename: string) {
         var importDate = new Date();
-        importDate.setMilliseconds(0);//needed for filters to work on transactions page
+        importDate.setMilliseconds(0); //needed for filters to work on transactions page when copy-pasting
         var translatedTrxns = trxns.map(z => (<StoredTransactionPlusId>{
-            id: this.id++,
+            tempId: this.nextTempId++,
             name: z.name,
             amount: z.amount,
             date: z.date,
@@ -73,33 +73,33 @@ export class TransactionService {
     }
 
     getTransactions(): Transaction[] {
-        return this.tranasctions$();
+        return this.transactions$();
     }
 
     deleteTrxns(trxns: Transaction[]){
-        var trxnIds = trxns.map(z => z.id);
-        var remainingStoredTrxns = this.storedTransactions$().filter(z => !trxnIds.includes(z.id));
+        var trxnIds = trxns.map(z => z.tempId);
+        var remainingStoredTrxns = this.storedTransactions$().filter(z => !trxnIds.includes(z.tempId));
         this.storedTransactions$.set(remainingStoredTrxns);
     }
 
     negateAmounts(trxns: Transaction[]){
-        var storedTrxns = trxns.map(trxn => this.storedTransactions$().find(z => z.id == trxn.id)!);
+        var storedTrxns = trxns.map(trxn => this.storedTransactions$().find(z => z.tempId == trxn.tempId)!);
         storedTrxns.forEach(z => z.amount = -z.amount);
         this.storedTransactions$.set([...this.storedTransactions$()]);
     }
 
     editSubcategories(trxns: Transaction[], subcategory: Subcategory){
-        var storedTrxns = trxns.map(trxn => this.storedTransactions$().find(z => z.id == trxn.id)!);
+        var storedTrxns = trxns.map(trxn => this.storedTransactions$().find(z => z.tempId == trxn.tempId)!);
         storedTrxns.forEach(z => z.subcategory = subcategory);
         this.storedTransactions$.set([...this.storedTransactions$()]);
     }
 
-    private getComputedTrxns(storedTransactions: StoredTransactionPlusId[], settings: Settings, categoryRules: CategoryRule[]): Transaction[] {
+    private getComputedTrxns(storedTransactions: StoredTransactionPlusId[]): Transaction[] {
         var output: Transaction[] = [];
         for (var storedTrxn of storedTransactions) {
-            var subcategory = this.getTrxnSubcategory(storedTrxn, categoryRules, settings.useIncomeCategory);
+            var subcategory = this.categoryService.getSubcategoryForTrxn(storedTrxn);
             output.push({
-                id: storedTrxn.id,
+                tempId: storedTrxn.tempId,
                 importDate: storedTrxn.importDate,
                 importFile: storedTrxn.importFile,
                 date: storedTrxn.date,
@@ -114,35 +114,10 @@ export class TransactionService {
         return output;
     }
 
-    private getTrxnSubcategory(trxn: StoredTransaction, categoryRules: CategoryRule[], useIncomeCategory: boolean): Subcategory {
-        if (trxn.amount < 0 && useIncomeCategory) {
-            return {
-                catName: "income",
-                subcatName: "income"
-            };
-        }
-        if (trxn.subcategory != null){
-            return trxn.subcategory;
-        }
-        var lower = trxn.name.toLowerCase()
-        var foundRule = categoryRules.find(rule => lower.startsWith(rule.text));
-        if (foundRule) {
-            return foundRule;
-        }
-        foundRule = categoryRules.find(rule => lower.includes(rule.text));
-        if (foundRule) {
-            return foundRule;
-        }
-        return {
-            catName: "",
-            subcatName: ""
-        };
-    }
-
     private getStoredTrxns(): StoredTransactionPlusId[] {
         var data = this.storageService.retrieve("transactions.json");
         var storedTransactions: StoredTransaction[] = data && Array.isArray(data) ? data : [];
-        return storedTransactions.map(z => ({...z, id: this.id++}))
+        return storedTransactions.map(z => ({...z, tempId: this.nextTempId++}))
     }
     private setStoredTrxns(storedTransactions: StoredTransactionPlusId[]){
         if (this.effectFired){ 

@@ -36,30 +36,31 @@ export class CategoryService {
         }
     }
 
-    private _addRule(newRule: CategoryRule){
-        var subcategory = this.subcategories$().find(z => z.catName.toLowerCase() == newRule.catName.toLowerCase()
-            && z.subcatName.toLowerCase() == newRule.subcatName.toLowerCase());
-        if (subcategory == null){
-            subcategory = {
-                catName: newRule.catName,
-                subcatName: newRule.subcatName 
+    getSubcategoryForTrxn(trxn: { name: string, amount: number, subcategory?: Subcategory | undefined }): Subcategory {
+        var lowerName = trxn.name.toLowerCase()
+        if (trxn.amount < 0) {
+            var allowedCatNames = ["hidden", "income"]
+            if (trxn.subcategory != null && allowedCatNames.includes(trxn.subcategory.catName)){
+                return trxn.subcategory;
             }
-            this.subcategories$().push(subcategory)
+            var eligibleRules = this.rules$().filter(z => allowedCatNames.includes(z.catName));
+            var foundRule = eligibleRules.find(rule => lowerName.startsWith(rule.text));
+            foundRule = foundRule || eligibleRules.find(rule => lowerName.includes(rule.text));
+            return foundRule || {
+                catName: "income",
+                subcatName: "income"
+            };
         }
-        this.rules$().push({
-            catName: newRule.catName,
-            subcatName: newRule.subcatName,
-            text: newRule.text.toLowerCase()
-        });
-    }
-
-    private reset(){
-        this.rules$.set([]);
-        var defaultSubcategories = [{catName: "", subcatName: ""}];
-        if (this.settingsService.getSettings().useIncomeCategory){
-            defaultSubcategories.push({catName: "income", subcatName: "income"})
+        if (trxn.subcategory != null){
+            return trxn.subcategory;
         }
-        this.subcategories$.set(defaultSubcategories);
+        var rules = this.rules$();
+        var foundRule = rules.find(rule => lowerName.startsWith(rule.text));
+        foundRule = foundRule || rules.find(rule => lowerName.includes(rule.text));
+        return foundRule || {
+            catName: "other",
+            subcatName: "uncategorized"
+        };
     }
 
     doesRuleTextMatch(trxn: { name: string, amount: number }, ruleText: string): boolean {
@@ -87,5 +88,42 @@ export class CategoryService {
 
     getSubcategories(): Subcategory[] {
         return this.subcategories$()
+    }
+
+    isUncategorized(subcategory: Subcategory): boolean{
+        return subcategory.catName == "other" && subcategory.subcatName == "uncategorized"
+    }
+
+    private _addRule(newRule: CategoryRule){
+        var subcategory = this.subcategories$().find(z => z.catName.toLowerCase() == newRule.catName.toLowerCase()
+            && z.subcatName.toLowerCase() == newRule.subcatName.toLowerCase());
+        if (subcategory == null){
+            subcategory = {
+                catName: newRule.catName,
+                subcatName: newRule.subcatName 
+            }
+            this.subcategories$().push(subcategory)
+        }
+        //it's very important that rules are added in such a way that the capitalization is uniform
+        //by using subcategory.catName rather than newRule.catName, 
+        //it'll use the existing subcategory's catName's capitalization (if there was an existing subcategory)
+        this.rules$().push({
+            catName: subcategory.catName,
+            subcatName: subcategory.subcatName,
+            text: newRule.text.toLowerCase()
+        });
+    }
+
+    private reset(){
+        this.rules$.set([]);
+        var defaultSubcategories = [
+            {catName: "other", subcatName: "uncategorized"},
+            {catName: "income", subcatName: "income"},
+            {catName: "hidden", subcatName: "hidden"},
+        ];
+        if (this.settingsService.getSettings().useIncomeCategory){
+            defaultSubcategories.push({catName: "income", subcatName: "income"})
+        }
+        this.subcategories$.set(defaultSubcategories);
     }
 }

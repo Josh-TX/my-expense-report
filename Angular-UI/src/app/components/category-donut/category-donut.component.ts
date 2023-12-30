@@ -31,6 +31,7 @@ export class CategoryDonutComponent {
     private avgCategoryAmounts: number[] = [];
     private avgSubcategoryAmounts: number[] = [];
     private maxTotal: number = 0;
+    private minTotal: number = 0;
 
     private date: string | undefined;
     private averageType: string | undefined;
@@ -42,15 +43,18 @@ export class CategoryDonutComponent {
     private innerCircum: number = 360;
     private chartRenderStartTime: number = 0;
     private innerRotation: number = 0;
+    private prevRotation: number = 0;
+    private innerRotationStartTime: number = 0;
 
     constructor(private themeService: ThemeService, private chartDataService: chartDataService) {
         this.month$ = signal(undefined);
         var intModes = (<any>Interaction.modes);
         intModes.currentAverageSync = this.interactionModeFunc.bind(this);
         effect(() => {
-            this.theme = this.themeService.getTheme();
             var chartData = this.chartDataService.getMonthlyDonutData(this.month$());
             if (chartData){
+                var len = chartData.categoryItems.length;
+                this.theme = this.themeService.getTheme(len, chartData.categoryItems[len - 1].catName == "other");
                 this.renderChart(chartData);
             }
         })
@@ -106,9 +110,9 @@ export class CategoryDonutComponent {
             index = items[0].index;//both activeItems should have the same index
             if (isSubcategory){
                 var catIndex = getDistinctByProp(this.subcategories.slice(0, index + 1), "catName").length - 1;
-                color = this.theme!.text[catIndex];
+                color = this.theme!.texts[catIndex];
             } else {
-                color = this.theme!.text[index];
+                color = this.theme!.texts[index];
             }
         }
 
@@ -196,6 +200,62 @@ export class CategoryDonutComponent {
         return percent.toPrecision(precision) + "%";
     }
 
+    private missingTotalSectionBeforeDraw(chart: Chart<any>, args: { cancelable: true }, options: any): boolean | void {
+        var elapsedTime = new Date().getTime() - this.chartRenderStartTime;
+        var animationTime = 900;
+        var animationProgress = elapsedTime > animationTime ? 1 : elapsedTime / animationTime;
+        var easeOutCubic = 1 - Math.pow(1 - animationProgress, 3);
+        var isInner = this.innerCircum < 360 ? true : false;
+        var ctx = chart.ctx;
+        var { top, bottom, left, right, width, height } = chart.chartArea;
+        var cx = left + width / 2;
+        var cy = top + height / 2;
+        var baseR = height / 2;
+        //I'm using the terms "inner" & "outer" to distingish datasets 0 & 1 from datasets 3 & 4
+        //so I'm using largeR and smallR to refer to the 2 radiuses for the missing section
+        var largeR = isInner 
+            ? baseR * 0.6 + baseR * 0.4 * (1.4 / 3.75)
+            : baseR;
+        var smallR = isInner 
+            ? baseR * 0.6
+            : baseR * 0.6 + baseR * 0.4 * (1.75 / 3.75);
+        var circum = isInner ? this.innerCircum : this.outerCircum;
+        var extraAngle = 0;
+        if (isInner){
+            //because the inner rings can rotate, we have to adjust the extraAngle to match
+            var innerRotElapsedTime = new Date().getTime() - this.innerRotationStartTime;
+            var innerRotProgress = Math.min(1, innerRotElapsedTime / 800)
+            var innerRotEaseOutCubic = 1 - Math.pow(1 - innerRotProgress, 3);
+            var prevAngle = this.prevRotation * Math.PI / 180;
+            var targetAngle = this.innerRotation * Math.PI / 180;
+            extraAngle = prevAngle * (1 - innerRotEaseOutCubic) + targetAngle * innerRotEaseOutCubic;
+        }
+        //startAngle & endAngle assume 0 is at 12 O'clock and goes clockwise
+        var startAngle = circum / 180 * Math.PI * easeOutCubic + extraAngle;
+        var endAngle = Math.PI * 2 * easeOutCubic + extraAngle;
+        ctx.lineDashOffset = 0;
+        ctx.setLineDash([1, 4]);
+        ctx.strokeStyle = this.theme!.mutedText;
+        ctx.beginPath();
+        //ctx.arc() starts at 3 O'clock, hence I have to subtrack PI/2
+        ctx.arc(cx, cy, largeR, startAngle + - Math.PI / 2, endAngle - Math.PI / 2);
+        ctx.lineTo(cx + Math.sin(endAngle) * smallR, cy - Math.cos(endAngle) * smallR);
+        ctx.arc(cx, cy, smallR, endAngle - Math.PI / 2, startAngle - Math.PI / 2, true);
+        ctx.fillStyle = this.theme!.mutedText + "20";
+        ctx.fill();
+        var requiredDegreesForLabel = isInner ? 20 : 15;
+        if (360 - circum > requiredDegreesForLabel){
+            var amount = this.maxTotal - this.minTotal;
+            var amountStr = "$" + new DecimalPipe('en-US').transform(amount, ".0-0")!;
+            var midAngle = (startAngle + endAngle - extraAngle*2) / 2 + extraAngle;
+            var midR = (largeR + smallR ) / 2;
+            ctx.font = "12px Arial";
+            ctx.fillStyle = this.theme!.mutedText;
+            ctx.textAlign = "center";
+            ctx.fillText(amountStr, cx + Math.sin(midAngle) * midR, cy - Math.cos(midAngle) * midR);
+        }
+    }
+
     //draws the labels the radiate outward
     private outerLabelBeforeDraw(chart: Chart<any>, args: { cancelable: true }, options: any): boolean | void {
         var elapsedTime = new Date().getTime() - this.chartRenderStartTime;
@@ -233,7 +293,14 @@ export class CategoryDonutComponent {
             }
         }
         if (targetRotation != this.innerRotation){
+            var innerRotElapsedTime = new Date().getTime() - this.innerRotationStartTime;
+            var innerRotProgress = Math.min(1, innerRotElapsedTime / 800)
+            var innerRotEaseOutCubic = 1 - Math.pow(1 - innerRotProgress, 3);
+            //kinda perfectionist, but prevRotation will now be accurate if an active animation was interrupted
+            //this results in the missingTotalSection to align correctly, even if there's multiple clicks in under 800ms
+            this.prevRotation =  this.prevRotation * (1 - innerRotEaseOutCubic) + this.innerRotation * innerRotEaseOutCubic;
             this.innerRotation = targetRotation;
+            this.innerRotationStartTime = new Date().getTime()
             chart.data.datasets[3].rotation = targetRotation;
             chart.data.datasets[4].rotation = targetRotation;
             chart.update();
@@ -258,6 +325,7 @@ export class CategoryDonutComponent {
         var categorySum = categoryItems.reduce((a, b) => a + b.amount, 0)
         var averageSum = categoryItems.reduce((a, b) => a + b.averageAmount, 0)
         this.maxTotal = Math.max(categorySum, averageSum);
+        this.minTotal = Math.min(categorySum, averageSum);
         this.outerCircum = 360;
         this.innerCircum = 360;
         if (categorySum > averageSum) {
@@ -265,6 +333,7 @@ export class CategoryDonutComponent {
         } else {
             this.outerCircum = 360 * categorySum / averageSum
         }
+        this.innerRotation = 0;
 
         var subcatBorders: string[] = [];
         var subcatBackgrounds: string[] = [];
@@ -379,6 +448,10 @@ export class CategoryDonutComponent {
                 {
                     id: "innerLabel",
                     beforeDraw: this.innerLabelBeforeDraw.bind(this)
+                },
+                {
+                    id: "missingTotalSection",
+                    beforeDraw: this.missingTotalSectionBeforeDraw.bind(this)
                 }
             ]
         });

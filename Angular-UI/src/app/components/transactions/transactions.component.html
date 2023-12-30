@@ -1,12 +1,12 @@
 <div class="p-4">
-    <div style="display: grid; grid-template: 1fr 1fr 0.5fr / 13rem 1fr 13rem;">
+    <div style="display: grid; grid-template: 1fr 1fr 0.5fr / 14rem 1fr 14rem;">
         <h2 class="mb-0">Transactions</h2>
         <div style="grid-row: span 2; display: flex; justify-content: center;">
             <mat-form-field class="mr-3" style="flex-grow: 0.5">
                 <mat-label>Filter</mat-label>
                 <input matInput [(ngModel)]="filterText" (ngModelChange)="filterTextChanged()" (paste)="onPaste()">
             </mat-form-field>
-            <mat-form-field class="mr-3">
+            <mat-form-field class="mr-3" style="flex-grow: 0.1">
                 <mat-label>Filter Column</mat-label>
                 <mat-select [(value)]="selectedFilterColumn" (selectionChange)="filterChanged()">
                     @for (filterableColumn of filterableColumns; track filterableColumn) {
@@ -14,9 +14,9 @@
                     }
                 </mat-select>
             </mat-form-field>
-            <mat-form-field>
-                <mat-label>Filter Type</mat-label>
-                <mat-select [(value)]="selectedFilterType" (selectionChange)="filterChanged()">
+            <mat-form-field style="flex-grow: 0.1">
+                <mat-label >Filter Type</mat-label>
+                <mat-select role="listbox" [(value)]="selectedFilterType" (selectionChange)="filterChanged()">
                     @for (filterType of filterTypes; track filterType) {
                     <mat-option [value]="filterType">{{filterType}}</mat-option>
                     }
@@ -27,7 +27,8 @@
             </div>
         </div>
         <div>
-            <span>show hidden transactions</span>
+            <mat-slide-toggle [(ngModel)]="showHidden"
+            (ngModelChange)="showHiddenChanged()">Show Hidden Transactions</mat-slide-toggle>
         </div>
         <div style="grid-row: span 2">
             @if (selection.selected.length){
@@ -36,8 +37,13 @@
                 </button>
             }
         </div>
-        <div>
-
+        <div style="grid-row: span 2; display: flex; justify-content: end; font-size: 2rem;">
+            @if (dataSource.filteredData.length){
+                <button class="mr-3" mat-raised-button (click)="editSelected()">
+                    Export to CSV
+                </button>
+            }
+            <button class="large-icon-btn" mat-raised-button color="primary" (click)="add()"><mat-icon>add</mat-icon></button>
         </div>
         <p class="text-center mb-0" style="position: relative; top: -12px; overflow: hidden;">
             @if (filterText && !debounceActive){

@@ -51,13 +51,10 @@ export class chartDataService {
         if (!month) {
             return null;
         }
-        var currentCatStats = this.statService.getCatStats(month);
-        if (currentCatStats.length == 1){
-            return null;
-        }
-        var recentCatStats = this.statService.getRecentCatStats();
-        var currentSubcatStats = this.statService.getSubcatStats(month);
-        var recentSubcatStats = this.statService.getRecentSubcatStats();
+        var currentCatStats = this.statService.getCatStatsMonthlyInfo(month);
+        var recentCatStats = this.statService.getRecentCatStatsMonthlyInfo();
+        var currentSubcatStats = this.statService.getSubcatStatsMonthlyInfo(month);
+        var recentSubcatStats = this.statService.getRecentSubcatStatsMonthlyInfo();
 
         //filter out negative categories (negative based on recent, not necessarily current)
         var incomeCatNames = recentCatStats.filter(z => z.sumAmount < 0).map(z => z.catName);

@@ -5,9 +5,10 @@ export type Theme = {
     borders: string[],
     backgrounds: string[],
     hovers: string[],
-    text: string[],
-    normalText: string
+    texts: string[],
+    normalText: string,
     mutedText: string,
+    normalBackground: string
 }
 
 @Injectable({
@@ -35,8 +36,25 @@ export class ThemeService {
         return this.darkMode$();
     }
 
-    getTheme(): Theme {
-        return this.currentTheme$();
+    getTheme(colorCount: number, hasOther: boolean): Theme {
+        var baseTheme = this.currentTheme$();
+        var notGrayColorCount = Math.min(8, colorCount - (hasOther ? 1 : 0))
+        var copy: Theme = {
+            borders: baseTheme.borders.slice(0, notGrayColorCount),
+            backgrounds: baseTheme.backgrounds.slice(0, notGrayColorCount),
+            hovers: baseTheme.hovers.slice(0, notGrayColorCount),
+            texts: baseTheme.texts.slice(0, notGrayColorCount),
+            mutedText: baseTheme.mutedText,
+            normalText: baseTheme.normalText,
+            normalBackground: baseTheme.normalBackground
+        }
+        if (hasOther){
+            copy.borders.push(baseTheme.borders[8]);
+            copy.backgrounds.push(baseTheme.backgrounds[8]);
+            copy.hovers.push(baseTheme.hovers[8]);
+            copy.texts.push(baseTheme.texts[8]);
+        }
+        return copy;
     }
 
     private createLightTheme(): Theme {
@@ -45,20 +63,24 @@ export class ThemeService {
             "#0077fd", //blue
             "#00bb4f", //green
             "#9119f5", //purple
-            "#ffa300", //orange
+            "#f09900", //orange
             "#00bfb7", //turquoise
             "#dc0acd", //magenta
-            "#e3d500", //yellow
+            "#c7c100", //yellow
             "#777777"  //gray
         ];
-        return {
+        var texts = colors.slice(0);
+        texts[8] = "#606060";
+        var theme = {
             borders: colors,
             backgrounds: colors.map(z => this.getAlphaColor(z, 0.25)) ,
             hovers: colors.map(z => this.getAlphaColor(z, 0.5)),
-            text: colors,
+            texts: texts,
             mutedText: "#AAAAAA",
-            normalText: "#444444"
+            normalText: "#444444",
+            normalBackground: "#FFFFFF"
         };
+        return theme;
     }
 
     private createDarkTheme(): Theme { 
@@ -77,9 +99,10 @@ export class ThemeService {
             borders: colors,
             backgrounds: colors.map(z => this.getAlphaColor(z, 0.15)) ,
             hovers: colors.map(z => this.getAlphaColor(z, 0.40)),
-            text: colors,
+            texts: colors,
             mutedText: "#888888",
-            normalText: "#FFFFFF"
+            normalText: "#FFFFFF",
+            normalBackground: "#303030"
         };
     }
 

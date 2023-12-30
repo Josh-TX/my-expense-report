@@ -84,7 +84,7 @@ export function areValuesSame(z1: any, z2: any): boolean{
         return z1 == z2;
     }
     if (z1 instanceof Date){
-        return z2.getTime && z1.getTime() == z2.getTime();
+        return z2 instanceof Date && z1.getTime() == z2.getTime();
     }
     if (Array.isArray(z1)){
         if (z1.length != z2.length){

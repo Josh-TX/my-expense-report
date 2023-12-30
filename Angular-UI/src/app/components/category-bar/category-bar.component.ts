@@ -26,12 +26,13 @@ export class CategoryBarComponent {
     private clickJustFired = false;
 
     constructor(private themeService: ThemeService, private chartDataService: chartDataService) {
-        this.theme = this.themeService.getTheme();
+        this.theme = <any>{};
         (<any>Interaction.modes)["indexReverse"] = this.interactionModeFunc.bind(this);
         effect(() => {
-            this.theme = this.themeService.getTheme();
             var chartData = this.chartDataService.getMonthlyBarData();
             if (chartData){
+                var len = chartData.items[0].items.length;
+                this.theme = this.themeService.getTheme(len, chartData.items[0].items[len - 1].catName == "other");
                 this.renderChart(chartData);
             }
         })
@@ -122,7 +123,7 @@ export class CategoryBarComponent {
                                 return "Total: $" + new DecimalPipe("en-US").transform(sumAmount, ".0-0")
                             })
                         },
-                        multiKeyBackground: "#303030",
+                        multiKeyBackground: this.theme.normalBackground,
                         displayColors(ctx, options) {
                             return true;
                         },

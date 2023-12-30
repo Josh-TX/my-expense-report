@@ -85,7 +85,7 @@ export class OuterLableDrawer{
                 endAngle: currentAngle + angleRange,
                 label: this.categoryNames[i],
                 isSubcategory: false,
-                color: this.theme.text[i]
+                color: this.theme.texts[i]
             });
             currentAngle += angleRange;
         }
@@ -107,7 +107,7 @@ export class OuterLableDrawer{
                 endAngle: currentAngle + angleRange,
                 label: this.subcategories[i].subcatName,
                 isSubcategory: true,
-                color: this.theme.text[catIndex]
+                color: this.theme.texts[catIndex]
             });
             currentAngle += angleRange;
         }

@@ -16,7 +16,7 @@ import { ReportService, Report, ReportCell, ReportRow } from '@services/report.s
 export class ReportComponent {
   @Input() isYearly: boolean = false;
   report: Report | null = null;
-  subcategories: boolean = false;
+  showSubcategories: boolean = false;
   selectedCell: ReportCell | null = null;
 
   constructor(
@@ -31,7 +31,7 @@ export class ReportComponent {
     this.updateReport();
   }
 
-  subcategoriesChanged(){
+  showSubcategoriesChanged(){
     this.updateReport();
   }
 
@@ -50,13 +50,13 @@ export class ReportComponent {
 
   updateReport(){
     if (this.isYearly){
-      if (this.subcategories){
-        this.report = this.reportService.getMonthlyCategoryReport();
+      if (this.showSubcategories){
+        this.report = this.reportService.getYearlySubcategoryReport();
       } else {
         this.report = this.reportService.getYearlyCategoryReport();
       }
     } else {
-      if (this.subcategories){
+      if (this.showSubcategories){
         this.report = this.reportService.getMonthlySubcategoryReport();
       } else {
         this.report = this.reportService.getMonthlyCategoryReport();

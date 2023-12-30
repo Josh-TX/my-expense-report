@@ -161,3 +161,14 @@ html {
           display: none;
      }
 }
+
+.large-icon-btn {
+     min-width: 0 !important;
+     & .mat-icon{
+          height: 24px !important;
+          width: 24px !important;
+          font-size: 24px !important;
+          margin-right: 0px !important;
+          margin-left: 0px !important;
+     }
+}

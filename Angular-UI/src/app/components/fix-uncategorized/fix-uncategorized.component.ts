@@ -52,8 +52,8 @@ export class FixUncategorizedComponent {
         this.catNameInput = null;
         this.subcategoryInput = null;
         var allTransactions = this.transactionService.getTransactions();
-        this.catTransactions = allTransactions.filter(z => z.catName != "");
-        this.uncatTransactions = allTransactions.filter(z => z.catName == "").slice(this.skipCount);
+        this.catTransactions = allTransactions.filter(z => !this.categoryService.isUncategorized(z));
+        this.uncatTransactions = allTransactions.filter(z => this.categoryService.isUncategorized(z)).slice(this.skipCount);
         this.currentUncatTransaction = this.uncatTransactions[0];
         if (this.currentUncatTransaction) {
             var suggestionStrings = getSuggestionStrings(this.currentUncatTransaction.name);
@@ -105,8 +105,8 @@ export class FixUncategorizedComponent {
 
     submit() {
         var error = "";
-        if (!this.ruleTextChanged) {
-            error = "category required"
+        if (!this.ruleTextInput) {
+            error = "rule text required"
         }
         if (!this.catNameInput) {
             error = "category required"

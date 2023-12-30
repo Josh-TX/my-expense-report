@@ -13,15 +13,19 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input'
 import { MatSelectModule } from '@angular/material/select'
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatDialog } from '@angular/material/dialog';
 import { EditTransactionsComponent } from '@components/edit-transactions/edit-transactions.component';
 import { getSum } from '@services/helpers';
+import { AddTransactionComponent } from '@components/add-transaction/add-transaction.component';
 
 
 @Component({
     standalone: true,
     imports: [CommonModule, MatButtonModule, MatCheckboxModule, MatIconModule, MatInputModule, FormsModule,
-        MatTableModule, MatSortModule, MatPaginatorModule, MatMenuModule, MatSelectModule],
+        MatTableModule, MatSortModule, MatPaginatorModule, MatMenuModule, MatSelectModule, MatSlideToggleModule,
+        AddTransactionComponent
+    ],
     templateUrl: './transactions.component.html'
 })
 export class TransactionsComponent {
@@ -39,6 +43,7 @@ export class TransactionsComponent {
     @ViewChild(MatSort, {static: true}) sort: MatSort | undefined;
     @ViewChild(MatPaginator, {static: true}) paginator: MatPaginator | undefined;
     selection = new SelectionModel<Transaction>(true, []);
+    showHidden: boolean = false;
 
     constructor(
         private transactionService: TransactionService,
@@ -59,13 +64,24 @@ export class TransactionsComponent {
     }
 
     private updateData(transactions: Transaction[]){
+        if (!this.showHidden){
+            transactions = transactions.filter(z => z.catName != "hidden")
+        }
         this.dataSource.data = transactions;
         this.selection.clear();
+    }
+
+    showHiddenChanged(){
+        this.updateData(this.transactionService.getTransactions())
     }
 
     editSelected(){
         var ref = this.dialog.open(EditTransactionsComponent, {autoFocus: false});
         ref.componentInstance.init(this.selection.selected);
+    }
+
+    add(){
+        this.dialog.open(AddTransactionComponent, {autoFocus: false});
     }
 
     onPaste(){
