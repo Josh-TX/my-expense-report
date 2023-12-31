@@ -1,5 +1,5 @@
 import { Subcategory } from "@services/category.service";
-import { Theme } from "@services/theme.service";
+import { ColorSet, Theme } from "@services/theme.service";
 import { ChartArea } from "chart.js";
 
 type LabelFinalPos = {
@@ -8,7 +8,6 @@ type LabelFinalPos = {
     textRadius: number,
     textHalfWidth: number,
     label: string,
-    isSubcategory: boolean,
     color: string,
 }
 
@@ -16,7 +15,6 @@ type LabelInfo = {
     startAngle: number, //0 pointing straight up, and PI/2 pointing right
     endAngle: number,//0 pointing straight up, and PI/2 pointing right
     label: string,
-    isSubcategory: boolean,
     color: string,
 }
 
@@ -27,7 +25,7 @@ type TextPos = {
     yBottom: number,
 }
 
-export class OuterLableDrawer{
+export class SmallOuterLableDrawer{
     private cx: number;
     private cy: number;
     private r: number;
@@ -38,11 +36,9 @@ export class OuterLableDrawer{
     constructor(
         private ctx: CanvasRenderingContext2D,
         chartArea: ChartArea,
-        private categoryNames: string[], 
-        private subcategories: Subcategory[],
-        private categoryAmounts: number[], 
-        private subcategoryAmounts: number[],
-        private theme: Theme,
+        private names: string[], 
+        private amounts: number[], 
+        private colorSets: ColorSet[],
         categoryCircumDegrees: number,
         private animationProg: number,
         ){
@@ -53,14 +49,7 @@ export class OuterLableDrawer{
     }
 
     drawLabels(){
-        var labelInfos = this.getCategoryLabelInfos();
         var finalPositions: LabelFinalPos[] = []
-        for (var labelInfo of labelInfos){
-            var finalPosition = this.getLabelFinalPos(labelInfo);
-            if (finalPosition){
-                finalPositions.push(finalPosition);
-            }
-        }
         var subcatlabelInfos = this.getSubcategoryLabelInfos();
         for (var labelInfo of subcatlabelInfos){
             var finalPosition = this.getLabelFinalPos(labelInfo);
@@ -71,43 +60,20 @@ export class OuterLableDrawer{
         finalPositions.forEach(z => this.drawLabel(z))
     }
 
-    private getCategoryLabelInfos(): LabelInfo[]{
-        var categoryLabels: LabelInfo[] = [];
-        var sumAmount = this.categoryAmounts.reduce((a, b) => a + b, 0);
-        var currentAngle = 0;
-        for (var i = 0; i < this.categoryNames.length; i++){
-            var angleRange = this.categoryAmounts[i] / sumAmount * Math.PI * 2 * this.circumRatio;
-            if (angleRange < .0174){ //less than 1 degree
-                continue;
-            }
-            categoryLabels.push({
-                startAngle: currentAngle,
-                endAngle: currentAngle + angleRange,
-                label: this.categoryNames[i],
-                isSubcategory: false,
-                color: this.theme.colorSets[i].text
-            });
-            currentAngle += angleRange;
-        }
-        return categoryLabels;
-    }
-
     private getSubcategoryLabelInfos(): LabelInfo[]{
         var subcategoryLabels: LabelInfo[] = [];
-        var sumAmount = this.subcategoryAmounts.reduce((a, b) => a + b, 0);
+        var sumAmount = this.amounts.reduce((a, b) => a + b, 0);
         var currentAngle = 0;
-        for (var i = 0; i < this.subcategories.length; i++){
-            var angleRange = this.subcategoryAmounts[i] / sumAmount * Math.PI * 2 * this.circumRatio;
+        for (var i = 0; i < this.names.length; i++){
+            var angleRange = this.amounts[i] / sumAmount * Math.PI * 2 * this.circumRatio;
             if (angleRange < .0174){ //less than 1 degree
                 continue;
             }
-            var catIndex = this.categoryNames.indexOf(this.subcategories[i].catName);
             subcategoryLabels.push({
                 startAngle: currentAngle,
                 endAngle: currentAngle + angleRange,
-                label: this.subcategories[i].subcatName,
-                isSubcategory: true,
-                color: this.theme.colorSets[catIndex].text
+                label: this.names[i],
+                color: this.colorSets[i].text
             });
             currentAngle += angleRange;
         }
@@ -119,7 +85,7 @@ export class OuterLableDrawer{
         var lineAngle = finalPos.lineAngle * Math.min(1, easeOutCubic);
         var textAngle = finalPos.textAngle * Math.min(1, easeOutCubic);
         var textSide = textAngle < Math.PI ? 1 : -1;
-        var inwardAmount = finalPos.isSubcategory ? 36 : 10;
+        var inwardAmount = 16;
 
         //because angle zero is up, I use sin for x and cos for y
         var x1 = this.cx + Math.sin(lineAngle) * (this.r - inwardAmount);
@@ -143,7 +109,7 @@ export class OuterLableDrawer{
         this.ctx.strokeStyle = finalPos.color;
         this.ctx.stroke();
 
-        this.ctx.font = finalPos.isSubcategory ? "12px Arial" : "20px Arial";
+        this.ctx.font = "14px Arial";
         this.ctx.textBaseline = "middle";
         this.ctx.textAlign = textSide! > 0 ? "left" : "right";
         this.ctx.fillStyle = finalPos.color;
@@ -155,7 +121,7 @@ export class OuterLableDrawer{
         var x1,x2,x3,y1,y2,side: number;
         for (var remainingAttempts = 3; remainingAttempts > 0; remainingAttempts--){
             side = angle < Math.PI ? 1 : -1;
-            var inwardAmount = info.isSubcategory ? 36 : 10;
+            var inwardAmount = 16;
             //because angle zero is up, I use sin for x and cos for y
             x1 = this.cx + Math.sin(angle) * (this.r - inwardAmount);
             //since higher Y values are further down, I subtract cos rather than add
@@ -165,7 +131,7 @@ export class OuterLableDrawer{
             x3 = x2 + (12 * side);
 
             //now the fun part... see if this overlaps an already-placed label
-            var height = info.isSubcategory ? 14 : 22;
+            var height = 17;
             var newText: TextPos = {
                 side: side,
                 yCenter: y2,
@@ -196,7 +162,7 @@ export class OuterLableDrawer{
         if (remainingAttempts == 0){
             return null; //unable to find an available spot after 3 tries
         }
-        this.ctx.font = info.isSubcategory ? "12px Arial" : "20px Arial";
+        this.ctx.font = "14px Arial";
         var textHalfWidth = this.ctx.measureText(info.label).width / 2 + 5;
         var textCenterX = x3! + (textHalfWidth) * side!;
         var textAngle = Math.atan2((textCenterX - this.cx),(this.cy - y2!));
@@ -208,7 +174,6 @@ export class OuterLableDrawer{
             textHalfWidth: textHalfWidth,
             textRadius: textRadius,
             label: info.label,
-            isSubcategory: info.isSubcategory,
             color: info.color 
         };
     }

@@ -79,9 +79,9 @@ export class CategoryBarComponent {
         var datasets: ChartDataset<any, number[]>[] =  categoryNames.map((name, i) => ({
             label: name,
             data: [],
-            backgroundColor: this.theme.backgrounds[i % this.theme.backgrounds.length],
-            hoverBackgroundColor: this.theme.hovers[i % this.theme.hovers.length],
-            borderColor: this.theme.borders[i % this.theme.borders.length],
+            backgroundColor: this.theme.colorSets[i % this.theme.colorSets.length].background,
+            hoverBackgroundColor: this.theme.colorSets[i % this.theme.colorSets.length].hover,
+            borderColor: this.theme.colorSets[i % this.theme.colorSets.length].border,
             borderWidth: 1,
             borderSkipped: false
         }));

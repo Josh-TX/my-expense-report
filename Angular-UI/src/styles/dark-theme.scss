@@ -42,6 +42,12 @@ $my-theme: mat.define-dark-theme((color: (primary: $my-primary,
   color: map.get(mat.$dark-theme-foreground-palette, base) !important;
 }
 
+//the default dialog text has too little contrast
+.mat-mdc-dialog-container .mdc-dialog__content{
+  color: map.get(mat.$grey-palette, 300) !important;
+}
+
+
 .text-body {
   color: map.get(mat.$dark-theme-foreground-palette, base) !important;
 

@@ -1,6 +1,6 @@
 import { Component, ViewChild, effect } from '@angular/core';
 import { Transaction, TransactionService } from '@services/transaction.service';
-import { CommonModule } from '@angular/common'
+import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common'
 import { FormsModule } from '@angular/forms'
 import { SettingsService } from '@services/settings.service';
 import { MatButtonModule } from '@angular/material/button';
@@ -18,6 +18,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { EditTransactionsComponent } from '@components/edit-transactions/edit-transactions.component';
 import { getSum } from '@services/helpers';
 import { AddTransactionComponent } from '@components/add-transaction/add-transaction.component';
+import { ExportService } from '@services/export.service';
 
 
 @Component({
@@ -47,7 +48,7 @@ export class TransactionsComponent {
 
     constructor(
         private transactionService: TransactionService,
-        private settingsService: SettingsService,
+        private exportService: ExportService,
         private dialog: MatDialog,
     ) {
         effect(() => this.updateData(this.transactionService.getTransactions()));
@@ -83,6 +84,23 @@ export class TransactionsComponent {
     add(){
         this.dialog.open(AddTransactionComponent, {autoFocus: false});
     }
+
+    exportTransactions(){
+        var transactions = this.dataSource.filteredData;
+        var datePipe = new DatePipe('en-US');
+        var currencyPipe = new CurrencyPipe('en-US');
+        var headers = ["Date", "Name", "Amount", "Category", "Subcategory", "Imported From"];
+        var transactionRows = transactions.map(z => [
+            datePipe.transform(z.date, 'M/d/yy'), 
+            z.name, currencyPipe.transform(z.amount), 
+            z.catName, 
+            z.subcatName,
+            z.importFrom
+        ]);
+        var data = [headers, ...transactionRows];
+        var fileName = this.filterText ? "filtered-transactions.csv" : "transactions.csv";
+        this.exportService.exportData(data, fileName);
+      }
 
     onPaste(){
         //if they triple-click and paste, it often has whitespace on the end, which this removes
@@ -141,7 +159,7 @@ export class TransactionsComponent {
             case 'amount': return trxn.amount;
             case 'category': return trxn.catName.toLowerCase();
             case 'subcategory': return trxn.subcatName.toLowerCase();
-            case 'importedFrom': return trxn.importFile.toLowerCase();
+            case 'importedFrom': return trxn.importFrom.toLowerCase();
             case 'name': return trxn.name.toLowerCase();
             default: return 0;
         }

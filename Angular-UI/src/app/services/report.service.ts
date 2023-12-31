@@ -27,7 +27,6 @@ export type ReportRow = {
     date: Date;
     cells: ReportCell[];
     totalCell: ReportCell;
-    extrapolated?: number | undefined;
 }
 
 export type ReportCell = {

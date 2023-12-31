@@ -5,6 +5,9 @@
         } @else {
         <h2>Monthly Report</h2>
         }
+        @if (report){
+        <button mat-raised-button (click)="export()">Export to CSV</button>
+        }
         <div style="padding-top: 0.4375rem">
             <mat-slide-toggle [(ngModel)]="showSubcategories"
                 (ngModelChange)="showSubcategoriesChanged()">Subcategories</mat-slide-toggle>
@@ -29,19 +32,21 @@
         @for (row of report.rows; track row; ){
         <tr>
             @if (isYearly){
-            <td>{{row.date | date:'y'}}@if (row.extrapolated){*}
+            <td class="clickable-cell" [class.selected-cell]="row == selectedDate" (click)="dateClicked(row)">{{row.date | date:'y'}}
             </td>
             } @else {
-            <td>{{row.date | date:'MMM y'}}</td>
+            <td class="clickable-cell" [class.selected-cell]="row == selectedDate" (click)="dateClicked(row)">{{row.date | date:'MMM y'}}</td>
             }
             @for (cell of row.cells; track cell; let index = $index){
             <td class="clickable-cell" [class.good-cell]="cell.deviation < 0" [class.bad-cell]="cell.deviation > 0"
-                [style]="getColorOpacity(cell)" [class.selected-cell]="cell == selectedCell" (click)="cellClicked(cell, row, index)">
+                [style]="getColorOpacity(cell)" [class.selected-cell]="cell == selectedCell"
+                (click)="cellClicked(cell, row, index)">
                 {{cell.amount | number:'.0-0'}}
             </td>
             }
-            <td class="clickable-cell" [class.good-cell]="row.totalCell.deviation < 0" [class.selected-cell]="row.totalCell == selectedCell"
-                [class.bad-cell]="row.totalCell.deviation > 0" [style]="getColorOpacity(row.totalCell)" (click)="cellClicked(row.totalCell, row, null)">
+            <td class="clickable-cell" [class.good-cell]="row.totalCell.deviation < 0"
+                [class.selected-cell]="row.totalCell == selectedCell" [class.bad-cell]="row.totalCell.deviation > 0"
+                [style]="getColorOpacity(row.totalCell)" (click)="cellClicked(row.totalCell, row, null)">
                 {{row.totalCell.amount | number:'.0-0'}}
             </td>
         </tr>

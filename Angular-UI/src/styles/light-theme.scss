@@ -18,7 +18,6 @@ $my-theme: mat.define-light-theme((color: (primary: $my-primary,
 @include mat.all-component-themes($my-theme);
 
 .mer-menu-active>.mat-mdc-menu-item-text {
-  //color: var(--mat-tab-header-active-label-text-color) !important;
   color: #2196f3 !important;
 }
 
@@ -27,6 +26,10 @@ $my-theme: mat.define-light-theme((color: (primary: $my-primary,
   color: map.get(mat.$light-theme-foreground-palette, base) !important;
 }
 
+//the default dialog text has too little contrast
+.mat-mdc-dialog-container .mdc-dialog__content{
+  color: map.get(mat.$grey-palette, 800) !important;
+}
 
 .text-body {
   color: map.get(mat.$light-theme-foreground-palette, base) !important;

@@ -2,13 +2,17 @@ import { Injectable, WritableSignal, computed, signal, Signal, effect, untracked
 import { LocalSettingsService } from "@services/localSettings.service";
 
 export type Theme = {
-    borders: string[],
-    backgrounds: string[],
-    hovers: string[],
-    texts: string[],
+    colorSets: ColorSet[]
     normalText: string,
     mutedText: string,
     normalBackground: string
+}
+
+export type ColorSet = {
+    border: string,
+    background: string,
+    hover: string,
+    text: string
 }
 
 @Injectable({
@@ -40,19 +44,13 @@ export class ThemeService {
         var baseTheme = this.currentTheme$();
         var notGrayColorCount = Math.min(8, colorCount - (hasOther ? 1 : 0))
         var copy: Theme = {
-            borders: baseTheme.borders.slice(0, notGrayColorCount),
-            backgrounds: baseTheme.backgrounds.slice(0, notGrayColorCount),
-            hovers: baseTheme.hovers.slice(0, notGrayColorCount),
-            texts: baseTheme.texts.slice(0, notGrayColorCount),
+            colorSets: baseTheme.colorSets.slice(0, notGrayColorCount),
             mutedText: baseTheme.mutedText,
             normalText: baseTheme.normalText,
             normalBackground: baseTheme.normalBackground
         }
         if (hasOther){
-            copy.borders.push(baseTheme.borders[8]);
-            copy.backgrounds.push(baseTheme.backgrounds[8]);
-            copy.hovers.push(baseTheme.hovers[8]);
-            copy.texts.push(baseTheme.texts[8]);
+            copy.colorSets.push(baseTheme.colorSets[8]);
         }
         return copy;
     }
@@ -71,11 +69,17 @@ export class ThemeService {
         ];
         var texts = colors.slice(0);
         texts[8] = "#606060";
+        var colorSets: ColorSet[] = [];
+        for (var i = 0; i < colors.length; i++){
+            colorSets.push({
+                border: colors[i],
+                background: this.getAlphaColor(colors[i], 0.25),
+                hover: this.getAlphaColor(colors[i], 0.5),
+                text: texts[i]
+            })
+        }
         var theme = {
-            borders: colors,
-            backgrounds: colors.map(z => this.getAlphaColor(z, 0.25)) ,
-            hovers: colors.map(z => this.getAlphaColor(z, 0.5)),
-            texts: texts,
+            colorSets: colorSets,
             mutedText: "#AAAAAA",
             normalText: "#444444",
             normalBackground: "#FFFFFF"
@@ -95,11 +99,17 @@ export class ThemeService {
             '#ffff35', //yellow
             '#cccccc', //gray
         ];
+        var colorSets: ColorSet[] = [];
+        for (var i = 0; i < colors.length; i++){
+            colorSets.push({
+                border: colors[i],
+                background: this.getAlphaColor(colors[i], 0.25),
+                hover: this.getAlphaColor(colors[i], 0.5),
+                text: colors[i],
+            })
+        }
         return {
-            borders: colors,
-            backgrounds: colors.map(z => this.getAlphaColor(z, 0.15)) ,
-            hovers: colors.map(z => this.getAlphaColor(z, 0.40)),
-            texts: colors,
+            colorSets: colorSets,
             mutedText: "#888888",
             normalText: "#FFFFFF",
             normalBackground: "#303030"

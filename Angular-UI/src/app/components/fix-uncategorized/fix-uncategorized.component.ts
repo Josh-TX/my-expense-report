@@ -14,10 +14,12 @@ import { Subcategory, CategoryService } from '@services/category.service';
 import { MatInputModule } from '@angular/material/input'
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { SubcategorySelectComponent } from '@components/subcategory-select/subcategory-select.component';
 
 @Component({
     standalone: true,
-    imports: [CommonModule, FormsModule, MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose, MatButtonModule, MatInputModule, MatAutocompleteModule],
+    imports: [CommonModule, FormsModule, MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose, 
+        MatButtonModule, MatInputModule, SubcategorySelectComponent],
     templateUrl: './fix-uncategorized.component.html'
 })
 export class FixUncategorizedComponent {
@@ -30,13 +32,8 @@ export class FixUncategorizedComponent {
     ruleTextInput: string = "";
     isUpdating: boolean = false;
 
-    allCatNames: string[] = [];
-    filteredCatNames: string[] = [];
-    catNameInput: string | null = "";
-
-    allSubcategories: Subcategory[] = [];
-    filteredSubcategories: Subcategory[] = [];
-    subcategoryInput: string | Subcategory | null = "";
+    selectedSubcategory: Subcategory | undefined;
+    isNewSubcategory: boolean | undefined;
 
     constructor(
         private transactionService: TransactionService,
@@ -49,8 +46,7 @@ export class FixUncategorizedComponent {
 
     private update() {
         this.ruleTextInput = "";
-        this.catNameInput = null;
-        this.subcategoryInput = null;
+        this.selectedSubcategory = undefined;
         var allTransactions = this.transactionService.getTransactions();
         this.catTransactions = allTransactions.filter(z => !this.categoryService.isUncategorized(z));
         this.uncatTransactions = allTransactions.filter(z => this.categoryService.isUncategorized(z)).slice(this.skipCount);
@@ -76,10 +72,6 @@ export class FixUncategorizedComponent {
                 }
             }
         }
-        this.allSubcategories = this.categoryService.getSubcategories().filter(z => z.catName);
-        this.allCatNames = [...new Set(this.allSubcategories.map(z => z.catName))];
-        this.filteredCatNames = this.allCatNames;
-        this.filteredSubcategories = this.allSubcategories;
     }
 
     selectSuggestion(suggestion: SuggestionInfo) {
@@ -108,13 +100,13 @@ export class FixUncategorizedComponent {
         if (!this.ruleTextInput) {
             error = "rule text required"
         }
-        if (!this.catNameInput) {
+        else if (!this.selectedSubcategory || !this.selectedSubcategory.catName) {
             error = "category required"
         }
-        if (!this.getSubcatName()) {
+        else if (!this.selectedSubcategory.subcatName) {
             error = "subcategory required"
         }
-        if (!this.categoryService.doesRuleTextMatch(this.currentUncatTransaction!, this.ruleTextInput)) {
+        else if (!this.categoryService.doesRuleTextMatch(this.currentUncatTransaction!, this.ruleTextInput)) {
             error = "rule text doesn't match current transaction"
         }
         if (error){
@@ -122,72 +114,18 @@ export class FixUncategorizedComponent {
             return
         }
         this.categoryService.addRules([{
-            catName: this.catNameInput!,
-            subcatName: this.getSubcatName(),
+            catName: this.selectedSubcategory!.catName,
+            subcatName: this.selectedSubcategory!.subcatName,
             text: this.ruleTextInput
         }]);
         this.update();
     }
 
-
-    subcategoryInputChange(event: string | Subcategory) {
-        if (typeof event == "string") {
-            var filter = event;
-            this.filteredSubcategories = this.allSubcategories;
-            if (this.catNameInput) {
-                this.filteredSubcategories = this.allSubcategories.filter(info => info.catName.toLowerCase() == this.catNameInput!.toLowerCase())
-            }
-            if (filter && !(typeof this.subcategoryInput == "object")) {
-                this.filteredSubcategories = this.filteredSubcategories.filter(info => filterMatchesTarget(filter, [info.catName, info.subcatName]));
-            }
-        } else { //event is CategoryInfo
-            this.catNameInput = event.catName;
-            this.filteredSubcategories = [event];
-            this.subcategoryInput = event;
-        }
-    }
-
-    catNameInputChange(filter: string) {
-        this.filteredCatNames = this.allCatNames.filter(z => z.toLowerCase().startsWith(filter.toLowerCase()));
-        if (this.subcategoryInput && typeof this.subcategoryInput == "object" && filter.toLowerCase() != this.subcategoryInput.catName.toLowerCase()) {
-            this.subcategoryInput = null;
-            this.subcategoryInput = "";
-        }
-        if (filter) {
-            this.filteredSubcategories = this.allSubcategories.filter(info => info.catName.toLowerCase() == filter.toLowerCase());
-        } else {
-            this.filteredSubcategories = this.allSubcategories;
-        }
-    }
-
-    displayFn(info: Subcategory): string {
-        return info ? info.subcatName : "";
-    }
-
-    quickSelectSubcategory(subcategory: Subcategory){
-        this.subcategoryInput = subcategory;
-    }
-
-    getSubcategoriesFromCatName(catName: string){
-        return this.allSubcategories.filter(z => z.catName == catName);
-    }
-
     isAddingNewSubcategory(){
-        var subcatName = this.getSubcatName().toLowerCase();
-        if (!subcatName || !this.catNameInput){
+        if (!this.selectedSubcategory || !this.selectedSubcategory.catName || !this.selectedSubcategory.subcatName){
             return false;
         }
-        return !this.allSubcategories.find(z => z.catName == this.catNameInput?.toLowerCase() && z.subcatName.toLowerCase() == subcatName);
-    }
-
-    private getSubcatName(): string {
-        if (!this.subcategoryInput) {
-            return "";
-        }
-        if (typeof this.subcategoryInput == "object") {
-            return this.subcategoryInput.subcatName
-        }
-        return this.subcategoryInput;
+        return this.isNewSubcategory
     }
 }
 
@@ -211,14 +149,4 @@ function getSuggestionStrings(str: string): string[] {
         }
     }
     return suggestions.slice(0, 4);
-}
-
-function filterMatchesTarget(filter: string, targets: string[]): boolean {
-    var filterParts = filter.split(" ");
-    for (var filterPart of filterParts) {
-        if (!targets.some(target => target.toLowerCase().startsWith(filterPart.toLowerCase()))) {
-            return false;
-        }
-    }
-    return true;
 }

@@ -39,7 +39,7 @@
         </div>
         <div style="grid-row: span 2; display: flex; justify-content: end; font-size: 2rem;">
             @if (dataSource.filteredData.length){
-                <button class="mr-3" mat-raised-button (click)="editSelected()">
+                <button class="mr-3" mat-raised-button (click)="exportTransactions()">
                     Export to CSV
                 </button>
             }
@@ -104,7 +104,7 @@
 
             <ng-container matColumnDef="importedFrom">
                 <th mat-header-cell mat-sort-header *matHeaderCellDef> Imported From </th>
-                <td mat-cell *matCellDef="let trxn">{{trxn.importFile ? trxn.importFile : '(manually added)'}}</td>
+                <td mat-cell *matCellDef="let trxn">{{trxn.importFrom ? trxn.importFrom : '(manually added)'}}</td>
             </ng-container>
 
             <ng-container matColumnDef="importedOn">

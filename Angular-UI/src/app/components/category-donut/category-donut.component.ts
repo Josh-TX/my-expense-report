@@ -1,15 +1,19 @@
-import { Component, Input, SimpleChanges, WritableSignal, effect, signal } from '@angular/core';
+import { Component, EventEmitter, Input, Output, SimpleChanges, WritableSignal, effect, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ChartEvent, Interaction, InteractionItem, InteractionOptions, Point } from 'chart.js';
 import { Chart, registerables } from 'chart.js';
 import { DatePipe, CurrencyPipe, DecimalPipe } from '@angular/common';
 import { Subcategory } from '@services/category.service';
 import { OuterLableDrawer } from './outer-label-drawer';
-import { Theme, ThemeService } from '@services/theme.service';
+import { ColorSet, Theme, ThemeService } from '@services/theme.service';
 import { getDistinctByProp, getSum } from '@services/helpers';
 import { DonutData, chartDataService } from '@services/chartData.service';
 Chart.register(...registerables);
 
+export type DonutClickData = {
+    catName: string,
+    subcatName: string | undefined
+}
 
 @Component({
     selector: 'mer-category-donut',
@@ -19,10 +23,13 @@ Chart.register(...registerables);
 })
 export class CategoryDonutComponent {
     @Input("currentDate") inputCurrentDate: Date | undefined;
+    @Output("itemClick") clickEmitter = new EventEmitter<DonutClickData | null>();
     private month$: WritableSignal<Date | undefined>;
 
     chart: Chart<"doughnut", number[], string> | null = null;
     private theme: Theme | undefined;
+    private categoryColorSets: ColorSet[] = [];
+    private subcategoryColorSets: ColorSet[] = [];
 
     private categoryNames: string[] = [];
     private subcategories: Subcategory[] = [];
@@ -35,10 +42,10 @@ export class CategoryDonutComponent {
 
     private date: string | undefined;
     private averageType: string | undefined;
+    private clickJustFired = false;
 
     private activeItems: InteractionItem[] = [];
     private clickedItems: InteractionItem[] = [];
-    private clickActiveTimeout: any;
     private outerCircum: number = 360;
     private innerCircum: number = 360;
     private chartRenderStartTime: number = 0;
@@ -77,21 +84,50 @@ export class CategoryDonutComponent {
         }
         if (e.type == "click"){
             this.clickedItems = this.activeItems;
-            this.rotateAverage(<any>chart);
-        }
-        //if nothing is hovered and there are clickedItems, then make the clicked items appear active
-        clearInterval(this.clickActiveTimeout)
-        if (!pointItems.length && this.clickedItems.length == 2){
-            //when you stop hovering over the canvas entirely, it auto-deactivates the elements
-            //so I check 50ms to see if there's no active elements and if so activate clickedItems
-            this.clickActiveTimeout = setInterval(() => {
-                if (this.clickedItems.length == 2 && chart.getActiveElements().length == 0){
-                    chart.setActiveElements(this.clickedItems);
-                    chart.update();
+            //using chart.setActiveElements is unreliable (it would deselect when the mouse leaves the canvas)
+            //therefore, I'll manually update the background colors to make the clicked items appear selected
+            var index = this.clickedItems.length ? this.clickedItems[0].index : null;
+            var categoryBackgroundsCopy = this.categoryColorSets.map(z => z.background);
+            var subcategoryBackgroundsCopy = this.subcategoryColorSets.map(z => z.background);
+            if (index != null){
+                var isSubcategory = this.clickedItems.some(z => z.datasetIndex == 1);
+                if (isSubcategory){
+                    subcategoryBackgroundsCopy[index] = this.subcategoryColorSets[index].hover;
+                } else {
+                    categoryBackgroundsCopy[index] = this.categoryColorSets[index].hover;
                 }
-            }, 50);
-            return this.clickedItems
-        } 
+            }
+            chart.data.datasets[0].backgroundColor = categoryBackgroundsCopy;
+            chart.data.datasets[3].backgroundColor = categoryBackgroundsCopy;
+            chart.data.datasets[1].backgroundColor = subcategoryBackgroundsCopy;
+            chart.data.datasets[4].backgroundColor = subcategoryBackgroundsCopy;
+            var updated = this.rotateAverage(<any>chart);
+            if (!updated){
+                chart.update();
+            }
+            if (!this.clickJustFired){
+                this.clickJustFired = true;
+                var clickData: DonutClickData | undefined;
+                if (index != null){
+                    var isSubcategory = this.clickedItems.some(z => z.datasetIndex == 1);
+                    if (isSubcategory){
+                        clickData = {
+                            catName: this.subcategories[index].catName,
+                            subcatName:  this.subcategories[index].subcatName,
+                        }
+                    } else {
+                        clickData = {
+                            catName: this.categoryNames[index],
+                            subcatName: undefined,
+                        }
+                    }
+                }
+                this.clickEmitter.emit(clickData);
+                setTimeout(() => {
+                    this.clickJustFired = false;
+                }, 25);
+            }
+        }
         return this.activeItems;
     }
 
@@ -110,9 +146,9 @@ export class CategoryDonutComponent {
             index = items[0].index;//both activeItems should have the same index
             if (isSubcategory){
                 var catIndex = getDistinctByProp(this.subcategories.slice(0, index + 1), "catName").length - 1;
-                color = this.theme!.texts[catIndex];
+                color = this.theme!.colorSets[catIndex].text;
             } else {
-                color = this.theme!.texts[index];
+                color = this.theme!.colorSets[index].text;
             }
         }
 
@@ -275,7 +311,8 @@ export class CategoryDonutComponent {
         drawer.drawLabels();
     }
 
-    private rotateAverage(chart: Chart<"doughnut", number[], unknown>){
+    /**returns true if an update was run */
+    private rotateAverage(chart: Chart<"doughnut", number[], unknown>): boolean{
         var targetRotation = this.innerRotation;
         if (!this.clickedItems.length){
             targetRotation = 0;
@@ -304,7 +341,9 @@ export class CategoryDonutComponent {
             chart.data.datasets[3].rotation = targetRotation;
             chart.data.datasets[4].rotation = targetRotation;
             chart.update();
+            return true;
         }
+        return false;
     }
 
     private renderChart(data: DonutData) {
@@ -335,15 +374,11 @@ export class CategoryDonutComponent {
         }
         this.innerRotation = 0;
 
-        var subcatBorders: string[] = [];
-        var subcatBackgrounds: string[] = [];
-        var subcatHovers: string[] = [];
-        var colorLen = this.theme!.borders.length;
+        this.categoryColorSets = this.theme!.colorSets;
+        this.subcategoryColorSets = [];
         for (var i = 0; i < categoryItems.length; i++) {
             for (var j = 0; j < categoryItems[i].subcategoryItems.length; j++) {
-                subcatBorders.push(this.theme!.borders[i % colorLen]);
-                subcatBackgrounds.push(this.theme!.backgrounds[i % colorLen]);
-                subcatHovers.push(this.theme!.hovers[i % colorLen]);
+                this.subcategoryColorSets.push(this.theme!.colorSets[i % this.theme!.colorSets.length]);
             }
         }
         if (this.chart) {
@@ -354,18 +389,18 @@ export class CategoryDonutComponent {
             data: {
                 datasets: [{
                     data: categoryItems.map(z => z.amount),
-                    backgroundColor: this.theme?.backgrounds,
-                    hoverBackgroundColor: this.theme?.hovers,
-                    borderColor: this.theme?.borders,
+                    backgroundColor: this.theme!.colorSets.map(z => z.background),
+                    hoverBackgroundColor: this.theme!.colorSets.map(z => z.hover),
+                    borderColor: this.theme!.colorSets.map(z => z.border),
                     borderWidth: 1,
                     circumference: this.outerCircum,
                     weight: 1
                 },
                 {
                     data: subcategoryItems.map(z => z.amount),
-                    backgroundColor: subcatBackgrounds,
-                    hoverBackgroundColor: subcatHovers,
-                    borderColor: subcatBorders,
+                    backgroundColor: this.subcategoryColorSets.map(z => z.background),
+                    hoverBackgroundColor: this.subcategoryColorSets.map(z => z.hover),
+                    borderColor: this.subcategoryColorSets.map(z => z.border),
                     borderWidth: 1,
                     circumference: this.outerCircum,
                     weight: 1
@@ -382,18 +417,18 @@ export class CategoryDonutComponent {
 
                 {
                     data: categoryItems.map(z => z.averageAmount),
-                    backgroundColor: this.theme?.backgrounds,
-                    hoverBackgroundColor: this.theme?.hovers,
-                    borderColor: this.theme?.borders,
+                    backgroundColor: this.theme!.colorSets.map(z => z.background),
+                    hoverBackgroundColor: this.theme!.colorSets.map(z => z.hover),
+                    borderColor: this.theme!.colorSets.map(z => z.border),
                     borderWidth: 1,
                     circumference: this.innerCircum,
                     weight: 0.70
                 },
                 {
                     data: subcategoryItems.map(z => z.averageAmount),
-                    backgroundColor: subcatBackgrounds,
-                    hoverBackgroundColor: subcatHovers,
-                    borderColor: subcatBorders,
+                    backgroundColor: this.subcategoryColorSets.map(z => z.background),
+                    hoverBackgroundColor: this.subcategoryColorSets.map(z => z.hover),
+                    borderColor: this.subcategoryColorSets.map(z => z.border),
                     borderWidth: 1,
                     circumference: this.innerCircum,
                     weight: 0.70

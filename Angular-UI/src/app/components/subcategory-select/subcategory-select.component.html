@@ -1,0 +1,36 @@
+<div class="flex">
+    <mat-form-field class="flex-grow mr-4">
+        <mat-label>category</mat-label>
+        <input type="text" placeholder="Select a Category" matInput
+            [matAutocomplete]="catNameRef" [(ngModel)]="catNameInput" (ngModelChange)="catNameInputChange($event)">
+        <mat-autocomplete #catNameRef="matAutocomplete" autoActiveFirstOption>
+            @for (catName of filteredCatNames; track catName) {
+            <mat-option [value]="catName">
+                <div style="position: absolute; top: 0; bottom: 0; right: 0; width: 75%;">
+                    @for (subcategory of getSubcategoriesFromCatName(catName); track subcategory) {
+                        <button class="btn-sm" style="float: right;" mat-button color="primary" (click)="quickSelectSubcategory(subcategory)">
+                            {{subcategory.subcatName}}
+                        </button>
+                    }
+                </div>
+                {{catName}}
+            </mat-option>
+            }
+        </mat-autocomplete>
+    </mat-form-field>
+    <mat-form-field class="flex-grow">
+        <mat-label>subcategory</mat-label>
+        <input type="text" placeholder="Select a Subcategory" matInput
+            [matAutocomplete]="subcategoryRef" [(ngModel)]="subcategoryInput" (ngModelChange)="subcategoryInputChange($event)">
+        <mat-autocomplete #subcategoryRef="matAutocomplete" autoActiveFirstOption [displayWith]="displayFn">
+            @for (subcategory of filteredSubcategories; track subcategory) {
+            <mat-option [value]="subcategory">
+                <div style="line-height: 1.125rem;">
+                    <div style="font-size: 0.875rem;" class="text-muted mb-0">{{subcategory.catName}}</div>
+                    {{subcategory.subcatName}}
+                </div>
+            </mat-option>
+            }
+        </mat-autocomplete>
+    </mat-form-field>
+</div>

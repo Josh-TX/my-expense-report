@@ -121,9 +121,6 @@ export class CategoryService {
             {catName: "income", subcatName: "income"},
             {catName: "hidden", subcatName: "hidden"},
         ];
-        if (this.settingsService.getSettings().useIncomeCategory){
-            defaultSubcategories.push({catName: "income", subcatName: "income"})
-        }
         this.subcategories$.set(defaultSubcategories);
     }
 }
