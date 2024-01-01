@@ -1,4 +1,8 @@
-<h2 mat-dialog-title>Manually Add Transaction</h2>
+<div style="padding: 20px 24px; display: flex; justify-content: space-between;">
+    <h2 class="mb-0">Manually Add Transaction</h2>
+    <button mat-raised-button (click)="importFromFile()">Import from File</button>
+</div>
+
 <mat-dialog-content class="mat-typography">
     <mat-form-field class="mr-4" style="min-width: 360px;">
         <mat-label>name</mat-label>
@@ -9,14 +13,14 @@
         <input matInput type="number" [(ngModel)]="amount">
     </mat-form-field>
     <mat-form-field>
-        <mat-label>Choose a date</mat-label>
+        <mat-label>date</mat-label>
         <input matInput [(ngModel)]="date">
         <mat-hint>MM/DD/YYYY</mat-hint>
     </mat-form-field>
 
     <mat-card>
         <mat-card-content>
-            Manual Category (optional)
+            <div class="mb-2">Manual Category (optional)</div>
             <mer-subcategory-select [(subcategory)]="selectedSubcategory" [(isNew)]="isNew"></mer-subcategory-select>
             @if(isNew && selectedSubcategory && selectedSubcategory.catName && selectedSubcategory.subcatName){
                 <span>this will create a new Category/Subcategory</span>

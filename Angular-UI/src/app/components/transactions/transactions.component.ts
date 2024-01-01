@@ -19,6 +19,7 @@ import { EditTransactionsComponent } from '@components/edit-transactions/edit-tr
 import { getSum } from '@services/helpers';
 import { AddTransactionComponent } from '@components/add-transaction/add-transaction.component';
 import { ExportService } from '@services/export.service';
+import { CatColorService } from '@services/catColor.service';
 
 
 @Component({
@@ -48,6 +49,7 @@ export class TransactionsComponent {
 
     constructor(
         private transactionService: TransactionService,
+        private catColorService: CatColorService,
         private exportService: ExportService,
         private dialog: MatDialog,
     ) {
@@ -83,6 +85,11 @@ export class TransactionsComponent {
 
     add(){
         this.dialog.open(AddTransactionComponent, {autoFocus: false});
+    }
+
+    getColorStyles(trxn: Transaction){
+        var colorSet = this.catColorService.getColorSet(trxn.catName);
+        return `background: ${colorSet.background}; border: 1px solid ${colorSet.border}`
     }
 
     exportTransactions(){

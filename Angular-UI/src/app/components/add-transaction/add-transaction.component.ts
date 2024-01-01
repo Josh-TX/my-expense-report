@@ -13,13 +13,13 @@ import {
     MatDialogActions,
     MatDialogClose,
     MatDialogRef,
-
+    MatDialog
 } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
-import { MatNativeDateModule } from '@angular/material/core';
 import { MatCardModule } from '@angular/material/card';
 import { Subcategory } from '@services/category.service';
 import { SubcategorySelectComponent } from '@components/subcategory-select/subcategory-select.component';
+import { ImportTransactionsComponent } from '@components/import-transactions/import-transactions.component';
 
 @Component({
     standalone: true,
@@ -38,8 +38,14 @@ export class AddTransactionComponent {
     constructor(
         private transactionService: TransactionService,
         private dialogRef: MatDialogRef<AddTransactionComponent>,
+        private dialog: MatDialog,
         private snackBar: MatSnackBar
     ) {
+    }
+
+    importFromFile(){
+        this.dialogRef.close("import");
+        this.dialog.open(ImportTransactionsComponent, { panelClass: "dialog-xl", autoFocus: false })
     }
 
     submit() {

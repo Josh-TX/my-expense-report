@@ -23,7 +23,7 @@
                 </mat-select>
             </mat-form-field>
             <div style="width: 48px; margin: 4px 0 0 4px;">
-                <button mat-icon-button (click)="clearFilters()"><mat-icon>clear</mat-icon></button>
+                <button mat-icon-button (click)="clearFilters()" [class.text-muted]="!filterText"><mat-icon>clear</mat-icon></button>
             </div>
         </div>
         <div>
@@ -94,7 +94,10 @@
 
             <ng-container matColumnDef="category">
                 <th mat-header-cell mat-sort-header *matHeaderCellDef> Category </th>
-                <td mat-cell *matCellDef="let trxn">{{trxn.catName}}</td>
+                <td mat-cell *matCellDef="let trxn">
+                    <span class="cat-box" [style]="getColorStyles(trxn)"></span>
+                    {{trxn.catName}}
+                </td>
             </ng-container>
 
             <ng-container matColumnDef="subcategory">

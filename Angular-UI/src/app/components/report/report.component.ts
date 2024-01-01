@@ -5,9 +5,11 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatButtonModule  } from '@angular/material/button';
 import { ReportCellComponent } from '@components/report-cell/report-cell.component';
 import { ReportRowComponent } from '@components/report-row/report-row.component';
+import { ReportColumnComponent } from '@components/report-column/report-column.component';
 import { MatDialog } from '@angular/material/dialog';
-import { ReportService, Report, ReportCell, ReportRow } from '@services/report.service';
+import { ReportService, Report, ReportCell, ReportRow, ReportHeader } from '@services/report.service';
 import { ExportService } from '@services/export.service';
+import { CatColorService } from '@services/catColor.service';
 
 
 @Component({
@@ -22,9 +24,11 @@ export class ReportComponent {
     showSubcategories: boolean = false;
     selectedCell: ReportCell | null = null;
     selectedDate: ReportRow | null = null;
+    selectedHeader: ReportHeader | null = null;
 
     constructor(
         private reportService: ReportService,
+        private catColorService: CatColorService,
         private dialog: MatDialog,
         private exportService: ExportService
     ) {
@@ -92,6 +96,32 @@ export class ReportComponent {
         ref.afterClosed().subscribe(() => {
             setTimeout(() => {
                 this.selectedDate = null;
+            }, 50);
+        })
+    }
+
+    getColorStyles(header: ReportHeader){
+        var colorSet = this.catColorService.getColorSet(header.name);
+        return `background: ${colorSet.background}; border: 1px solid ${colorSet.border}`
+    }
+
+    headerClicked(header: ReportHeader) {
+        this.selectedHeader = header;
+        var ref = this.dialog.open(ReportColumnComponent, {autoFocus: false, panelClass: "dialog-xl"});
+        var header0Index = this.report!.headerRows[0].indexOf(header);
+        var header1Index = this.report!.headerRows.length > 1 ? this.report!.headerRows[1].indexOf(header) : -1;
+        if (header0Index >= 0){
+            var catName = header.name;
+        } else if (header1Index >= 0){
+            var catName = this.report!.columns[header1Index].catName;
+            var subcatName = this.report!.columns[header1Index].subcatName;
+        } else {
+            throw "column not found";
+        }
+        ref.componentInstance.init(catName, subcatName, this.isYearly);
+        ref.afterClosed().subscribe(() => {
+            setTimeout(() => {
+                this.selectedHeader = null;
             }, 50);
         })
     }

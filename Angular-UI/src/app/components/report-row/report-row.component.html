@@ -15,7 +15,10 @@
             @if (!filterCat){
                 <span class="text-muted">Click on graph to filter</span>
             } @else {
-                <h3 class="mb-0" style="line-height: 18px;">{{filterCat}}
+
+                <h3 class="mb-0" style="line-height: 18px;">
+                    <span class="cat-box" [style]="getColorStyles()"></span>
+                    {{filterCat}}
                      @if (filterSubcat){
                         - {{filterSubcat}}
                      }

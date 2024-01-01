@@ -130,6 +130,12 @@ export function getStartOfMonth(date: Date): Date {
     return d;
 }
 
+export function getStartOfYear(date: Date): Date {
+    var d = getStartOfMonth(date);
+    d.setMonth(0);
+    return d;
+}
+
 export function sortBy<T>(items: T[], selectorFunc: (t:T) => number){
     items.sort((t1, t2) => selectorFunc(t1) - selectorFunc(t2));
 }

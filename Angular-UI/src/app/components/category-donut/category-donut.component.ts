@@ -240,10 +240,10 @@ export class CategoryDonutComponent {
                 var percentStr = this.getPercentStr(totalAmount, amount)
                 this.drawCenterLabel(chart, percentStr, 12, 25, this.theme!.mutedText);
             } else {
-                this.drawCenterLabel(chart, "average", 10, 23, this.theme!.mutedText);
+                this.drawCenterLabel(chart, "average", 10, 24, this.theme!.mutedText);
                 var otherTotalAmount = getSum(otherRing.items.map(z => z.amount));
                 var label5 =  "$" + new DecimalPipe('en-US').transform(otherTotalAmount, ".0-0")!;
-                this.drawCenterLabel(chart, label5, 12, 35, this.theme!.normalText);
+                this.drawCenterLabel(chart, label5, 12, 36, this.theme!.normalText);
             }
         }
     }
@@ -415,7 +415,7 @@ export class CategoryDonutComponent {
         if (donutData.innerRings.length == 2){
             this.weights = [1, 0.35, 0.7]
         } else {
-            this.weights = [1, 0.2, 0.65]
+            this.weights = [1, 0.25, 0.65]
         }
 
 

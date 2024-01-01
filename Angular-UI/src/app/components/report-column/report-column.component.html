@@ -1,0 +1,48 @@
+<!-- <div class="relative" style="margin: 20px 24px 0 24px; padding-top: 8px;">
+    <h1 style="position: absolute; top: 0; left: 0;">{{title}}</h1>
+    <mer-category-bar (dateClick)="barClicked($event)" [catName]="catName" chartType="short"></mer-category-bar>
+</div> -->
+
+<div class="flex" style="padding: 8px 16px 0 24px">
+    <div style="min-width: 12rem; padding-top: 12px; display: flex; flex-direction: column; justify-content: space-between;">
+        <h1>{{title}}</h1>
+        <div>
+            <div>
+                @if (filteredDate){
+                    <span class="text-muted">Filtered to</span>
+                }
+            </div>
+            <div>
+                @if (!filteredDate){
+                    <span class="text-muted">Click on graph to filter</span>
+                } @else {
+                    <h3 class="mb-0" style="line-height: 18px;">{{filteredDate | date:dateFormat}}</h3>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="flex-grow">
+        <mer-category-bar (dateClick)="barClicked($event)" [catName]="catName" [subcatName]="subcatName" 
+        chartType="short" [showSubcategories]="showSubcategories" [isYearly]="isYearly"></mer-category-bar>
+    </div>
+</div>
+
+<mat-dialog-content class="mat-typography py-2" style="height: 70vh;">
+    <table class="table mat-elevation-z4 mb-0">
+        @for(transaction of filteredTransactions; track transaction){
+        <tr>
+            <td>{{transaction.date | date:'M/d/yy'}}</td>
+            <td>{{transaction.amount | currency}}</td>
+            <td>{{transaction.name}}</td>
+            <td>{{transaction.catName}}</td>
+            <td>{{transaction.subcatName}}</td>
+        </tr>
+        }
+    </table>
+    @if(!filteredTransactions.length){
+    <h3 class="pt-6 text-center">No Transactions in this period</h3>
+    }
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+    <button mat-raised-button mat-dialog-close>close</button>
+</mat-dialog-actions>

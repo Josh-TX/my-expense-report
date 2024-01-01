@@ -31,7 +31,7 @@ export class SubcategorySelectComponent {
         private categoryService: CategoryService) {
     }
     ngOnInit() {
-        this.allSubcategories = this.categoryService.getSubcategories().filter(z => z.catName);
+        this.allSubcategories = this.categoryService.getSubcategories().filter(z => !(z.catName == "other" && z.subcatName == "uncategorized"));
         this.allCatNames = [...new Set(this.allSubcategories.map(z => z.catName))];
         this.filteredCatNames = this.allCatNames;
         this.filteredSubcategories = this.allSubcategories;

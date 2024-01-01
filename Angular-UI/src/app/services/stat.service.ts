@@ -247,7 +247,7 @@ export class StatService {
         for (var subcatYearGroup of subcatYearGroups){
             var stat = this.getCombinedStat(subcatYearGroup.items);
             subcatYearStats.push({
-                year: new Date(subcatYearGroup.key.year, 1,1), 
+                year: new Date(subcatYearGroup.key.year, 0,1), 
                 extrapolatedAmount: stat.sumAmount * 12 / subcatYearGroup.items.length,
                 monthCount: subcatYearGroup.items.length,
                 subcategory: subcatYearGroup.key.subcategory, 

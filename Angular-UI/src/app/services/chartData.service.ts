@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import { SettingsService } from "@services/settings.service";
-import { StatService } from './stat.service';
+import { CatMonthStat, CatYearStat, StatService, SubcatMonthStat, SubcatYearStat } from './stat.service';
 import { getSum, groupBy } from '@services/helpers';
 import { ColorSet, ThemeService } from './theme.service';
+import { CatColorService } from './catColor.service';
 
 export type DonutData = {
     isYearly: boolean,
@@ -34,8 +35,11 @@ export type BarDateItem = {
     items: BarCategoryItem[]
 };
 export type BarCategoryItem = {
+    label: string,
     catName: string,
-    amount: number
+    subcatName?: string | undefined,
+    amount: number,
+    colorSet: ColorSet
 };
 
 @Injectable({
@@ -47,6 +51,7 @@ export class chartDataService {
         private statService: StatService,
         private themeService: ThemeService,
         private settingsService: SettingsService,
+        private catColorService: CatColorService,
         ) {
     }
 
@@ -240,23 +245,37 @@ export class chartDataService {
         }
     }
 
-    getMonthlyBarData() {
-        var stats = this.statService.getCatMonthStats();
+    getMonthlyBarData(catName: string | undefined, subcatName: string | undefined, showSubcategories: boolean) {
+        var stats = (catName && subcatName) || showSubcategories
+            ? this.statService.getSubcatMonthStats().filter(z => (!catName || z.subcategory.catName == catName) && (!subcatName || z.subcategory.subcatName == subcatName))
+            : this.statService.getCatMonthStats().filter(z => !catName || z.catName == catName);
         var maxCategories = this.settingsService.getSettings().maxGraphCategories;
         if (!stats.length) {
             return
         }
         var dateItems: BarDateItem[] = [];
-        var monthGroups = groupBy(stats, z => z.month);
+        var monthGroups = groupBy<SubcatMonthStat | CatMonthStat, Date>(stats, z => z.month);
         for (var monthGroup of monthGroups) {
-            var catItems: BarCategoryItem[] = monthGroup.items.map(catMonthStat => ({
-                catName: catMonthStat.catName,
-                amount: catMonthStat.sumAmount
-            }));
+            var catItems: BarCategoryItem[] = monthGroup.items.map(eitherMonthStat => {
+                var catName = (<any>eitherMonthStat).subcategory
+                     ? (<any>eitherMonthStat).subcategory.catName
+                     : (<any>eitherMonthStat).catName;
+                var subcatName = (<any>eitherMonthStat).subcategory?.subcatName
+                return {
+                    label: subcatName ?? catName,
+                    catName: catName,
+                    subcatName: subcatName,
+                    amount: eitherMonthStat.sumAmount,
+                    colorSet: this.catColorService.getColorSet(catName)
+                }
+            });
             if (catItems.length > maxCategories){
                 catItems = [...catItems.slice(0, maxCategories - 1), {
+                    label: "other",
                     catName: "other",
-                    amount: getSum(catItems.slice(maxCategories - 1).map(z => z.amount))
+                    subcatName: undefined,
+                    amount: getSum(catItems.slice(maxCategories - 1).map(z => z.amount)),
+                    colorSet: this.catColorService.getColorSet("other")
                 }];
             }
             dateItems.push({
@@ -268,6 +287,52 @@ export class chartDataService {
         dateItems.reverse();
         return {
             isYearly: false,
+            items: dateItems
+        };
+    }
+
+    getYearlyBarData(catName: string | undefined, subcatName: string | undefined, showSubcategories: boolean) {
+        var stats = (catName && subcatName) || showSubcategories
+            ? this.statService.getSubcatYearStats().filter(z => (!catName || z.subcategory.catName == catName) && (!subcatName || z.subcategory.subcatName == subcatName))
+            : this.statService.getCatYearStats().filter(z => !catName || z.catName == catName);
+        var maxCategories = this.settingsService.getSettings().maxGraphCategories;
+        if (!stats.length) {
+            return
+        }
+        var dateItems: BarDateItem[] = [];
+        var yearGroups = groupBy<SubcatYearStat | CatYearStat, Date>(stats, z => z.year);
+        for (var yearGroup of yearGroups) {
+            var catItems: BarCategoryItem[] = yearGroup.items.map(eitherYearStat => {
+                var catName = (<any>eitherYearStat).subcategory
+                     ? (<any>eitherYearStat).subcategory.catName
+                     : (<any>eitherYearStat).catName;
+                var subcatName = (<any>eitherYearStat).subcategory?.subcatName;
+                return {
+                    label: subcatName ?? catName,
+                    catName: catName,
+                    subcatName: subcatName,
+                    amount: eitherYearStat.sumAmount,
+                    colorSet: this.catColorService.getColorSet(catName)
+                }
+            });
+            if (catItems.length > maxCategories){
+                catItems = [...catItems.slice(0, maxCategories - 1), {
+                    label: "other",
+                    catName: "other",
+                    subcatName: undefined,
+                    amount: getSum(catItems.slice(maxCategories - 1).map(z => z.amount)),
+                    colorSet: this.catColorService.getColorSet("other")
+                }];
+            }
+            dateItems.push({
+                date: yearGroup.key,
+                items: catItems
+            });
+        }
+        //the bar chart displays the 1st item on the left side, but stats are sorted newest to oldest, hence the reverse:
+        dateItems.reverse();
+        return {
+            isYearly: true,
             items: dateItems
         };
     }

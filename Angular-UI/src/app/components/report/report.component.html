@@ -24,7 +24,12 @@
                 }
             </th>
             @for (header of headerRow; track header){
-            <th [attr.colspan]="header.width">{{header.name}}</th>
+            <th [attr.colspan]="header.width" class="clickable-cell" [class.selected-cell]="header == selectedHeader" (click)="headerClicked(header)">
+                @if (index == 0){
+                    <span class="cat-box" [style]="getColorStyles(header)"></span>
+                }
+                {{header.name}}
+            </th>
             }
             <th>Total</th>
         </tr>

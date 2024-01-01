@@ -52,9 +52,6 @@ export class ReportCellComponent {
     if (!column){
       return "";
     }
-    if (column.catName === ""){
-      return " - (uncategorized)"
-    }
     if (!column.subcatName){
       return " - " + column.catName
     }

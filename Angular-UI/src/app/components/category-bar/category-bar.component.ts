@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, SimpleChanges, effect } from '@angular/core';
+import { Component, EventEmitter, Input, Output, SimpleChanges, WritableSignal, effect, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ChartDataset, ChartEvent, Interaction, InteractionItem, InteractionOptions, Point } from 'chart.js';
 import { Chart, registerables } from 'chart.js';
@@ -9,6 +9,7 @@ import { Theme, ThemeService } from '@services/theme.service';
 import { getSum } from '@services/helpers';
 Chart.register(...registerables);
 
+export type BarChartType = "large" | "short";
 
 @Component({
     selector: 'mer-category-bar',
@@ -17,21 +18,37 @@ Chart.register(...registerables);
     templateUrl: './category-bar.component.html'
 })
 export class CategoryBarComponent {
-    @Input("data") inputData: BarData | undefined;
-    @Output("dateClick") dateClick = new EventEmitter<Date>();
+    @Input("catName") catName: string | undefined;
+    @Input("subcatName") subcatName: string | undefined;
+    @Input("showSubcategories") showSubcategories: boolean = false;
+    @Input("isYearly") isYearlyInput: boolean = false;
+    @Input("chartType") chartType: BarChartType = "large";
+    @Output("dateClick") dateClick = new EventEmitter<Date | undefined>();
+
+    private catName$: WritableSignal<string | undefined>;
+    private subcatName$: WritableSignal<string | undefined>;
+    private showSubcategories$: WritableSignal<boolean>;
+    private isYearly$: WritableSignal<boolean>;
+
     chart: Chart<"bar", number[], string> | undefined;
+    height: number = 500;
+
+
     private dates: Date[] = []
-    private initCalled: boolean = false;
-    private theme: Theme;
+    private theme!: Theme;
     private clickJustFired = false;
 
     constructor(private themeService: ThemeService, private chartDataService: chartDataService) {
-        this.theme = <any>{};
+        this.catName$ = signal(undefined);
+        this.subcatName$ = signal(undefined);
+        this.showSubcategories$ = signal(false);
+        this.isYearly$ = signal(false);
         (<any>Interaction.modes)["indexReverse"] = this.interactionModeFunc.bind(this);
         effect(() => {
-            var chartData = this.chartDataService.getMonthlyBarData();
+            var chartData =  this.isYearly$()
+                ? this.chartDataService.getYearlyBarData(this.catName$(), this.subcatName$(), this.showSubcategories$())
+                : this.chartDataService.getMonthlyBarData(this.catName$(), this.subcatName$(), this.showSubcategories$());
             if (chartData) {
-                var len = chartData.items[0].items.length;
                 this.theme = this.themeService.getTheme();
                 this.renderChart(chartData);
             }
@@ -39,27 +56,24 @@ export class CategoryBarComponent {
     }
 
     ngOnChanges(simpleChanges: SimpleChanges) {
-        if (this.initCalled && this.inputData) {
-            this.renderChart(this.inputData);
-        }
+        this.height = this.chartType == "large" ? 500 : 300;
+        this.catName$.set(this.catName);
+        this.subcatName$.set(this.subcatName);
+        this.showSubcategories$.set(this.showSubcategories);
+        this.isYearly$.set(this.isYearlyInput);
     }
 
-    ngOnInit() {
-        this.initCalled = true;
-        if (this.inputData) {
-            this.renderChart(this.inputData);
-        }
-    }
 
     //ChartJs' interactionModes are used to determine what sets of things are highlighted when there's a mouse event
     //This custom interactionMode causes the selection to be in reverse order, which reverse the order of the tooltip
     private interactionModeFunc(chart: Chart, e: ChartEvent, options: InteractionOptions, useFinalPosition?: boolean): InteractionItem[] {
         var indexItems = Interaction.modes.index(chart, e, options, useFinalPosition);
-        if (e.type == "click" && indexItems.length) {
+        if (e.type == "click") {
+            var date = indexItems.length ? this.dates[indexItems[0].index] : undefined;
             //this code runs twice per click, but we only wanna emit once per click
             if (!this.clickJustFired) {
                 this.clickJustFired = true;
-                this.dateClick.emit(this.dates[indexItems[0].index]);
+                this.dateClick.emit(date);
                 setTimeout(() => {
                     this.clickJustFired = false;
                 }, 25);
@@ -71,21 +85,19 @@ export class CategoryBarComponent {
     //private outerLabelAfterDraw(chart: Chart<TType>, args: EmptyObject, options: O)
 
     private renderChart(data: BarData) {
-        var categoryNames = data.items[0].items.map(z => z.catName);
+        var catItems = data.items[0].items;
         var datepipe = new DatePipe("en-US");
         this.dates = data.items.map(z => z.date);
-        var dateStrings = data.items.map(z => datepipe.transform(z.date, "MMM y")!);
+        var dateFormat = this.isYearlyInput ? 'y' : 'MMM y'
+        var dateStrings = data.items.map(z => datepipe.transform(z.date, dateFormat)!);
 
-        var datasets: ChartDataset<any, number[]>[] = categoryNames.map((catName, i) => {
-            var colorSet = catName == "other"
-                ? this.theme.otherColorSet
-                : this.theme.colorSets[i % this.theme.colorSets.length];
+        var datasets: ChartDataset<any, number[]>[] = catItems.map((catItem, i) => {
             return {
-                label: catName,
+                label: catItem.label,
                 data: [],
-                backgroundColor: colorSet.background,
-                hoverBackgroundColor: colorSet.hover,
-                borderColor: colorSet.border,
+                backgroundColor: catItem.colorSet.background,
+                hoverBackgroundColor: catItem.colorSet.hover,
+                borderColor: catItem.colorSet.border,
                 borderWidth: 1,
                 borderSkipped: false
             }
@@ -105,17 +117,29 @@ export class CategoryBarComponent {
                 datasets: datasets
             },
             options: {
+                maintainAspectRatio: false,
                 interaction: {
                     mode: <any>"indexReverse",
                 },
                 scales: {
                     x: {
                         stacked: true,
+                        ticks: {
+                            color: this.theme.normalText
+                        }
                     },
                     y: {
-                        stacked: true
+                        stacked: true,
+                        ticks: {
+                            color: this.theme.mutedText,
+                            callback: function(value, index, ticks) {
+                                return '$' + new DecimalPipe("en-US").transform(<any>value, ".0-0");
+                            }
+                        },
+                        
                     }
                 },
+                aspectRatio: 3,
                 plugins: {
                     tooltip: {
                         callbacks: {
@@ -133,6 +157,13 @@ export class CategoryBarComponent {
                             return true;
                         },
                     },
+                    legend: {
+                        position: this.chartType == "short" ? "right" : "top",
+                        reverse: true,
+                        labels: {
+                            color: this.theme.normalText
+                        }
+                    }
                 }
             }
         });
