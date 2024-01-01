@@ -1,82 +1,106 @@
 <h2 mat-dialog-title>Settings</h2>
 <mat-dialog-content class="mat-typography">
-  <div class="grid grid-cols-4 gap-4">
-    <mat-form-field>
-      <mat-label>Recent Month Count</mat-label>
-      <input matInput type="number" [(ngModel)]="settings.recentMonthCount" (ngModelChange)="change()">
-    </mat-form-field>
-    <p class="col-span-3 mb-0">The Monthly Report calculates the Average and Standard Deviation using just the "Recent Months". 
-      The "Recent Months" affects the color highlighting of the monthly report, causing specifically the recent months to have a more even mix of positive colors and negative colors (default 12)
-    </p>
-  </div>
-  <hr class="my-4">
-  <div class="grid grid-cols-4 gap-4">
-    <mat-form-field>
-      <mat-label>Required Days for Latest Month</mat-label>
-      <input matInput type="number" [(ngModel)]="settings.requiredDaysForLatestMonth" (ngModelChange)="change()">
-    </mat-form-field>
-    <p class="col-span-3 mb-0">
-      The monthly report groups transactions by months and displays a row for each month. 
-      But the most recent month might have just a few days of transactions, and you probably don't want the report to have a row for an incomplete month.
-      For example, if you choose 25, then in order for Jan 2023 to be included, there must be a transaction on Jan 25th 2023 or any time later.
-    </p>
-  </div>
-  <hr class="my-4">
-  <div class="grid grid-cols-4 gap-4">
-    <mat-form-field>
-      <mat-label>Maximum Rendered Transaction Rows</mat-label>
-      <input matInput type="number" [(ngModel)]="settings.maxRenderTransactionRows" (ngModelChange)="change()">
-    </mat-form-field>
-    <p class="col-span-3">
-      If you have tons of transactions, the browser might struggle to render them. If the transactions page seems slow, try lowering this.
-    </p>
-  </div>
-  <hr class="my-4">
-  <div class="grid grid-cols-4 gap-4">
-    <mat-form-field>
-      <mat-label>Report color severe z-score</mat-label>
-      <input matInput type="number" [(ngModel)]="settings.reportColorSevereZScore" (ngModelChange)="change()">
-    </mat-form-field>
-    <p class="col-span-3 mb-0">
-      To determine what color a report cell should be, it calculates a cell's "Z-score".
-      A z-score is the difference from average, divided by the standard deviation. 
-      You can think of it as "how far away from the average, in terms of standard deviation units"
-      In general, 99.7% of cells will have a z-score between negative 3 and positive 3.
-    </p>
-  </div>
-  <hr class="my-4">
-  <div class="grid grid-cols-4 gap-4">
-    <mat-form-field>
-      <mat-label>Report color deadzone</mat-label>
-      <input matInput type="number" [(ngModel)]="settings.reportColorDeadZone" (ngModelChange)="change()">
-    </mat-form-field>
-    <p class="col-span-3 mb-0">
-      The report page might have a column with a low standard deviation, and this can cause unimportant changes to be a severe color. 
-      The deadzone reduces the difference from the average before calculating the z-score.
-      For example, if a column has an average of $50 and a standard deviation of 4, then a cell with $66 would normally be z+4, 
-      but a deadzone of $5 would treat the cell as if it was just $61 so the z-score is +2.75
-    </p>
-  </div>
-  <hr class="my-4">
-  <div class="grid grid-cols-4 gap-4">
-    <mat-form-field>
-      <mat-label>Report color half deadzone</mat-label>
-      <input matInput type="number" [(ngModel)]="settings.reportColorHalfDeadZone" (ngModelChange)="change()">
-    </mat-form-field>
-    <p class="col-span-3 mb-0">
-      This is similar to the report color deadzone, but instead of completely eliminating the difference, the difference within this zone is halved. 
-      Note that this halving occurs AFTER calculating the report color deadzone. 
-      For example, a column has an average of $50 & a standard deviation of 4, a deadzone of $5 & the half-deadzone of $10, and the cell's amount was $66.
-      First the deadzone would reduce the difference from $16 to $11, then the half-deadzone would reduce it from $11 to $6, so the z-score is +1.5
-    </p>
-  </div>
-  <hr class="my-4">
-  <div class="text-center">
-    <button mat-raised-button (click)="reset()">reset to default</button>
-  </div>
+    <div class="grid grid-cols-4 gap-4">
+        <mat-form-field>
+            <mat-label>Recent Month Count</mat-label>
+            <input matInput type="number" [(ngModel)]="settings.recentMonthCount" (ngModelChange)="change()">
+        </mat-form-field>
+        <p class="col-span-3 mb-0">The Monthly Report calculates the Average and Standard Deviation using just the
+            "Recent Months".
+            The "Recent Months" affects the color highlighting of the monthly report, causing specifically the recent
+            months to have a more even mix of positive colors and negative colors (default 12)
+        </p>
+    </div>
+    <hr class="my-4">
+    <div class="grid grid-cols-4 gap-4">
+        <mat-form-field>
+            <mat-label>Required Days for Latest Month</mat-label>
+            <input matInput type="number" [(ngModel)]="settings.requiredDaysForLatestMonth" (ngModelChange)="change()">
+        </mat-form-field>
+        <p class="col-span-3 mb-0">
+            The monthly report groups transactions by months and displays a row for each month.
+            But the most recent month might have just a few days of transactions, and you probably don't want the report
+            to have a row for an incomplete month.
+            For example, if you choose 25, then in order for Jan 2023 to be included, there must be a transaction on Jan
+            25th 2023 or any time later.
+        </p>
+    </div>
+    <hr class="my-4">
+    <div class="grid grid-cols-4 gap-4">
+        <mat-form-field>
+            <mat-label>Max Graph Categories</mat-label>
+            <input matInput type="number" [(ngModel)]="settings.maxGraphCategories" (ngModelChange)="change()">
+        </mat-form-field>
+        <p class="col-span-3 mb-0">
+            The various graphs will display the categories ordered by amount (based on the recent average).
+            So the highest category will be 1st and colored red, the 2nd highest category will be 2nd & blue, etc.
+            If you have many categories and find it overwhelming, you can limit how many different categories can be displayed on the graphs.
+            Any category in excess of this limit will be displayed as a subcategory of the "other" category. 
+        </p>
+    </div>
+
+    <hr class="my-4">
+    <div class="grid grid-cols-4 gap-4">
+        <mat-form-field>
+            <mat-label>Maximum Rendered Transaction Rows</mat-label>
+            <input matInput type="number" [(ngModel)]="settings.maxRenderTransactionRows" (ngModelChange)="change()">
+        </mat-form-field>
+        <p class="col-span-3">
+            If you have tons of transactions, the browser might struggle to render them. If the transactions page seems
+            slow, try lowering this.
+        </p>
+    </div>
+    <hr class="my-4">
+    <div class="grid grid-cols-4 gap-4">
+        <mat-form-field>
+            <mat-label>Report color severe z-score</mat-label>
+            <input matInput type="number" [(ngModel)]="settings.reportColorSevereZScore" (ngModelChange)="change()">
+        </mat-form-field>
+        <p class="col-span-3 mb-0">
+            To determine what color a report cell should be, it calculates a cell's "Z-score".
+            A z-score is the difference from average, divided by the standard deviation.
+            You can think of it as "how far away from the average, in terms of standard deviation units"
+            In general, 99.7% of cells will have a z-score between negative 3 and positive 3.
+        </p>
+    </div>
+    <hr class="my-4">
+    <div class="grid grid-cols-4 gap-4">
+        <mat-form-field>
+            <mat-label>Report color deadzone</mat-label>
+            <input matInput type="number" [(ngModel)]="settings.reportColorDeadZone" (ngModelChange)="change()">
+        </mat-form-field>
+        <p class="col-span-3 mb-0">
+            The report page might have a column with a low standard deviation, and this can cause unimportant changes to
+            be a severe color.
+            The deadzone reduces the difference from the average before calculating the z-score.
+            For example, if a column has an average of $50 and a standard deviation of 4, then a cell with $66 would
+            normally be z+4,
+            but a deadzone of $5 would treat the cell as if it was just $61 so the z-score is +2.75
+        </p>
+    </div>
+    <hr class="my-4">
+    <div class="grid grid-cols-4 gap-4">
+        <mat-form-field>
+            <mat-label>Report color half deadzone</mat-label>
+            <input matInput type="number" [(ngModel)]="settings.reportColorHalfDeadZone" (ngModelChange)="change()">
+        </mat-form-field>
+        <p class="col-span-3 mb-0">
+            This is similar to the report color deadzone, but instead of completely eliminating the difference, the
+            difference within this zone is halved.
+            Note that this halving occurs AFTER calculating the report color deadzone.
+            For example, a column has an average of $50 & a standard deviation of 4, a deadzone of $5 & the
+            half-deadzone of $10, and the cell's amount was $66.
+            First the deadzone would reduce the difference from $16 to $11, then the half-deadzone would reduce it from
+            $11 to $6, so the z-score is +1.5
+        </p>
+    </div>
+    <hr class="my-4">
+    <div class="text-center">
+        <button mat-raised-button (click)="reset()">reset to default</button>
+    </div>
 
 
-  <!-- <div class="grid grid-cols-4 gap-4">
+    <!-- <div class="grid grid-cols-4 gap-4">
     <p class="col-span-3">
       You can automatically have income transactions (transactions with a negative amount) assigned the "income" category & "income" subcategory. 
     </p>
@@ -89,6 +113,6 @@
 
 </mat-dialog-content>
 <mat-dialog-actions align="end">
-  <button mat-raised-button mat-dialog-close>close</button>
-  <button mat-raised-button color="primary" (click)="reload()">reload</button>
+    <button mat-raised-button mat-dialog-close>close</button>
+    <button mat-raised-button color="primary" (click)="reload()">reload</button>
 </mat-dialog-actions>

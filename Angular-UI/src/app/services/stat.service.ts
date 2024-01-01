@@ -2,7 +2,7 @@ import { Injectable, Signal, WritableSignal, computed, signal } from '@angular/c
 import { Settings, SettingsService } from "@services/settings.service";
 import { Transaction, TransactionService } from "@services/transaction.service";
 import { CategoryService, Subcategory } from "@services/category.service";
-import { getStartOfMonth, getDistinctBySelectorFunc, groupBy, getSum, sortBy, sortByDesc, areValuesSame, roundToCent, getSD, getCombinedSet } from "@services/helpers";
+import { getStartOfMonth, groupBy, getSum, sortBy, sortByDesc, areValuesSame, roundToCent, getSD, getCombinedSet } from "@services/helpers";
 
 export type Stat = {
     trxnCount: number,
@@ -92,6 +92,13 @@ export class StatService {
     getCurrentMonth(): Date | undefined {
         if (this.catMonthStats$().length){
             return this.catMonthStats$()[0].month;
+        }
+        return undefined;
+    }
+
+    getCurrentYear(): Date | undefined {
+        if (this.catYearStats$().length){
+            return this.catYearStats$()[0].year;
         }
         return undefined;
     }

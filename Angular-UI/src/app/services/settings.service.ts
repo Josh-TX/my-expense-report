@@ -31,7 +31,7 @@ export class SettingsService {
   private createDefault(): Settings{
     return {
       recentMonthCount: 12,
-      maxCategoryColors: 4,
+      maxGraphCategories: 9,
       requiredDaysForLatestMonth: 25,
       maxRenderTransactionRows: 2000,
       reportColorDeadZone: 5,
@@ -44,7 +44,7 @@ export class SettingsService {
 
 export type Settings = {
   recentMonthCount: number,
-  maxCategoryColors: number,
+  maxGraphCategories: number,
   requiredDaysForLatestMonth: number,
   maxRenderTransactionRows: number,
   reportColorDeadZone: number,

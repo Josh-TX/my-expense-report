@@ -2,7 +2,8 @@ import { Injectable, WritableSignal, computed, signal, Signal, effect, untracked
 import { LocalSettingsService } from "@services/localSettings.service";
 
 export type Theme = {
-    colorSets: ColorSet[]
+    colorSets: ColorSet[],
+    otherColorSet: ColorSet,
     normalText: string,
     mutedText: string,
     normalBackground: string
@@ -40,19 +41,20 @@ export class ThemeService {
         return this.darkMode$();
     }
 
-    getTheme(colorCount: number, hasOther: boolean): Theme {
+    getTheme(): Theme {
         var baseTheme = this.currentTheme$();
-        var notGrayColorCount = Math.min(8, colorCount - (hasOther ? 1 : 0))
-        var copy: Theme = {
-            colorSets: baseTheme.colorSets.slice(0, notGrayColorCount),
-            mutedText: baseTheme.mutedText,
-            normalText: baseTheme.normalText,
-            normalBackground: baseTheme.normalBackground
-        }
-        if (hasOther){
-            copy.colorSets.push(baseTheme.colorSets[8]);
-        }
-        return copy;
+        return baseTheme;
+        // var notGrayColorCount = Math.min(8, colorCount - (hasOther ? 1 : 0))
+        // var copy: Theme = {
+        //     colorSets: baseTheme.colorSets.slice(0, notGrayColorCount),
+        //     mutedText: baseTheme.mutedText,
+        //     normalText: baseTheme.normalText,
+        //     normalBackground: baseTheme.normalBackground
+        // }
+        // if (hasOther){
+        //     copy.colorSets.push(baseTheme.colorSets[8]);
+        // }
+        // return copy;
     }
 
     private createLightTheme(): Theme {
@@ -79,7 +81,8 @@ export class ThemeService {
             })
         }
         var theme = {
-            colorSets: colorSets,
+            colorSets: colorSets.slice(0,8),
+            otherColorSet: colorSets[8],
             mutedText: "#AAAAAA",
             normalText: "#444444",
             normalBackground: "#FFFFFF"
@@ -109,7 +112,8 @@ export class ThemeService {
             })
         }
         return {
-            colorSets: colorSets,
+            colorSets: colorSets.slice(0,8),
+            otherColorSet: colorSets[8],
             mutedText: "#888888",
             normalText: "#FFFFFF",
             normalBackground: "#303030"

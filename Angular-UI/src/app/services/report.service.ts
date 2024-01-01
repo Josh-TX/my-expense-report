@@ -2,8 +2,8 @@ import { Injectable } from '@angular/core';
 import { Settings, SettingsService } from "@services/settings.service";
 import { Transaction, TransactionService } from "@services/transaction.service";
 import { StatService } from './stat.service';
-import { CategoryService, Subcategory } from './category.service';
-import { getSum, groupBy, getDistinct, getDistinctBySelectorFunc, areValuesSame } from '@services/helpers';
+import { CategoryService } from './category.service';
+import { getSum, groupBy, areValuesSame } from '@services/helpers';
 
 export type Report = {
     headerRows: ReportHeader[][]

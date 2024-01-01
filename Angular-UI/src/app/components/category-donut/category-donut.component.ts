@@ -1,19 +1,21 @@
 import { Component, EventEmitter, Input, Output, SimpleChanges, WritableSignal, effect, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ChartEvent, Interaction, InteractionItem, InteractionOptions, Point } from 'chart.js';
+import { ChartDataset, ChartEvent, Interaction, InteractionItem, InteractionOptions } from 'chart.js';
 import { Chart, registerables } from 'chart.js';
-import { DatePipe, CurrencyPipe, DecimalPipe } from '@angular/common';
-import { Subcategory } from '@services/category.service';
-import { OuterLableDrawer } from './outer-label-drawer';
-import { ColorSet, Theme, ThemeService } from '@services/theme.service';
-import { getDistinctByProp, getSum } from '@services/helpers';
-import { DonutData, chartDataService } from '@services/chartData.service';
+import { DatePipe, DecimalPipe } from '@angular/common';
+import { OuterLableDrawer, outerLabelData } from './outer-label-drawer';
+import { Theme, ThemeService } from '@services/theme.service';
+import { getSum } from '@services/helpers';
+import { DonutData, DonutDataRing, chartDataService } from '@services/chartData.service';
 Chart.register(...registerables);
 
 export type DonutClickData = {
     catName: string,
-    subcatName: string | undefined
+    subcatName: string | undefined,
+    movedToOtherCatNames: string[]
 }
+
+export type DonutChartType = "both" | "category" | "subcategory"
 
 @Component({
     selector: 'mer-category-donut',
@@ -22,27 +24,27 @@ export type DonutClickData = {
     templateUrl: './category-donut.component.html'
 })
 export class CategoryDonutComponent {
-    @Input("currentDate") inputCurrentDate: Date | undefined;
+    @Input("currentDate") currentDateInput: Date | undefined;
+    @Input("isYearly") isYearlyInput: boolean = false;
+    @Input("chartType") inputChartType: DonutChartType = "both";
     @Output("itemClick") clickEmitter = new EventEmitter<DonutClickData | null>();
-    private month$: WritableSignal<Date | undefined>;
+    height: number = 500;
+
+    private date$: WritableSignal<Date | undefined>;
+    private isYearly$: WritableSignal<boolean>;
+    private chartType$: WritableSignal<DonutChartType>;
+    private datasetIndexRingMap: { [datasetIndex: number]: DonutDataRing } = {}
 
     chart: Chart<"doughnut", number[], string> | null = null;
     private theme: Theme | undefined;
-    private categoryColorSets: ColorSet[] = [];
-    private subcategoryColorSets: ColorSet[] = [];
-
-    private categoryNames: string[] = [];
-    private subcategories: Subcategory[] = [];
-    private categoryAmounts: number[] = [];
-    private subcategoryAmounts: number[] = [];
-    private avgCategoryAmounts: number[] = [];
-    private avgSubcategoryAmounts: number[] = [];
-    private maxTotal: number = 0;
-    private minTotal: number = 0;
+    private donutData!: DonutData; 
 
     private date: string | undefined;
+
     private averageType: string | undefined;
     private clickJustFired = false;
+    private maxTotal: number = 0;
+    private minTotal: number = 0;
 
     private activeItems: InteractionItem[] = [];
     private clickedItems: InteractionItem[] = [];
@@ -52,23 +54,38 @@ export class CategoryDonutComponent {
     private innerRotation: number = 0;
     private prevRotation: number = 0;
     private innerRotationStartTime: number = 0;
+    private weights: [number, number, number] = [0,0,0];
+    private outerRingCount: number = 2;
 
     constructor(private themeService: ThemeService, private chartDataService: chartDataService) {
-        this.month$ = signal(undefined);
+        this.date$ = signal(undefined);
+        this.isYearly$ = signal(false);
+        this.chartType$ = signal("both")
         var intModes = (<any>Interaction.modes);
         intModes.currentAverageSync = this.interactionModeFunc.bind(this);
         effect(() => {
-            var chartData = this.chartDataService.getMonthlyDonutData(this.month$());
+            var chartData = this.isYearly$()
+                ? this.chartDataService.getYearlyDonutData(this.date$())
+                : this.chartDataService.getMonthlyDonutData(this.date$());
             if (chartData){
-                var len = chartData.categoryItems.length;
-                this.theme = this.themeService.getTheme(len, chartData.categoryItems[len - 1].catName == "other");
+                if (this.chartType$() == "category"){
+                    chartData.outerRings = [chartData.outerRings[0]];
+                    chartData.innerRings = [chartData.innerRings[0]]
+                } else if (this.chartType$() == "subcategory"){
+                    chartData.outerRings = [chartData.outerRings[1]];
+                    chartData.innerRings = [chartData.innerRings[1]]
+                }
+                this.theme = this.themeService.getTheme();
                 this.renderChart(chartData);
             }
         })
     }
 
     ngOnChanges(simpleChanges: SimpleChanges) {
-        this.month$.set(this.inputCurrentDate);
+        this.date$.set(this.currentDateInput);
+        this.isYearly$.set(this.isYearlyInput);
+        this.chartType$.set(this.inputChartType);
+        this.height = this.inputChartType == "both" ? 500 : 280;
     }
 
     //ChartJs' interactionModes are used to determine what sets of things are highlighted when there's a mouse event
@@ -78,7 +95,9 @@ export class CategoryDonutComponent {
         var pointItems = Interaction.modes.point(chart, e, options, useFinalPosition);
         this.activeItems = [];
         if (pointItems.length == 1) {
-            var otherDatasetIndex = (pointItems[0].datasetIndex + 3) % 6;
+            var otherDatasetIndex = this.outerRingCount == 2
+                ? (pointItems[0].datasetIndex + 3) % 6
+                : (pointItems[0].datasetIndex + 2) % 4
             var otherIndexItem = indexItems.find(z => z.datasetIndex == otherDatasetIndex)!;
             this.activeItems = [...pointItems, otherIndexItem];
         }
@@ -87,21 +106,17 @@ export class CategoryDonutComponent {
             //using chart.setActiveElements is unreliable (it would deselect when the mouse leaves the canvas)
             //therefore, I'll manually update the background colors to make the clicked items appear selected
             var index = this.clickedItems.length ? this.clickedItems[0].index : null;
-            var categoryBackgroundsCopy = this.categoryColorSets.map(z => z.background);
-            var subcategoryBackgroundsCopy = this.subcategoryColorSets.map(z => z.background);
-            if (index != null){
-                var isSubcategory = this.clickedItems.some(z => z.datasetIndex == 1);
-                if (isSubcategory){
-                    subcategoryBackgroundsCopy[index] = this.subcategoryColorSets[index].hover;
-                } else {
-                    categoryBackgroundsCopy[index] = this.categoryColorSets[index].hover;
+            var datasetIndexes = this.outerRingCount == 2 ? [0,1,3,4] : [0,2];
+            for (var datesetIndex of datasetIndexes){
+                var ring =  this.datasetIndexRingMap[datesetIndex];
+                var backgrounds = ring.items.map(z => z.colorSet.background);
+                if (index != null && this.clickedItems.map(z => z.datasetIndex).includes(datesetIndex)){
+                    backgrounds = [...backgrounds]
+                    backgrounds[index] =  ring.items[index].colorSet.hover;
                 }
+                chart.data.datasets[datesetIndex].backgroundColor = backgrounds;
             }
-            chart.data.datasets[0].backgroundColor = categoryBackgroundsCopy;
-            chart.data.datasets[3].backgroundColor = categoryBackgroundsCopy;
-            chart.data.datasets[1].backgroundColor = subcategoryBackgroundsCopy;
-            chart.data.datasets[4].backgroundColor = subcategoryBackgroundsCopy;
-            var updated = this.rotateAverage(<any>chart);
+            var updated = this.rotateInner(<any>chart);
             if (!updated){
                 chart.update();
             }
@@ -109,18 +124,12 @@ export class CategoryDonutComponent {
                 this.clickJustFired = true;
                 var clickData: DonutClickData | undefined;
                 if (index != null){
-                    var isSubcategory = this.clickedItems.some(z => z.datasetIndex == 1);
-                    if (isSubcategory){
-                        clickData = {
-                            catName: this.subcategories[index].catName,
-                            subcatName:  this.subcategories[index].subcatName,
-                        }
-                    } else {
-                        clickData = {
-                            catName: this.categoryNames[index],
-                            subcatName: undefined,
-                        }
-                    }
+                    var ring = this.datasetIndexRingMap[pointItems[0].datasetIndex];
+                    clickData = {
+                        catName: ring.items[index].catName,
+                        subcatName: ring.items[index].subcatName,
+                        movedToOtherCatNames: [...(ring.items[index].containsMoveToOtherCatNames || [])]
+                    };
                 }
                 this.clickEmitter.emit(clickData);
                 setTimeout(() => {
@@ -130,108 +139,128 @@ export class CategoryDonutComponent {
         }
         return this.activeItems;
     }
-
-    //draws the labels in the center of the donut
     private innerLabelBeforeDraw(chart: Chart<"doughnut", number[], unknown>, args: { cancelable: true }, options: any): boolean | void {
-        var ctx = chart.ctx;
-        var isSubcategory = false;
-        var isAverage = false;
-        var index: number | undefined; //a null index means we display the total
-        var color = this.theme!.normalText;
         var items = this.activeItems.length == 2 
             ? this.activeItems : this.clickedItems;
-        if (items.length == 2) {
-            isSubcategory = items.some(z => z.datasetIndex == 1);
-            isAverage = items[0].datasetIndex > 2; //the first activeItem
-            index = items[0].index;//both activeItems should have the same index
-            if (isSubcategory){
-                var catIndex = getDistinctByProp(this.subcategories.slice(0, index + 1), "catName").length - 1;
-                color = this.theme!.colorSets[catIndex].text;
+        if (this.outerRingCount == 2){
+            var innerActive = items.length ? items[0].datasetIndex > 2 : false;
+            var mainRing = this.donutData.outerRings[0];
+            var otherRing = this.donutData.innerRings[0];
+            var index = 0;
+            var labelColor = this.theme!.normalText;
+            var label1 = "";
+            var label2 = "Total";
+            if (items.length){
+                if (items[0].datasetIndex == 1){
+                    mainRing = this.donutData.outerRings[1];
+                    otherRing = this.donutData.innerRings[1];
+                } else if (items[0].datasetIndex == 3){
+                    mainRing = this.donutData.innerRings[0];
+                    otherRing = this.donutData.outerRings[0];
+                } else if (items[0].datasetIndex == 4){
+                    mainRing = this.donutData.innerRings[1];
+                    otherRing = this.donutData.outerRings[1];
+                }
+                index = items[0].index;//both activeItems should have the same index
+                labelColor = mainRing.items[index].colorSet.text;
+                if (items.some(z => z.datasetIndex == 0)){
+                    label2 = this.donutData.outerRings[0].items[index].label;
+                } else {
+                    if (!this.donutData.outerRings[1].items[index].movedToOther){
+                        label1 = this.donutData.outerRings[1].items[index].catName;
+                    }
+                    label2 = this.donutData.outerRings[1].items[index].label;
+                }
+            } 
+            if (label1){
+                this.drawCenterLabel(chart, label1, 12, -80, labelColor);
+            }
+            this.drawCenterLabel(chart, label2, 20, -62, labelColor);
+
+            var label3 = innerActive ? "monthly average" : this.date!;
+            this.drawCenterLabel(chart, label3, 12, -37, this.theme!.mutedText);
+
+            var totalAmount = getSum(mainRing.items.map(z => z.amount))
+            var amount = items.length 
+                ? mainRing.items[index].amount
+                : totalAmount;
+
+            var label4 =  "$" + new DecimalPipe('en-US').transform(amount, ".0-0")!;
+            this.drawCenterLabel(chart, label4, 36, -12, labelColor);
+
+            if (items.length){
+                var percentStr = this.getPercentStr(totalAmount, amount)
+                this.drawCenterLabel(chart, percentStr, 20, +13, this.theme!.mutedText);
+            }
+
+            var label6 = !innerActive ? "monthly average" : this.date!;
+            this.drawCenterLabel(chart, label6, 12, +55, this.theme!.mutedText);
+
+            var otherTotalAmount = getSum(otherRing.items.map(z => z.amount));
+            var otherAmount = items.length 
+                ? otherRing.items[index].amount
+                : otherTotalAmount;
+            var label7 = "$" + new DecimalPipe('en-US').transform(otherAmount, ".0-0")!;
+            this.drawCenterLabel(chart, label7, 20, +75, labelColor);
+
+            if (items.length){
+                var percentStr = this.getPercentStr(otherTotalAmount, otherAmount)
+                this.drawCenterLabel(chart, percentStr, 12, +90, this.theme!.mutedText);
+            }
+        } else {
+            var innerActive = items.length ? items[0].datasetIndex > 1 : false;
+            var mainRing = this.donutData.outerRings[0];
+            var otherRing = this.donutData.innerRings[0];
+            var index = 0;
+            var labelColor = this.theme!.normalText;
+            var label1 = "Total";
+            if (items.length){
+                if (items[0].datasetIndex == 2){
+                    mainRing = this.donutData.innerRings[0];
+                    otherRing = this.donutData.outerRings[0];
+                }
+                index = items[0].index;//both activeItems should have the same index
+                labelColor = mainRing.items[index].colorSet.text;
+                label1 = mainRing.items[index].label;
+            } 
+            this.drawCenterLabel(chart, label1, 14, -35, labelColor);
+
+            var label3 = innerActive ? "average" : this.date!;
+            this.drawCenterLabel(chart, label3, 12, -17, this.theme!.mutedText);
+
+            var totalAmount = getSum(mainRing.items.map(z => z.amount))
+            var amount = items.length 
+                ? mainRing.items[index].amount
+                : totalAmount;
+
+            var label4 =  "$" + new DecimalPipe('en-US').transform(amount, ".0-0")!;
+            this.drawCenterLabel(chart, label4, 28, 5, labelColor);
+
+            if (items.length){
+                var percentStr = this.getPercentStr(totalAmount, amount)
+                this.drawCenterLabel(chart, percentStr, 12, 25, this.theme!.mutedText);
             } else {
-                color = this.theme!.colorSets[index].text;
+                this.drawCenterLabel(chart, "average", 10, 23, this.theme!.mutedText);
+                var otherTotalAmount = getSum(otherRing.items.map(z => z.amount));
+                var label5 =  "$" + new DecimalPipe('en-US').transform(otherTotalAmount, ".0-0")!;
+                this.drawCenterLabel(chart, label5, 12, 35, this.theme!.normalText);
             }
         }
-
-
+    }
+    private drawCenterLabel(chart: Chart<any>, label: string, size: number, yOffset: number, color: string){
         var { top, bottom, left, right, width, height } = chart.chartArea;
         var cx = left + width / 2;
         var cy = top + height / 2;
-
-        ctx.textBaseline = "middle";
-        ctx.textAlign = "right";
-        ctx.fillStyle = color;
-        var xOffset = +45;
-        var yOffset = -60;
-        if (index != null) {
-            var primaryLabel = isSubcategory 
-                ? this.subcategories[index].subcatName || this.subcategories[index].catName
-                : this.categoryNames[index];
-            var secondaryLabel = isSubcategory ? this.subcategories[index].catName : null;
-            if (secondaryLabel) {
-                ctx.font = "12px Arial";
-                ctx.fillText(this.subcategories[index].catName, cx + xOffset, cy + yOffset - 18);
-            } 
-            if (!primaryLabel){
-                ctx.fillStyle = this.theme!.mutedText;
-                primaryLabel = "uncategorized"
-            }
-            ctx.font = "20px Arial";
-            ctx.fillText(primaryLabel, cx + xOffset, cy + yOffset);
-        } else { //since index is null, display the total
-            ctx.font = "20px Arial";
-            ctx.fillText("Total", cx + xOffset, cy + yOffset);
-        }
-
-        var label = isAverage ? "monthly average" : this.date!;
-        var amounts = this.getAmounts(isSubcategory, isAverage);
-        var amount = index != null ? amounts[index] : amounts.reduce((a, b) => a + b, 0);
-        var amountStr = "$" + new DecimalPipe('en-US').transform(amount, ".0-0")!;
-
-        ctx.font = "12px Arial";
-        ctx.textAlign = "right";
-        ctx.fillStyle = this.theme!.mutedText;
-        ctx.fillText(label, cx + 45, cy - 35);
-        ctx.font = "36px Arial";
-        ctx.fillStyle = color;
-        ctx.fillText(amountStr, cx + 45, cy - 10);
-        if (index != null) {
-            ctx.font = "20px Arial";
-            ctx.fillStyle = this.theme!.mutedText;
-            ctx.fillText(this.getPercent(amounts, index), cx + 45, cy + 15);
-        }
-
-        var otherLabel = !isAverage ? "monthly average" : this.date!;
-        var otherAmounts = this.getAmounts(isSubcategory, !isAverage);
-        var otherAmount = index != null ? otherAmounts[index] : otherAmounts.reduce((a, b) => a + b, 0);
-        var otherAmountStr = "$" + new DecimalPipe('en-US').transform(otherAmount, ".0-0")!;
-
-        ctx.font = "12px Arial";
-        ctx.fillStyle = this.theme!.mutedText;
-        ctx.fillText(otherLabel, cx + 45, cy + 57);
-        ctx.font = "20px Arial";
-        ctx.fillStyle = color;
-        ctx.fillText(otherAmountStr, cx + 45, cy + 75);
-        if (index != null) {
-            ctx.font = "12px Arial";
-            ctx.fillStyle = this.theme!.mutedText;
-            ctx.fillText(this.getPercent(otherAmounts, index), cx + 45, cy + 92);
-        }
+        chart.ctx.textBaseline = "middle";
+        chart.ctx.textAlign = "right";
+        chart.ctx.font = size + "px Arial";
+        chart.ctx.fillStyle = color;
+        var x = this.outerRingCount == 2 ? cx + 45 : cx + 40;
+        chart.ctx.fillText(label, x, cy + yOffset);
     }
 
-    private getAmounts(isSubcategory: boolean, isAverage: boolean): number[] {
-        if (isSubcategory) {
-            return isAverage
-                ? this.avgSubcategoryAmounts
-                : this.subcategoryAmounts
-        }
-        return isAverage
-            ? this.avgCategoryAmounts
-            : this.categoryAmounts
-    }
-
-    private getPercent(amounts: number[], index: number): string {
-        var sumAmount = amounts.reduce((a, b) => a + b, 0);
-        var percent = (amounts[index] / sumAmount * 100);
+    private getPercentStr(sumAmount: number, amount: number): string {
+        var percent = (amount / sumAmount * 100);
         var precision = percent >= 10 ? 3 : (percent > 1 ? 2 : 1);
         return percent.toPrecision(precision) + "%";
     }
@@ -280,7 +309,7 @@ export class CategoryDonutComponent {
         ctx.fillStyle = this.theme!.mutedText + "20";
         ctx.fill();
         var requiredDegreesForLabel = isInner ? 20 : 15;
-        if (360 - circum > requiredDegreesForLabel){
+        if (this.outerRingCount == 2 && 360 - circum > requiredDegreesForLabel){
             var amount = this.maxTotal - this.minTotal;
             var amountStr = "$" + new DecimalPipe('en-US').transform(amount, ".0-0")!;
             var midAngle = (startAngle + endAngle - extraAngle*2) / 2 + extraAngle;
@@ -297,14 +326,34 @@ export class CategoryDonutComponent {
         var elapsedTime = new Date().getTime() - this.chartRenderStartTime;
         var animationTime = 900;
         var animationProgress = elapsedTime > animationTime ? 1 : elapsedTime / animationTime;
+
+        var labelDatas: outerLabelData[] = [{
+            fontSize: 20,
+            inwardDistance: 10,
+            items: this.donutData.outerRings[0].items.map(z => ({
+                displayText: z.label,
+                amount: z.amount,
+                color: z.colorSet.text,
+            }))
+        }]
+        if (this.outerRingCount == 2){
+            var subcategoryLabelData: outerLabelData = {
+                fontSize: 12,
+                inwardDistance: 36,
+                items: this.donutData.outerRings[1].items.map(z => ({
+                    displayText: z.label,
+                    amount: z.amount,
+                    color: z.colorSet.text,
+                }))
+            };
+            labelDatas.push(subcategoryLabelData);
+        } else {
+            labelDatas[0].fontSize = 14;
+        }
         var drawer = new OuterLableDrawer(
             chart.ctx,
             chart.chartArea,
-            this.categoryNames,
-            this.subcategories,
-            this.categoryAmounts,
-            this.subcategoryAmounts,
-            this.theme!,
+            labelDatas,
             this.outerCircum,
             animationProgress
         )
@@ -312,22 +361,19 @@ export class CategoryDonutComponent {
     }
 
     /**returns true if an update was run */
-    private rotateAverage(chart: Chart<"doughnut", number[], unknown>): boolean{
-        var targetRotation = this.innerRotation;
-        if (!this.clickedItems.length){
-            targetRotation = 0;
-        } else {
+    private rotateInner(chart: Chart<"doughnut", number[], unknown>): boolean{
+        var targetRotation = 0;
+        if (this.clickedItems.length){
             var item = this.clickedItems[0];
-            if (item.datasetIndex == 0 || item.datasetIndex == 3){
-                var amount = getSum(this.categoryAmounts.slice(0, item.index));
-                var avgAmount = getSum(this.avgCategoryAmounts.slice(0, item.index));
-                targetRotation = (amount - avgAmount) / this.maxTotal * 360
+            var ringOffset = 0;
+            if (this.outerRingCount == 2 && (item.datasetIndex == 1 || item.datasetIndex == 4)){
+                var ringOffset = 1;
             }
-            if (item.datasetIndex == 1 || item.datasetIndex == 4){
-                var amount = getSum(this.subcategoryAmounts.slice(0, item.index));
-                var avgAmount = getSum(this.avgSubcategoryAmounts.slice(0, item.index));
-                targetRotation = (amount - avgAmount) / this.maxTotal * 360
-            }
+            var outerRing = this.donutData.outerRings[ringOffset];
+            var innerRing = this.donutData.innerRings[ringOffset];
+            var outerAmount = getSum(outerRing.items.slice(0, item.index).map(z => z.amount));
+            var innerAmount = getSum(innerRing.items.slice(0, item.index).map(z => z.amount));
+            targetRotation = (outerAmount - innerAmount) / this.maxTotal * 360
         }
         if (targetRotation != this.innerRotation){
             var innerRotElapsedTime = new Date().getTime() - this.innerRotationStartTime;
@@ -338,103 +384,89 @@ export class CategoryDonutComponent {
             this.prevRotation =  this.prevRotation * (1 - innerRotEaseOutCubic) + this.innerRotation * innerRotEaseOutCubic;
             this.innerRotation = targetRotation;
             this.innerRotationStartTime = new Date().getTime()
-            chart.data.datasets[3].rotation = targetRotation;
-            chart.data.datasets[4].rotation = targetRotation;
+            if (this.outerRingCount == 2){
+                chart.data.datasets[3].rotation = targetRotation;
+                chart.data.datasets[4].rotation = targetRotation;
+            } else {
+                chart.data.datasets[2].rotation = targetRotation;
+            }
             chart.update();
             return true;
         }
         return false;
     }
 
-    private renderChart(data: DonutData) {
+    private toDataset(ring: DonutDataRing, weight: number, circumference: number): ChartDataset<'doughnut', number[]>{
+        return {
+            data: ring.items.map(z => z.amount),
+            backgroundColor: ring.items.map(z => z.colorSet.background),
+            hoverBackgroundColor: ring.items.map(z => z.colorSet.hover),
+            borderColor: ring.items.map(z => z.colorSet.border),
+            borderWidth: 1,
+            circumference: circumference,
+            weight: weight,
+        }
+    }
+
+    private renderChart(donutData: DonutData) {
+        this.donutData = donutData;
+        var datasets: ChartDataset<'doughnut', number[]>[] = []
+        this.outerRingCount = donutData.outerRings.length;
+        if (donutData.innerRings.length == 2){
+            this.weights = [1, 0.35, 0.7]
+        } else {
+            this.weights = [1, 0.2, 0.65]
+        }
+
+
+
         this.chartRenderStartTime = new Date().getTime();
         this.clickedItems = [];
-        var categoryItems = [...data.categoryItems];
-        var subcategoryItems = categoryItems.flatMap(z => z.subcategoryItems);
-        this.categoryNames = categoryItems.map(z => z.catName);
-        this.subcategories = subcategoryItems.map(z => z.subcategory);
-        this.categoryAmounts = categoryItems.map(z => z.amount);
-        this.subcategoryAmounts = subcategoryItems.map(z => z.amount);
-        this.avgCategoryAmounts = categoryItems.map(z => z.averageAmount);
-        this.avgSubcategoryAmounts = subcategoryItems.map(z => z.averageAmount);
-
-        this.date = data.isYearly ? data.date.getFullYear() + "" : <string>new DatePipe('en-US').transform(data.date, 'MMM y');
-        this.averageType = data.isYearly ? "yearly average" : "monthly average";
-
-        var categorySum = categoryItems.reduce((a, b) => a + b.amount, 0)
-        var averageSum = categoryItems.reduce((a, b) => a + b.averageAmount, 0)
-        this.maxTotal = Math.max(categorySum, averageSum);
-        this.minTotal = Math.min(categorySum, averageSum);
-        this.outerCircum = 360;
-        this.innerCircum = 360;
-        if (categorySum > averageSum) {
-            this.innerCircum = 360 * averageSum / categorySum
-        } else {
-            this.outerCircum = 360 * categorySum / averageSum
-        }
+        this.activeItems = [];
         this.innerRotation = 0;
 
-        this.categoryColorSets = this.theme!.colorSets;
-        this.subcategoryColorSets = [];
-        for (var i = 0; i < categoryItems.length; i++) {
-            for (var j = 0; j < categoryItems[i].subcategoryItems.length; j++) {
-                this.subcategoryColorSets.push(this.theme!.colorSets[i % this.theme!.colorSets.length]);
-            }
+        this.date = donutData.isYearly ? donutData.date.getFullYear() + "" : <string>new DatePipe('en-US').transform(donutData.date, 'MMM y');
+        this.averageType = donutData.isYearly ? "yearly average" : "monthly average";
+
+        var outerSum = getSum(donutData.outerRings[0].items.map(z => z.amount))
+        var innerSum = getSum(donutData.innerRings[0].items.map(z => z.amount))
+        this.maxTotal = Math.max(outerSum, innerSum);
+        this.minTotal = Math.min(outerSum, innerSum);
+        this.outerCircum = 360;
+        this.innerCircum = 360;
+        if (outerSum > innerSum) {
+            this.innerCircum = 360 * innerSum / outerSum
+        } else {
+            this.outerCircum = 360 * outerSum / innerSum
         }
+        var datasetIndex = 0;
+        this.datasetIndexRingMap = {};
+        for (var outerRing of donutData.outerRings){
+            this.datasetIndexRingMap[datasetIndex++] = outerRing;
+            datasets.push(this.toDataset(outerRing, this.weights[0], this.outerCircum));
+        }
+        datasetIndex++;
+        datasets.push({
+            data: [],
+            backgroundColor: [],
+            hoverBackgroundColor: [],
+            borderColor: [],
+            borderWidth: 1,
+            circumference: 0,
+            weight: this.weights[1]
+        })
+        for (var innerRing of donutData.innerRings){
+            this.datasetIndexRingMap[datasetIndex++] = innerRing;
+            datasets.push(this.toDataset(innerRing, this.weights[2], this.innerCircum));
+        }
+
         if (this.chart) {
             this.chart.destroy();
         }
         this.chart = new Chart("donut-canvas", {
             type: 'doughnut',
             data: {
-                datasets: [{
-                    data: categoryItems.map(z => z.amount),
-                    backgroundColor: this.theme!.colorSets.map(z => z.background),
-                    hoverBackgroundColor: this.theme!.colorSets.map(z => z.hover),
-                    borderColor: this.theme!.colorSets.map(z => z.border),
-                    borderWidth: 1,
-                    circumference: this.outerCircum,
-                    weight: 1
-                },
-                {
-                    data: subcategoryItems.map(z => z.amount),
-                    backgroundColor: this.subcategoryColorSets.map(z => z.background),
-                    hoverBackgroundColor: this.subcategoryColorSets.map(z => z.hover),
-                    borderColor: this.subcategoryColorSets.map(z => z.border),
-                    borderWidth: 1,
-                    circumference: this.outerCircum,
-                    weight: 1
-                },
-                {
-                    data: [],
-                    backgroundColor: [],
-                    hoverBackgroundColor: [],
-                    borderColor: [],
-                    borderWidth: 1,
-                    circumference: 0,
-                    weight: 0.35
-                },
-
-                {
-                    data: categoryItems.map(z => z.averageAmount),
-                    backgroundColor: this.theme!.colorSets.map(z => z.background),
-                    hoverBackgroundColor: this.theme!.colorSets.map(z => z.hover),
-                    borderColor: this.theme!.colorSets.map(z => z.border),
-                    borderWidth: 1,
-                    circumference: this.innerCircum,
-                    weight: 0.70
-                },
-                {
-                    data: subcategoryItems.map(z => z.averageAmount),
-                    backgroundColor: this.subcategoryColorSets.map(z => z.background),
-                    hoverBackgroundColor: this.subcategoryColorSets.map(z => z.hover),
-                    borderColor: this.subcategoryColorSets.map(z => z.border),
-                    borderWidth: 1,
-                    circumference: this.innerCircum,
-                    weight: 0.70
-                }
-
-                ]
+                datasets: <any>datasets
             },
             options: {
                 interaction: {
@@ -452,25 +484,9 @@ export class CategoryDonutComponent {
                 cutout: "60%",
                 plugins: {
                     tooltip: {
-                        enabled: false,
-                        displayColors: false,
-                        callbacks: {
-                            label: (context) => {
-                                if (context.datasetIndex == 1) {
-                                    return this.averageType;
-                                } else {
-                                    return this.date;
-                                }
-                                //return this.categories[context.dataIndex]
-                            },
-                            footer: (contexts => {
-                                return contexts[0].parsed + ""
-                            })
-                        }
+                        enabled: false
                     },
                     legend: {
-                        // position: "left",
-                        // onClick: (e) => (<any>e).stopPropagation()
                         display: false
                     }
                 }

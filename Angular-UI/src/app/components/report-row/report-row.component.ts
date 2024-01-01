@@ -3,8 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { TransactionService, Transaction } from '@services/transaction.service';
-import { SmallDonutClickData, SmallDonutComponent } from '@components/small-donut/small-donut.component';
-import { CategoryDonutComponent, DonutClickData } from '@components/category-donut/category-donut.component';
+import { CategoryDonutComponent, DonutChartType, DonutClickData } from '@components/category-donut/category-donut.component';
 import {
     MatDialogTitle,
     MatDialogContent,
@@ -18,7 +17,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 @Component({
     standalone: true,
     imports: [CommonModule, FormsModule, MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose, 
-        MatButtonModule, MatSlideToggleModule, SmallDonutComponent, CategoryDonutComponent],
+        MatButtonModule, MatSlideToggleModule, CategoryDonutComponent],
     templateUrl: './report-row.component.html'
 })
 export class ReportRowComponent {
@@ -56,11 +55,16 @@ export class ReportRowComponent {
         this.filteredTransactions = this.transactions;
     }
 
-    largeDonutClicked(event: DonutClickData | null){
+    donutClicked(event: DonutClickData | null){
         this.resetFilter();
         if (event){
-            this.filteredTransactions = this.transactions.filter(z => z.catName == event.catName);
-            this.filterCat = event.catName
+            var catNames = [...event.movedToOtherCatNames, event.catName]
+            this.filteredTransactions = this.transactions.filter(z => catNames.includes(z.catName));
+            if (event.movedToOtherCatNames){
+                this.filterCat = catNames.join(", ")
+            } else {
+                this.filterCat = event.catName
+            }
             if (event.subcatName != null){
                 this.filteredTransactions = this.transactions.filter(z => z.catName == event.catName && z.subcatName == event.subcatName)
                 this.filterSubcat = event.subcatName
@@ -68,16 +72,13 @@ export class ReportRowComponent {
         }
     }
 
-    smallDonutClicked(event: SmallDonutClickData | null){
-        this.resetFilter();
-        if (event){
-            this.filteredTransactions = this.transactions.filter(z => z.catName == event.catName);
-            this.filterCat = event.catName
-            if (this.isSubcategory){
-                this.filteredTransactions = this.transactions.filter(z => z.catName == event.catName && z.subcatName == event.name)
-                this.filterSubcat = event.name
-            }
+    getChartType(): DonutChartType{
+        if (this.showBigGraph){
+            return "both"
+        } else if (this.isSubcategory){
+            return "subcategory"
         }
+        return "category";
     }
 
     isSubcategoryChanged(){

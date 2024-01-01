@@ -1,36 +1,29 @@
 import { Injectable } from '@angular/core';
-import { Settings, SettingsService } from "@services/settings.service";
-import { Transaction, TransactionService } from "@services/transaction.service";
+import { SettingsService } from "@services/settings.service";
 import { StatService } from './stat.service';
-import { CategoryService, Subcategory } from './category.service';
-import { getSum, groupBy, getDistinct, getDistinctBySelectorFunc, areValuesSame } from '@services/helpers';
+import { getSum, groupBy } from '@services/helpers';
+import { ColorSet, ThemeService } from './theme.service';
 
 export type DonutData = {
     isYearly: boolean,
     date: Date,
-    categoryItems: DonutCategoryItem[]
+    outerRings: DonutDataRing[],
+    innerRings: DonutDataRing[],
 };
-export type DonutCategoryItem = {
+export type DonutDataRing = {
+    items: DonutDataItem[]
+};
+export type DonutDataItem = {
+    amount: number,
+    label: string,
     catName: string,
-    amount: number,
-    averageAmount: number
-    subcategoryItems: DonutSubcategoryItem[]
-};
-export type DonutSubcategoryItem = {
-    subcategory: Subcategory,
-    amount: number,
-    averageAmount: number
+    subcatName: string | undefined,
+    colorSet: ColorSet
+    movedToOther?: boolean | undefined,
+    containsMoveToOtherCatNames?: string[] | undefined
 };
 
-export type SmallDonutData = {
-    items: SmallDonutDataItem[]
-};
-export type SmallDonutDataItem = {
-    name: string,
-    catName: string,
-    amount: number,
-    averageAmount: number
-};
+
 
 export type BarData = {
     isYearly: boolean,
@@ -51,7 +44,10 @@ export type BarCategoryItem = {
 export class chartDataService {
 
     constructor(
-        private statService: StatService) {
+        private statService: StatService,
+        private themeService: ThemeService,
+        private settingsService: SettingsService,
+        ) {
     }
 
     getMonthlyDonutData(month: Date | undefined): DonutData | null {
@@ -61,79 +57,192 @@ export class chartDataService {
         if (!month) {
             return null;
         }
-        var currentCatStats = this.statService.getCatStatsMonthlyInfo(month);
-        var recentCatStats = this.statService.getRecentCatStatsMonthlyInfo();
-        var currentSubcatStats = this.statService.getSubcatStatsMonthlyInfo(month);
-        var recentSubcatStats = this.statService.getRecentSubcatStatsMonthlyInfo();
+        var currentMonthCatStats = this.statService.getCatStatsMonthlyInfo(month).filter(z => z.catName != "income");
+        var recentCatStats = this.statService.getRecentCatStatsMonthlyInfo().filter(z => z.catName != "income");
+        var currentMonthSubcatStats = this.statService.getSubcatStatsMonthlyInfo(month).filter(z => z.subcategory.catName != "income");
+        var recentSubcatStats = this.statService.getRecentSubcatStatsMonthlyInfo().filter(z => z.subcategory.catName != "income");
 
-        //filter out negative categories (negative based on recent, not necessarily current)
-        var incomeCatNames = recentCatStats.filter(z => z.sumAmount < 0).map(z => z.catName);
-        currentCatStats = currentCatStats.filter(z => !incomeCatNames.includes(z.catName));
-        currentSubcatStats = currentSubcatStats.filter(z => !incomeCatNames.includes(z.subcategory.subcatName));
-        recentSubcatStats = recentSubcatStats.filter(z => !incomeCatNames.includes(z.subcategory.subcatName));
-
-        var catItems: DonutCategoryItem[] = [];
-        for (var currentCatStat of currentCatStats) {
-            var catName = currentCatStat.catName;
-            var recentCatStat = recentCatStats.find(z => z.catName == catName)!;
-            var matchingCurrentSubcatStats = currentSubcatStats.filter(z => z.subcategory.catName == catName);
-            var matchingRecentSubcatStats = recentSubcatStats.filter(z => z.subcategory.catName == catName);
-            var subcatItems: DonutSubcategoryItem[] = [];
-            for (var currentSubcatStat of matchingCurrentSubcatStats) {
-                var recentSubcatStat = matchingRecentSubcatStats.find(z => z.subcategory.subcatName == currentSubcatStat.subcategory.subcatName)!;
-                subcatItems.push({
-                    subcategory: currentSubcatStat.subcategory,
-                    amount: currentSubcatStat.sumAmount,
-                    averageAmount: recentSubcatStat.sumAmount / recentSubcatStat.monthCount
+        var outerItemCatRing: DonutDataItem[] = [];
+        var outerItemSubcatRing: DonutDataItem[] = [];
+        var innerItemCatRing: DonutDataItem[] = [];
+        var innerItemSubcatRing: DonutDataItem[] = [];
+        var theme = this.themeService.getTheme();
+        for (var i = 0; i < recentCatStats.length; i++) {
+            var recentCatStat = recentCatStats[i];
+            var colorSet = theme.colorSets[i % theme.colorSets.length];
+            if (recentCatStat.catName == "other"){
+                colorSet = theme.otherColorSet;
+            }
+            innerItemCatRing.push({
+                label: recentCatStat.catName,
+                catName: recentCatStat.catName,
+                subcatName: undefined,
+                amount: recentCatStat.sumAmount / recentCatStat.monthCount,
+                colorSet: colorSet
+            });
+            var currentMonthCatStat = currentMonthCatStats[i];
+            outerItemCatRing.push({
+                label: currentMonthCatStat.catName,
+                catName: currentMonthCatStat.catName,
+                subcatName: undefined,
+                amount: currentMonthCatStat.sumAmount,
+                colorSet: colorSet
+            });
+            var matchingCurrentMonthSubcatStats = currentMonthSubcatStats.filter(z => z.subcategory.catName == recentCatStat.catName);
+            var matchingRecentSubcatStats = recentSubcatStats.filter(z => z.subcategory.catName == recentCatStat.catName);
+            for (var j = 0; j < matchingRecentSubcatStats.length; j++){
+                var recentSubcatStat = matchingRecentSubcatStats[j];
+                innerItemSubcatRing.push({
+                    label: recentSubcatStat.subcategory.subcatName,
+                    catName: recentSubcatStat.subcategory.catName,
+                    subcatName: recentSubcatStat.subcategory.subcatName,
+                    amount: recentSubcatStat.sumAmount / recentSubcatStat.monthCount,
+                    colorSet: colorSet
+                });
+                var currentMonthSubcatStat = matchingCurrentMonthSubcatStats[j];
+                outerItemSubcatRing.push({
+                    label: currentMonthSubcatStat.subcategory.subcatName,
+                    catName: currentMonthSubcatStat.subcategory.catName,
+                    subcatName: currentMonthSubcatStat.subcategory.subcatName,
+                    amount: currentMonthSubcatStat.sumAmount,
+                    colorSet: colorSet
                 });
             }
-            catItems.push({
-                catName: catName,
-                amount: currentCatStat.sumAmount,
-                averageAmount: recentCatStat.sumAmount / recentCatStat.monthCount,
-                subcategoryItems: subcatItems
-            });
         }
-        return {
+
+        
+        var output = {
             isYearly: false,
             date: month,
-            categoryItems: catItems
+            outerRings: [
+                {items: outerItemCatRing},
+                {items: outerItemSubcatRing},
+            ],
+            innerRings: [
+                {items: innerItemCatRing},
+                {items: innerItemSubcatRing},
+            ]
         };
+        this.moveExcessCategoriesToOther(output, theme.otherColorSet);
+        return output;
     }
 
-    getSmallDonutData(date: Date | undefined, isYearly: boolean, isSubcategory: boolean): SmallDonutData | null {
-        if (!isYearly) {
-            var largeDonutData = this.getMonthlyDonutData(date);
-            if (!largeDonutData) {
-                return null;
+    getYearlyDonutData(year: Date | undefined): DonutData | null {
+        if (!year) {
+            year = this.statService.getCurrentYear();
+        }
+        if (!year) {
+            return null;
+        }
+        var currentYearCatStats = this.statService.getCatYearStats().filter(z => z.year.getTime() == year!.getTime() && z.catName != "income");
+        var totalCatStats = this.statService.getCatStatsYearlyInfo().filter(z => z.catName != "income");
+        var currentYearSubcatStats = this.statService.getSubcatYearStats().filter(z => z.year.getTime() == year!.getTime() && z.subcategory.catName != "income");
+        var totalSubcatStats = this.statService.getSubcatStatsYearlyInfo().filter(z => z.subcategory.catName != "income");
+        var outerItemCatRing: DonutDataItem[] = [];
+        var outerItemSubcatRing: DonutDataItem[] = [];
+        var innerItemCatRing: DonutDataItem[] = [];
+        var innerItemSubcatRing: DonutDataItem[] = [];
+        var theme = this.themeService.getTheme();
+        for (var i = 0; i < totalCatStats.length; i++) {
+            var totalCatStat = totalCatStats[i];
+            var colorSet = theme.colorSets[i % theme.colorSets.length];
+            if (totalCatStat.catName == "other"){
+                colorSet = theme.otherColorSet;
             }
-            var items: SmallDonutDataItem[] = [];
-            if (isSubcategory) {
-                var subcatItems = largeDonutData.categoryItems.flatMap(z => z.subcategoryItems);
-                items = subcatItems.map(z => ({ 
-                    name: z.subcategory.subcatName, 
-                    catName: z.subcategory.catName, 
-                    amount: z.amount, 
-                    averageAmount: z.averageAmount, 
-                }));
+            innerItemCatRing.push({
+                label: totalCatStat.catName,
+                catName: totalCatStat.catName,
+                subcatName: undefined,
+                amount: totalCatStat.sumAmount / totalCatStat.yearCount,
+                colorSet: colorSet
+            });
+            var currentYearCatStat = currentYearCatStats[i];
+            outerItemCatRing.push({
+                label: currentYearCatStat.catName,
+                catName: currentYearCatStat.catName,
+                subcatName: undefined,
+                amount: currentYearCatStat.sumAmount,
+                colorSet: colorSet
+            });
+            var matchingCurrentYearSubcatStats = currentYearSubcatStats.filter(z => z.subcategory.catName == totalCatStat.catName);
+            var matchingTotalSubcatStats = totalSubcatStats.filter(z => z.subcategory.catName == totalCatStat.catName);
+            for (var j = 0; j < matchingTotalSubcatStats.length; j++){
+                var totalSubcatStat = matchingTotalSubcatStats[j];
+                innerItemSubcatRing.push({
+                    label: totalSubcatStat.subcategory.subcatName,
+                    catName: totalSubcatStat.subcategory.catName,
+                    subcatName: totalSubcatStat.subcategory.subcatName,
+                    amount: totalSubcatStat.sumAmount / totalSubcatStat.yearCount,
+                    colorSet: colorSet
+                });
+                var currentYearSubcatStat = matchingCurrentYearSubcatStats[j];
+                outerItemSubcatRing.push({
+                    label: currentYearSubcatStat.subcategory.subcatName,
+                    catName: currentYearSubcatStat.subcategory.catName,
+                    subcatName: currentYearSubcatStat.subcategory.subcatName,
+                    amount: currentYearSubcatStat.sumAmount,
+                    colorSet: colorSet
+                });
+            }
+        }
+        var output = {
+            isYearly: false,
+            date: year,
+            outerRings: [
+                {items: outerItemCatRing},
+                {items: outerItemSubcatRing},
+            ],
+            innerRings: [
+                {items: innerItemCatRing},
+                {items: innerItemSubcatRing},
+            ]
+        };
+        this.moveExcessCategoriesToOther(output, theme.otherColorSet);
+        return output;
+    }
+
+    private moveExcessCategoriesToOther(donutData: DonutData, otherColorSet: ColorSet){
+        var maxCategories = this.settingsService.getSettings().maxGraphCategories;
+        var ringss: DonutDataRing[][] = [donutData.innerRings, donutData.outerRings];
+        for (var rings of ringss){
+            if (rings[0].items.length <= maxCategories){
+                continue;
+            }
+            var catRing = rings[0].items;
+            var subcatRing = rings[1].items;
+            var otherCatItem = catRing.find(z => z.catName == "other");
+            var otherSubcatItems = subcatRing.filter(z => z.catName == "other");
+            var removedCatNames: string[] = [];
+            for (var i = maxCategories - 1; i < catRing.length; i++){
+                catRing[i].colorSet = otherColorSet
+                if (catRing[i].catName != "other"){
+                    otherSubcatItems.push({ ...catRing[i], movedToOther: true });
+                }
+                removedCatNames.push(catRing[i].catName);
+            }
+            if (!otherCatItem){
+                otherCatItem = {
+                    label: "other",
+                    catName: "other",
+                    subcatName: undefined,
+                    amount: getSum(otherSubcatItems.map(z => z.amount)),
+                    colorSet: otherColorSet,
+                    containsMoveToOtherCatNames: otherSubcatItems.filter(z => z.movedToOther).map(z => z.catName),
+                }
             } else {
-                items = largeDonutData.categoryItems.map(z => ({ 
-                    name: z.catName, 
-                    catName: z.catName, 
-                    amount: z.amount, 
-                    averageAmount: z.averageAmount, 
-                }));
+                otherCatItem.amount = getSum(otherSubcatItems.map(z => z.amount))
+                otherCatItem.containsMoveToOtherCatNames = otherSubcatItems.filter(z => z.movedToOther).map(z => z.catName);
             }
-            return {
-                items: items
-            };
-        } else {
-            throw "not implemented";
+            catRing = [...catRing.slice(0, maxCategories-1), otherCatItem];
+            subcatRing = [...subcatRing.filter(z => !removedCatNames.includes(z.catName)), ...otherSubcatItems]
+            rings[0].items = catRing;
+            rings[1].items = subcatRing;
         }
     }
 
     getMonthlyBarData() {
         var stats = this.statService.getCatMonthStats();
+        var maxCategories = this.settingsService.getSettings().maxGraphCategories;
         if (!stats.length) {
             return
         }
@@ -144,11 +253,19 @@ export class chartDataService {
                 catName: catMonthStat.catName,
                 amount: catMonthStat.sumAmount
             }));
+            if (catItems.length > maxCategories){
+                catItems = [...catItems.slice(0, maxCategories - 1), {
+                    catName: "other",
+                    amount: getSum(catItems.slice(maxCategories - 1).map(z => z.amount))
+                }];
+            }
             dateItems.push({
                 date: monthGroup.key,
                 items: catItems
             });
         }
+        //the bar chart displays the 1st item on the left side, but stats are sorted newest to oldest, hence the reverse:
+        dateItems.reverse();
         return {
             isYearly: false,
             items: dateItems

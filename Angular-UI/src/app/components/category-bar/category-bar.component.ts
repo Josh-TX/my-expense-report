@@ -17,8 +17,8 @@ Chart.register(...registerables);
     templateUrl: './category-bar.component.html'
 })
 export class CategoryBarComponent {
-    @Output("dateClick") dateClick = new EventEmitter<Date>();
     @Input("data") inputData: BarData | undefined;
+    @Output("dateClick") dateClick = new EventEmitter<Date>();
     chart: Chart<"bar", number[], string> | undefined;
     private dates: Date[] = []
     private initCalled: boolean = false;
@@ -30,9 +30,9 @@ export class CategoryBarComponent {
         (<any>Interaction.modes)["indexReverse"] = this.interactionModeFunc.bind(this);
         effect(() => {
             var chartData = this.chartDataService.getMonthlyBarData();
-            if (chartData){
+            if (chartData) {
                 var len = chartData.items[0].items.length;
-                this.theme = this.themeService.getTheme(len, chartData.items[0].items[len - 1].catName == "other");
+                this.theme = this.themeService.getTheme();
                 this.renderChart(chartData);
             }
         })
@@ -55,9 +55,9 @@ export class CategoryBarComponent {
     //This custom interactionMode causes the selection to be in reverse order, which reverse the order of the tooltip
     private interactionModeFunc(chart: Chart, e: ChartEvent, options: InteractionOptions, useFinalPosition?: boolean): InteractionItem[] {
         var indexItems = Interaction.modes.index(chart, e, options, useFinalPosition);
-        if (e.type == "click" && indexItems.length){
+        if (e.type == "click" && indexItems.length) {
             //this code runs twice per click, but we only wanna emit once per click
-            if (!this.clickJustFired){
+            if (!this.clickJustFired) {
                 this.clickJustFired = true;
                 this.dateClick.emit(this.dates[indexItems[0].index]);
                 setTimeout(() => {
@@ -75,16 +75,21 @@ export class CategoryBarComponent {
         var datepipe = new DatePipe("en-US");
         this.dates = data.items.map(z => z.date);
         var dateStrings = data.items.map(z => datepipe.transform(z.date, "MMM y")!);
-        
-        var datasets: ChartDataset<any, number[]>[] =  categoryNames.map((name, i) => ({
-            label: name,
-            data: [],
-            backgroundColor: this.theme.colorSets[i % this.theme.colorSets.length].background,
-            hoverBackgroundColor: this.theme.colorSets[i % this.theme.colorSets.length].hover,
-            borderColor: this.theme.colorSets[i % this.theme.colorSets.length].border,
-            borderWidth: 1,
-            borderSkipped: false
-        }));
+
+        var datasets: ChartDataset<any, number[]>[] = categoryNames.map((catName, i) => {
+            var colorSet = catName == "other"
+                ? this.theme.otherColorSet
+                : this.theme.colorSets[i % this.theme.colorSets.length];
+            return {
+                label: catName,
+                data: [],
+                backgroundColor: colorSet.background,
+                hoverBackgroundColor: colorSet.hover,
+                borderColor: colorSet.border,
+                borderWidth: 1,
+                borderSkipped: false
+            }
+        });
         for (var dateItem of data.items) {
             for (var i = 0; i < dateItem.items.length; i++) {
                 datasets[i].data.push(dateItem.items[i].amount);
@@ -117,7 +122,7 @@ export class CategoryBarComponent {
                             label: (tooltipItem) => {
                                 return " " + tooltipItem.dataset.label + ": $" + new DecimalPipe("en-US").transform(<any>tooltipItem.raw, ".0-0")
                             },
-                            
+
                             footer: (tooltipItems => {
                                 var sumAmount = getSum(tooltipItems.map(z => <number>z.raw));
                                 return "Total: $" + new DecimalPipe("en-US").transform(sumAmount, ".0-0")

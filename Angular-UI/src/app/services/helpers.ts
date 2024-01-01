@@ -59,12 +59,7 @@ export function getDistinct<T>(items: T[]): T[]{
 }
 
 /** uses areValuesSame for equality checks */
-export function getDistinctByProp<K extends keyof T, T>(items: T[], prop: K): T[]{
-    return items.filter((item, i) => items.findIndex(z => areValuesSame(z[prop], item[prop])) == i);
-}
-
-/** uses areValuesSame for equality checks */
-export function getDistinctBySelectorFunc<K extends keyof T, T>(items: T[], selectorFunc: (t:T)=>any): T[]{
+export function getDistinctBy<T>(items: T[], selectorFunc: (t:T)=>any): T[]{
     return items.filter((item, i) => items.findIndex(z => areValuesSame(selectorFunc(z), selectorFunc(item))) == i);
 }
 

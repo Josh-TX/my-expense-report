@@ -4,11 +4,7 @@
         <mat-slide-toggle [(ngModel)]="showBigGraph"
         (ngModelChange)="showBigGraphChanged()">Large Graph</mat-slide-toggle>
     </div>
-    @if (showBigGraph){
-        <mer-category-donut [currentDate]="date" (itemClick)="largeDonutClicked($event)"></mer-category-donut>
-    } @else {
-        <mer-small-donut [currentDate]="date" [isSubcategory]="isSubcategory" (itemClick)="smallDonutClicked($event)"></mer-small-donut>
-    }
+    <mer-category-donut [currentDate]="date" [chartType]="getChartType()" [isYearly]="isYearly" (itemClick)="donutClicked($event)"></mer-category-donut>
     <div style="position: absolute; bottom: 0; left: 0;">
         <div>
             @if (filterCat){
