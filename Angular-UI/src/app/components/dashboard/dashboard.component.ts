@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, Signal, computed } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -7,6 +7,8 @@ import { FixUncategorizedComponent } from '@components/fix-uncategorized/fix-unc
 import { CategoryDonutComponent } from '@components/category-donut/category-donut.component';
 import { CategoryBarComponent } from "@components/category-bar/category-bar.component";
 import { ManageRulesComponent } from '@components/manage-rules/manage-rules.component';
+import { TransactionService } from '@services/transaction.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
     standalone: true,
@@ -15,8 +17,16 @@ import { ManageRulesComponent } from '@components/manage-rules/manage-rules.comp
 })
 export class DashboardComponent {
     donutCurrentDate: Date | undefined;
-    constructor(private dialog: MatDialog) {
+    uncategorizedCount$: Signal<number>;
+    trxnCount$: Signal<number>;
+    isHosted: boolean = environment.storageUrl != null;
 
+    constructor(
+        private dialog: MatDialog,
+        private transactionService: TransactionService
+        ) {
+            this.trxnCount$ = computed(() => this.transactionService.getTransactions().length)
+            this.uncategorizedCount$ = computed(() => this.transactionService.getTransactions().filter(z => z.catName == "other" && z.subcatName == "uncategorized").length)
     }
 
     barClicked(event: Date | undefined) {

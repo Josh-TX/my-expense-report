@@ -14,13 +14,14 @@ export type Transaction = {
 
     catName: string,
     subcatName: string
+    catSource: string,
 }
 
 export type TransactionToAdd = {
     date: Date,
     name: string,
     amount: number,
-    ManualSubcategory?: Subcategory | undefined
+    manualSubcategory?: Subcategory | undefined
 }
 
 type StoredTransaction = {
@@ -30,7 +31,7 @@ type StoredTransaction = {
     importDate: Date,
     importFrom: string,
 
-    subcategory?: Subcategory | undefined
+    manualSubcategory: Subcategory | undefined
 }
 
 type StoredTransactionPlusId = StoredTransaction & { tempId: number }
@@ -50,7 +51,7 @@ export class TransactionService {
         private settingsService: SettingsService
     ) {
         this.storedTransactions$ = signal(this.getStoredTrxns());
-        this.transactions$ = computed(() => this.getComputedTrxns(this.storedTransactions$()))
+        this.transactions$ = computed(() => this.getComputedTrxns(this.storedTransactions$(), this.categoryService.getRules()))
         effect(() => this.setStoredTrxns(this.storedTransactions$()))
     }
 
@@ -91,13 +92,54 @@ export class TransactionService {
 
     editSubcategories(trxns: Transaction[], subcategory: Subcategory){
         var storedTrxns = trxns.map(trxn => this.storedTransactions$().find(z => z.tempId == trxn.tempId)!);
-        storedTrxns.forEach(z => z.subcategory = subcategory);
+        storedTrxns.forEach(z => z.manualSubcategory = subcategory);
         this.storedTransactions$.set([...this.storedTransactions$()]);
     }
 
-    private getComputedTrxns(storedTransactions: StoredTransactionPlusId[]): Transaction[] {
+    private getComputedTrxns(storedTransactions: StoredTransactionPlusId[], rules: CategoryRule[]): Transaction[] {
         var output: Transaction[] = [];
+
         for (var storedTrxn of storedTransactions) {
+            var lowerName = storedTrxn.name.toLowerCase()
+            var catSource = "";
+            var subcategory: Subcategory = {
+                catName: "other",
+                subcatName: "uncategorized"
+            };
+            if (storedTrxn.amount < 0) {
+                var allowedNegativeCatNames = ["hidden", "income"]
+                if (storedTrxn.manualSubcategory != null && allowedNegativeCatNames.includes(storedTrxn.manualSubcategory.catName)){
+                    subcategory = storedTrxn.manualSubcategory;
+                    catSource = `manual category`;
+                } else {
+                    var eligibleRules = rules.filter(z => allowedNegativeCatNames.includes(z.catName));
+                    var foundRule = eligibleRules.find(rule => lowerName.startsWith(rule.text));
+                    foundRule = foundRule || eligibleRules.find(rule => lowerName.includes(rule.text));
+                    if (foundRule){
+                        catSource = `matched rule "${foundRule.text}"`;
+                        subcategory = foundRule
+                    } else {
+                        catSource = `automatic because negative amount`;
+                        subcategory = {
+                            catName: "income",
+                            subcatName: "income"
+                        };
+                    }
+                }
+            } else {
+                if (storedTrxn.manualSubcategory != null){
+                    subcategory = storedTrxn.manualSubcategory;
+                    catSource = `manual category`;
+                } else {
+                    var foundRule = rules.find(rule => lowerName.startsWith(rule.text));
+                    if (foundRule){
+                        catSource = `matched rule "${foundRule.text}"`;
+                        subcategory = foundRule
+                    } else {
+                        //subcategory was initially set to uncategorized
+                    }
+                }
+            }
             var subcategory = this.categoryService.getSubcategoryForTrxn(storedTrxn);
             output.push({
                 tempId: storedTrxn.tempId,
@@ -109,6 +151,7 @@ export class TransactionService {
 
                 catName: subcategory.catName,
                 subcatName: subcategory.subcatName,
+                catSource: catSource
             });
         }
         output.sort((z1, z2) => z2.date.getTime() - z1.date.getTime());
@@ -140,7 +183,7 @@ export class TransactionService {
                 name: z.name,
                 importDate: z.importDate,
                 importFrom: z.importFrom,
-                subcategory: z.subcategory
+                manualSubcategory: z.manualSubcategory
             }))
             this.storageService.store("transactions.json", trxnsWithoutId)
         } 

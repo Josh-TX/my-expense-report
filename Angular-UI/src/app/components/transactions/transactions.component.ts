@@ -13,6 +13,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input'
 import { MatSelectModule } from '@angular/material/select'
+import { MatTooltipModule } from '@angular/material/tooltip'
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatDialog } from '@angular/material/dialog';
 import { EditTransactionsComponent } from '@components/edit-transactions/edit-transactions.component';
@@ -26,7 +27,7 @@ import { CatColorService } from '@services/catColor.service';
     standalone: true,
     imports: [CommonModule, MatButtonModule, MatCheckboxModule, MatIconModule, MatInputModule, FormsModule,
         MatTableModule, MatSortModule, MatPaginatorModule, MatMenuModule, MatSelectModule, MatSlideToggleModule,
-        AddTransactionComponent
+        AddTransactionComponent, MatTooltipModule
     ],
     templateUrl: './transactions.component.html'
 })

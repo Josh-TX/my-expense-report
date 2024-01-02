@@ -35,6 +35,10 @@ $my-theme: mat.define-light-theme((color: (primary: $my-primary,
   color: map.get(mat.$light-theme-foreground-palette, base) !important;
 }
 
+a {
+  color: map.get(mat.$blue-palette, 500)  !important;
+}
+
 .text-muted {
   color: map.get(mat.$grey-palette, 500) !important;
 }

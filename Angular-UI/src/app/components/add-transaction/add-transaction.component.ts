@@ -82,7 +82,7 @@ export class AddTransactionComponent {
             amount: this.amount!,
             date: date,
             name: this.name,
-            ManualSubcategory: this.selectedSubcategory
+            manualSubcategory: this.selectedSubcategory
         }
         this.transactionService.addTransactions([transactionToAdd], "manually added");
         this.snackBar.open("Transaction manually added", "", { duration: 3000 });

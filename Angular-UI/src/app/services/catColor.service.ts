@@ -31,7 +31,9 @@ export class CatColorService {
             var theme = this.themeService.getTheme();
             var map: CatColorSetMap = {};
             for (var i = 0; i < catNames.length; i++){
-                map[catNames[i]] = theme.colorSets[i % theme.colorSets.length];
+                if (catNames[i] != "other"){
+                    map[catNames[i]] = theme.colorSets[i % theme.colorSets.length];
+                }
             }
             return map;
         })

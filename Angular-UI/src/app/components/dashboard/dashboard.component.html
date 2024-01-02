@@ -1,25 +1,50 @@
 <div class="p-4">
-    <h1>Dashboard</h1>
+    <div class="flex justify-between">
+        <h1>Dashboard</h1>
+        <div>
+            @if (uncategorizedCount$()) {
+            <button mat-raised-button (click)="fixUncategorized()" class="mr-4">Fix Uncategorized ({{uncategorizedCount$()}})</button>
+            }
+            @if (trxnCount$()) {
+            <button mat-raised-button (click)="manageRules()" class="mr-4">Manage Category Rules</button>
+            }
+            <button mat-raised-button (click)="importTransactions()">Import Transactions</button>
+        </div>
+    </div>
+    @if (trxnCount$()) {
     <div class="grid grid-cols-2 gap-4">
         <mer-category-donut [currentDate]="donutCurrentDate" [isYearly]="false"></mer-category-donut>
         <mer-category-bar (dateClick)="barClicked($event)"></mer-category-bar>
-        <mat-card>
-            <mat-card-content>
-                Import Transactions
-                <button mat-button (click)="importTransactions()">Start</button>
-            </mat-card-content>
-        </mat-card>
-        <mat-card>
-            <mat-card-content>
-                Fix Uncategorized Transactions
-                <button mat-button (click)="fixUncategorized()">Start</button>
-            </mat-card-content>
-        </mat-card>
-        <mat-card>
-            <mat-card-content>
-                Manage Category Rules
-                <button mat-button (click)="manageRules()">Start</button>
-            </mat-card-content>
-        </mat-card>
+    </div>
+    } @else {
+    <p style="max-width: 800px; margin: auto;">
+        Welcome to My Expense Report! a free, open-source, local web-app for tracking your personal expenses.
+    <br>
+    Rather than integrating with financial institutions directly, you instead export your transactions to a CSV file,
+    and import them here using the button in the top right. 
+    More info available in the <a href="https://github.com/Josh-TX/my-expense-report" target="_blank">Readme File</a>
+    </p>
+    }
+    <div style="margin-top: 100px">
+        @if (!isHosted){
+        <p class="text-center text-muted">
+            This is the "browser-only" version of the web-app, meaning that all data is stored in the browser via
+            localStorage.
+            <br>
+            You can also set up a private "hosted" version via docker (<a href="https://github.com/Josh-TX/hosted-version" target="_blank">more info</a>)
+        </p>
+        } @else {
+        <p class="text-center text-muted">
+            This is the "hosted" version of the web-app, meaning that most of the data is being stored on a server someone is
+            hosting (hopefully someone you know)
+        </p>
+        }
+
+        <div class="text-right">
+            <small>
+                <a href="https://github.com/Josh-TX/my-expense-report" target="_blank">Github</a>
+                <span class="text-muted"> | Created By Josh Allen</span>
+            </small>
+        </div>
     </div>
 </div>

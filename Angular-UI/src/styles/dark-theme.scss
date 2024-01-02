@@ -53,6 +53,10 @@ $my-theme: mat.define-dark-theme((color: (primary: $my-primary,
 
 }
 
+a {
+  color: #42a5f5 !important;
+}
+
 .text-muted {
   color: map.get(mat.$grey-palette, 500) !important;
 }
