@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "expense-report": {
+    "my-expense-report": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -17,7 +17,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/expense-report",
+            "outputPath": "./dist",
             "index": "src/index.html",
             "browser": "src/main.ts",
             "polyfills": [
@@ -66,7 +66,7 @@
                 {
                   "type": "initial",
                   "maximumWarning": "500kb",
-                  "maximumError": "1mb"
+                  "maximumError": "2mb"
                 },
                 {
                   "type": "anyComponentStyle",
@@ -88,13 +88,13 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "hosted": {
-              "buildTarget": "expense-report:build:hosted"
+              "buildTarget": "my-expense-report:build:hosted"
             },
             "production": {
-              "buildTarget": "expense-report:build:production"
+              "buildTarget": "my-expense-report:build:production"
             },
             "development": {
-              "buildTarget": "expense-report:build:development"
+              "buildTarget": "my-expense-report:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -102,7 +102,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "buildTarget": "expense-report:build"
+            "buildTarget": "my-expense-report:build"
           }
         },
         "test": {
