@@ -44,7 +44,7 @@ export class AddTransactionComponent {
     }
 
     importFromFile(){
-        this.dialogRef.close("import");
+        this.dialogRef.close();
         this.dialog.open(ImportTransactionsComponent, { panelClass: "dialog-xl", autoFocus: false })
     }
 

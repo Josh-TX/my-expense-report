@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, SimpleChanges } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Subcategory, CategoryService } from '@services/category.service';
@@ -30,12 +30,27 @@ export class SubcategorySelectComponent {
     constructor(
         private categoryService: CategoryService) {
     }
+
+    ngOnChanges(changes: SimpleChanges){
+        if (changes['subcategoryBinding']){
+            this.catNameInput = this.subcategoryBinding ? this.subcategoryBinding.catName : null;
+            this.subcategoryInput = this.subcategoryBinding ? this.subcategoryBinding : null;
+            if (!this.catNameInput){
+                this.ngOnInit();
+            }
+        }
+    }
+
     ngOnInit() {
         this.allSubcategories = this.categoryService.getSubcategories().filter(z => !(z.catName == "other" && z.subcatName == "uncategorized"));
         this.allCatNames = [...new Set(this.allSubcategories.map(z => z.catName))];
+        if (!this.allCatNames.includes("other")){
+            this.allCatNames.push("other");
+        }
         this.filteredCatNames = this.allCatNames;
         this.filteredSubcategories = this.allSubcategories;
     }
+
 
     subcategoryInputChange(event: string | Subcategory) {
         if (typeof event == "string") {
@@ -74,7 +89,8 @@ export class SubcategorySelectComponent {
     }
 
     quickSelectSubcategory(subcategory: Subcategory) {
-        this.subcategoryInput = subcategory;
+        this.catNameInput = subcategory.catName;
+        this.subcategoryInput = subcategory.subcatName;
         this.update();
     }
 

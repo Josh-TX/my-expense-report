@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, Signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -19,6 +19,8 @@ import { ImportRulesComponent } from '@components/import-rules/import-rules.comp
 import {MatMenuModule} from '@angular/material/menu';
 import { ExportService } from '@services/export.service';
 import { SubcategorySelectComponent } from '@components/subcategory-select/subcategory-select.component';
+import { TransactionService } from '@services/transaction.service';
+import { FixUncategorizedComponent } from '@components/fix-uncategorized/fix-uncategorized.component';
 
 
 @Component({
@@ -35,8 +37,10 @@ export class ManageRulesComponent {
     selectedSubcategory: Subcategory | undefined;
     isNew: boolean | undefined;
     ruleTextInput: string = "";
+    uncategorizedCount$: Signal<number>;
 
     constructor(
+        private transactionService: TransactionService,
         private categoryService: CategoryService,
         private exportService: ExportService,
         private dialog: MatDialog,
@@ -45,6 +49,8 @@ export class ManageRulesComponent {
         ) {
         this.rules = this.categoryService.getRules();
         this.filteredRules = this.rules;
+        this.uncategorizedCount$ = computed(() => this.transactionService.getTransactions().filter(z => z.catName == "other" && z.subcatName == "uncategorized").length)
+
     }
 
     ruleTextChanged(){
@@ -109,8 +115,13 @@ export class ManageRulesComponent {
     }
 
     import(){
-        this.dialogRef.close("import");
+        this.dialogRef.close();
         this.dialog.open(ImportRulesComponent, { panelClass: "dialog-xl", autoFocus: false })
+    }
+
+    fixUncategorized(){
+        this.dialogRef.close();
+        this.dialog.open(FixUncategorizedComponent, { panelClass: "dialog-xl", autoFocus: false })
     }
 
     export(){
