@@ -1,4 +1,4 @@
-name: Build and deploy angular app to GitHub Pages
+name: Build and deploy to GitHub Pages
 
 on:
   workflow_dispatch:
