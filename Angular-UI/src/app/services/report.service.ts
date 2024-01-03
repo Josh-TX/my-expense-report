@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Settings, SettingsService } from "@services/settings.service";
 import { Transaction, TransactionService } from "@services/transaction.service";
 import { StatService } from './stat.service';
-import { CategoryService } from './category.service';
+import { CategoryRuleService } from './category-rule.service';
 import { getSum, groupBy, areValuesSame } from '@services/helpers';
 
 export type Report = {
@@ -52,7 +52,7 @@ export class ReportService {
         private transactionsService: TransactionService, 
         private settingsService: SettingsService,
         private statService: StatService,
-        private categoryService: CategoryService) {
+        private categoryRuleService: CategoryRuleService) {
         this.settings = this.settingsService.getSettings();
     }
 
@@ -103,8 +103,8 @@ export class ReportService {
         }
         var catStats = this.statService.getCatStatsYearlyInfo();
         var totalStat = this.statService.getTotalStatYearlyInfo();
-        var headerRows: ReportHeader[][] = [catYearStats.map(z => ({ width: 1, name: z.catName }))];
-        var columns: ReportColumn[] = catYearStats.map(z => ({ catName: z.catName }));
+        var headerRows: ReportHeader[][] = [catStats.map(z => ({ width: 1, name: z.catName }))];
+        var columns: ReportColumn[] = catStats.map(z => ({ catName: z.catName }));
         var rows: ReportRow[] = [];
         var statYearGroups = groupBy(catYearStats, z => z.year);
         for (var statYearGroup of statYearGroups){

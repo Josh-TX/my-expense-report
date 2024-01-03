@@ -142,6 +142,7 @@ export class CategoryDonutComponent {
     private innerLabelBeforeDraw(chart: Chart<"doughnut", number[], unknown>, args: { cancelable: true }, options: any): boolean | void {
         var items = this.activeItems.length == 2 
             ? this.activeItems : this.clickedItems;
+        var averageType = this.isYearly$() ? "yearly average" : "monthly average";
         if (this.outerRingCount == 2){
             var innerActive = items.length ? items[0].datasetIndex > 2 : false;
             var mainRing = this.donutData.outerRings[0];
@@ -177,7 +178,7 @@ export class CategoryDonutComponent {
             }
             this.drawCenterLabel(chart, label2, 20, -62, labelColor);
 
-            var label3 = innerActive ? "monthly average" : this.date!;
+            var label3 = innerActive ? averageType : this.date!;
             this.drawCenterLabel(chart, label3, 12, -37, this.theme!.mutedText);
 
             var totalAmount = getSum(mainRing.items.map(z => z.amount))
@@ -193,7 +194,7 @@ export class CategoryDonutComponent {
                 this.drawCenterLabel(chart, percentStr, 20, +13, this.theme!.mutedText);
             }
 
-            var label6 = !innerActive ? "monthly average" : this.date!;
+            var label6 = !innerActive ? averageType : this.date!;
             this.drawCenterLabel(chart, label6, 12, +55, this.theme!.mutedText);
 
             var otherTotalAmount = getSum(otherRing.items.map(z => z.amount));
@@ -225,7 +226,7 @@ export class CategoryDonutComponent {
             } 
             this.drawCenterLabel(chart, label1, 14, -35, labelColor);
 
-            var label3 = innerActive ? "average" : this.date!;
+            var label3 = innerActive ? averageType : this.date!;
             this.drawCenterLabel(chart, label3, 12, -17, this.theme!.mutedText);
 
             var totalAmount = getSum(mainRing.items.map(z => z.amount))
@@ -240,7 +241,7 @@ export class CategoryDonutComponent {
                 var percentStr = this.getPercentStr(totalAmount, amount)
                 this.drawCenterLabel(chart, percentStr, 12, 25, this.theme!.mutedText);
             } else {
-                this.drawCenterLabel(chart, "average", 10, 24, this.theme!.mutedText);
+                this.drawCenterLabel(chart, averageType, 10, 24, this.theme!.mutedText);
                 var otherTotalAmount = getSum(otherRing.items.map(z => z.amount));
                 var label5 =  "$" + new DecimalPipe('en-US').transform(otherTotalAmount, ".0-0")!;
                 this.drawCenterLabel(chart, label5, 12, 36, this.theme!.normalText);

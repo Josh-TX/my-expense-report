@@ -5,7 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { CategoryRule, CategoryService, Subcategory } from '@services/category.service';
+import { CategoryRule, CategoryRuleService } from '@services/category-rule.service';
 import {
     MatDialogRef,
     MatDialogTitle,
@@ -21,6 +21,7 @@ import { ExportService } from '@services/export.service';
 import { SubcategorySelectComponent } from '@components/subcategory-select/subcategory-select.component';
 import { TransactionService } from '@services/transaction.service';
 import { FixUncategorizedComponent } from '@components/fix-uncategorized/fix-uncategorized.component';
+import { Subcategory } from '@services/category.service';
 
 
 @Component({
@@ -41,13 +42,13 @@ export class ManageRulesComponent {
 
     constructor(
         private transactionService: TransactionService,
-        private categoryService: CategoryService,
+        private categoryRuleService: CategoryRuleService,
         private exportService: ExportService,
         private dialog: MatDialog,
         private dialogRef: MatDialogRef<ManageRulesComponent>,
         private snackBar: MatSnackBar
         ) {
-        this.rules = this.categoryService.getRules();
+        this.rules = this.categoryRuleService.getRules();
         this.filteredRules = this.rules;
         this.uncategorizedCount$ = computed(() => this.transactionService.getTransactions().filter(z => z.catName == "other" && z.subcatName == "uncategorized").length)
 
@@ -104,12 +105,12 @@ export class ManageRulesComponent {
             this.snackBar.open(error, "", { panelClass: "snackbar-error", duration: 3000 });
             return
         }
-        this.categoryService.addRules([{
+        this.categoryRuleService.addRules([{
             catName: this.selectedSubcategory!.catName,
             subcatName: this.selectedSubcategory!.subcatName,
             text: this.ruleTextInput
         }]);
-        this.rules = this.categoryService.getRules();
+        this.rules = this.categoryRuleService.getRules();
         this.filterTextChanged();
         this.stopAdd();
     }
@@ -125,7 +126,7 @@ export class ManageRulesComponent {
     }
 
     export(){
-        var rules = this.categoryService.getRules();
+        var rules = this.categoryRuleService.getRules();
         var headers = ["Category", "Subcategory", "Match Text"];
         var rows = rules.map(z => [z.catName, z.subcatName, z.text]);
         this.exportService.exportData([headers, ...rows],"category-rules.csv");
@@ -143,14 +144,14 @@ export class ManageRulesComponent {
             return;
         }
         rule.text = result.toLowerCase();
-        this.categoryService.replaceRules(this.rules);
+        this.categoryRuleService.replaceRules(this.rules);
         this.snackBar.open(`rule with text "${originalRuleText}" changed to "${rule.text}"`, "", {duration: 3000})
     }
 
     moveToTop(rule: CategoryRule){
         this.rules = this.rules.filter(z => z != rule);
         this.rules.unshift(rule);
-        this.categoryService.replaceRules(this.rules);
+        this.categoryRuleService.replaceRules(this.rules);
         this.snackBar.open(`rule with text "${rule.text}" moved to top`, "", {duration: 3000});
         this.filterTextChanged();
     }
@@ -158,14 +159,14 @@ export class ManageRulesComponent {
     moveToBottom(rule: CategoryRule){
         this.rules = this.rules.filter(z => z != rule);
         this.rules.push(rule);
-        this.categoryService.replaceRules(this.rules);
+        this.categoryRuleService.replaceRules(this.rules);
         this.snackBar.open(`rule with text "${rule.text}" moved to bottom`, "", {duration: 3000});
         this.filterTextChanged();
     }
 
     delete(rule: CategoryRule){
         this.rules = this.rules.filter(z => z != rule);
-        this.categoryService.replaceRules(this.rules);
+        this.categoryRuleService.replaceRules(this.rules);
         this.snackBar.open(`rule with text "${rule.text}" deleted`, "", {duration: 3000});
         this.filterTextChanged();
     }

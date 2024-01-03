@@ -1,10 +1,8 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DatePipe } from '@angular/common';
 import { TransactionService, Transaction, TransactionToAdd } from '@services/transaction.service';
 import { FormsModule } from '@angular/forms'
 import {MatInputModule} from '@angular/material/input';
-import {MatDatepickerModule,} from '@angular/material/datepicker';
 
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {

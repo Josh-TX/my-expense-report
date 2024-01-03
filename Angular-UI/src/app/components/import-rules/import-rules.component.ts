@@ -5,7 +5,7 @@ import Papa from 'papaparse';
 import { FileDropComponent } from '../file-drop/file-drop.component';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { CategoryRule, CategoryService } from '@services/category.service';
+import { CategoryRule, CategoryRuleService } from '@services/category-rule.service';
 import {
   MatDialogRef,
   MatDialogTitle,
@@ -28,10 +28,10 @@ export class ImportRulesComponent {
   replace: boolean = false;
   anyExistingRules: boolean = false;
   constructor(
-    private categoryService: CategoryService,  
+    private categoryRuleService: CategoryRuleService,  
     private dialogRef: MatDialogRef<ImportRulesComponent>,
     private snackBar: MatSnackBar) { 
-    if (categoryService.getRules().length){
+    if (categoryRuleService.getRules().length){
       this.anyExistingRules = true;
     }
   }
@@ -87,10 +87,10 @@ export class ImportRulesComponent {
       if (!confirm("Are you sure you want to delete all existing category rules?")){
         return;
       }
-      this.categoryService.replaceRules(rulesToAdd);
+      this.categoryRuleService.replaceRules(rulesToAdd);
       this.snackBar.open("replace all existing category rules with " + rulesToAdd.length + " new rules", "", { duration: 3000 });
     } else {
-      this.categoryService.addRules(rulesToAdd);
+      this.categoryRuleService.addRules(rulesToAdd);
       this.snackBar.open("imported  " + rulesToAdd.length + " category rules", "", { duration: 3000 });
     }
     this.dialogRef.close();
@@ -119,7 +119,7 @@ export class ImportRulesComponent {
           parsedRule.invalidIndexes.push(j);
         }
       }
-      if (this.categoryService.isDuplicate(parsedRule.text)){
+      if (this.categoryRuleService.isDuplicate(parsedRule.text)){
         parsedRule.isDuplicate = true;
       }
       this.parsedRules.push(parsedRule);

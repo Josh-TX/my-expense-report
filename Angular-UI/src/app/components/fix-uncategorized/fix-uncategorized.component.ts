@@ -10,11 +10,12 @@ import {
 } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { TransactionService, Transaction } from '@services/transaction.service';
-import { Subcategory, CategoryService } from '@services/category.service';
+import { CategoryRuleService } from '@services/category-rule.service';
 import { MatInputModule } from '@angular/material/input'
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { SubcategorySelectComponent } from '@components/subcategory-select/subcategory-select.component';
+import { Subcategory } from '@services/category.service';
 
 @Component({
     standalone: true,
@@ -37,7 +38,7 @@ export class FixUncategorizedComponent {
 
     constructor(
         private transactionService: TransactionService,
-        private categoryService: CategoryService,
+        private categoryRuleService: CategoryRuleService,
         private snackBar: MatSnackBar) {
     }
     ngOnInit() {
@@ -48,8 +49,8 @@ export class FixUncategorizedComponent {
         this.ruleTextInput = "";
         this.selectedSubcategory = undefined;
         var allTransactions = this.transactionService.getTransactions();
-        this.catTransactions = allTransactions.filter(z => !this.categoryService.isUncategorized(z));
-        this.uncatTransactions = allTransactions.filter(z => this.categoryService.isUncategorized(z)).slice(this.skipCount);
+        this.catTransactions = allTransactions.filter(z => !this.isUncategorized(z));
+        this.uncatTransactions = allTransactions.filter(z => this.isUncategorized(z)).slice(this.skipCount);
         this.currentUncatTransaction = this.uncatTransactions[0];
         if (this.currentUncatTransaction) {
             var suggestionStrings = getSuggestionStrings(this.currentUncatTransaction.name);
@@ -57,8 +58,8 @@ export class FixUncategorizedComponent {
             for (var suggestionString of suggestionStrings) {
                 var info: SuggestionInfo = {
                     text: suggestionString,
-                    conflicts: this.catTransactions.filter(trxn => this.categoryService.doesRuleTextMatch(trxn, suggestionString)),
-                    matches: this.uncatTransactions.filter(trxn => this.categoryService.doesRuleTextMatch(trxn, suggestionString)),
+                    conflicts: this.catTransactions.filter(trxn => this.categoryRuleService.doesRuleTextMatch(trxn, suggestionString)),
+                    matches: this.uncatTransactions.filter(trxn => this.categoryRuleService.doesRuleTextMatch(trxn, suggestionString)),
                 };
                 this.suggestionInfos.push(info);
             }
@@ -84,8 +85,8 @@ export class FixUncategorizedComponent {
         if (!this.currentSuggestionInfo) {
             this.currentSuggestionInfo = {
                 text: this.ruleTextInput,
-                conflicts: this.catTransactions.filter(trxn => this.categoryService.doesRuleTextMatch(trxn, this.ruleTextInput)),
-                matches: this.uncatTransactions.filter(trxn => this.categoryService.doesRuleTextMatch(trxn, this.ruleTextInput)),
+                conflicts: this.catTransactions.filter(trxn => this.categoryRuleService.doesRuleTextMatch(trxn, this.ruleTextInput)),
+                matches: this.uncatTransactions.filter(trxn => this.categoryRuleService.doesRuleTextMatch(trxn, this.ruleTextInput)),
             };
         }
     }
@@ -106,14 +107,14 @@ export class FixUncategorizedComponent {
         else if (!this.selectedSubcategory.subcatName) {
             error = "subcategory required"
         }
-        else if (!this.categoryService.doesRuleTextMatch(this.currentUncatTransaction!, this.ruleTextInput)) {
+        else if (!this.categoryRuleService.doesRuleTextMatch(this.currentUncatTransaction!, this.ruleTextInput)) {
             error = "rule text doesn't match current transaction"
         }
         if (error){
             this.snackBar.open(error, "", { panelClass: "snackbar-error", duration: 3000 });
             return
         }
-        this.categoryService.addRules([{
+        this.categoryRuleService.addRules([{
             catName: this.selectedSubcategory!.catName,
             subcatName: this.selectedSubcategory!.subcatName,
             text: this.ruleTextInput
@@ -126,6 +127,10 @@ export class FixUncategorizedComponent {
             return false;
         }
         return this.isNewSubcategory
+    }
+
+    private isUncategorized(subcategory: Subcategory): boolean{
+        return subcategory.catName == "other" && subcategory.subcatName == "uncategorized"
     }
 }
 
