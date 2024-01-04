@@ -10,6 +10,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { ReportService, Report, ReportCell, ReportRow, ReportHeader } from '@services/report.service';
 import { ExportService } from '@services/export.service';
 import { CategoryColorService } from '@services/category-color.service';
+import { LocalSettingsService } from '@services/local-settings.service';
 
 
 @Component({
@@ -29,16 +30,20 @@ export class ReportComponent {
     constructor(
         private reportService: ReportService,
         private categoryColorService: CategoryColorService,
+        private localSettingsService: LocalSettingsService,
         private dialog: MatDialog,
         private exportService: ExportService
     ) {
     }
 
     ngOnInit() {
+        console.log("test", this.localSettingsService.getValue("reportSubcat"))
+        this.showSubcategories = this.localSettingsService.getValue("reportSubcat") ?? false;
         this.updateReport();
     }
 
     showSubcategoriesChanged() {
+        this.localSettingsService.setValue("reportSubcat", this.showSubcategories);
         this.updateReport();
     }
 

@@ -8,7 +8,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatSort, Sort, MatSortModule } from '@angular/material/sort';
 import { SelectionModel } from '@angular/cdk/collections';
-import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { MatPaginator, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input'
@@ -21,6 +21,7 @@ import { getSum } from '@services/helpers';
 import { AddTransactionComponent } from '@components/add-transaction/add-transaction.component';
 import { ExportService } from '@services/export.service';
 import { CategoryColorService } from '@services/category-color.service';
+import { LocalSettingsService } from '@services/local-settings.service';
 
 
 @Component({
@@ -50,6 +51,7 @@ export class TransactionsComponent {
 
     constructor(
         private transactionService: TransactionService,
+        private localSettingsService: LocalSettingsService,
         private categoryColorService: CategoryColorService,
         private exportService: ExportService,
         private dialog: MatDialog,
@@ -59,7 +61,7 @@ export class TransactionsComponent {
     ngOnInit() {
         this.dataSource.data = this.transactionService.getTransactions();
         this.dataSource.paginator = this.paginator!;
-        this.dataSource.paginator.pageSize = 100;
+        this.dataSource.paginator.pageSize = this.localSettingsService.getValue("trxnsPageSize") ?? 50;
         this.dataSource.filterPredicate = this.filterTransactions.bind(this);
 
         this.dataSource.sort = this.sort!;
@@ -139,6 +141,10 @@ export class TransactionsComponent {
         this.debounceActive = false;
         this.dataSource.filter = this.filterText.toLowerCase();
         this.selection.clear();
+    }
+
+    pageChange(event: PageEvent){
+        this.localSettingsService.setValue("trxnsPageSize", event.pageSize)
     }
 
 

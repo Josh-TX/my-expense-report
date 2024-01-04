@@ -3,7 +3,9 @@ import { signal,Signal, computed } from '@angular/core';
 
 export type LocalSettings = {
     darkMode?: boolean | undefined,
-    pageSize?: number | undefined,
+    reportSubcat?: boolean | undefined,
+    trxnsPageSize?: number | undefined,
+    largeGraph?: boolean | undefined,
 }
 
 @Injectable({

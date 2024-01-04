@@ -1,8 +1,8 @@
 <div class="relative" style="margin: 20px 24px 0 24px;">
     <h1 style="position: absolute; top: 0; left: 0;">{{title}}</h1>
     <div style="position: absolute; top: 0; right: 0;">
-        <mat-slide-toggle [(ngModel)]="showBigGraph"
-        (ngModelChange)="showBigGraphChanged()">Large Graph</mat-slide-toggle>
+        <mat-slide-toggle [(ngModel)]="largeGraph"
+        (ngModelChange)="largeGraphChanged()">Large Graph</mat-slide-toggle>
     </div>
     <mer-category-donut [currentDate]="date" [chartType]="getChartType()" [isYearly]="isYearly" (itemClick)="donutClicked($event)"></mer-category-donut>
     <div style="position: absolute; bottom: 0; left: 0;">
@@ -26,7 +26,7 @@
             }
         </div>
     </div>
-    @if(!showBigGraph){
+    @if(!largeGraph){
         <div style="position: absolute; bottom: 15px; right: 0;">
             <mat-slide-toggle [(ngModel)]="isSubcategory"
             (ngModelChange)="isSubcategoryChanged()">Subcategories</mat-slide-toggle>

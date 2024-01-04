@@ -14,6 +14,7 @@ import {
 import { MatButtonModule } from '@angular/material/button';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { CategoryColorService } from '@services/category-color.service';
+import { LocalSettingsService } from '@services/local-settings.service';
 
 @Component({
     standalone: true,
@@ -27,14 +28,16 @@ export class ReportRowComponent {
     filterCat: string = "";
     filterSubcat: string = "";
     date: Date | undefined;
-    showBigGraph: boolean = false;
+    largeGraph: boolean = false;
     isSubcategory: boolean = false;
     isYearly: boolean = false;
     title: string = "";
     constructor(
         private transactionService: TransactionService,
+        private localSettingsService: LocalSettingsService,
         private categoryColorService: CategoryColorService
     ) {
+        this.largeGraph = this.localSettingsService.getValue("largeGraph") ?? false;
     }
 
     init(date: Date, isSubcategory: boolean, isYearly: boolean) {
@@ -80,7 +83,7 @@ export class ReportRowComponent {
     }
 
     getChartType(): DonutChartType{
-        if (this.showBigGraph){
+        if (this.largeGraph){
             return "both"
         } else if (this.isSubcategory){
             return "subcategory"
@@ -92,7 +95,8 @@ export class ReportRowComponent {
         this.resetFilter();
     }
 
-    showBigGraphChanged() {
+    largeGraphChanged() {
+        this.localSettingsService.setValue("largeGraph", this.largeGraph);
         this.resetFilter();
     }
 
