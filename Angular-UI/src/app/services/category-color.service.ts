@@ -31,7 +31,10 @@ export class CategoryColorService {
             var theme = this.themeService.getTheme();
             var map: CatColorSetMap = {};
             for (var i = 0; i < catNames.length; i++){
-                if (catNames[i] != "other"){
+                if (catNames[i] == "income"){
+                    map[catNames[i]] = theme.incomeColorSet;
+                }
+                else if (catNames[i] != "other"){
                     map[catNames[i]] = theme.colorSets[i % theme.colorSets.length];
                 }
             }

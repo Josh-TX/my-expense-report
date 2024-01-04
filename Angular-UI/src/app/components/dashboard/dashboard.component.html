@@ -2,10 +2,10 @@
     <div class="flex justify-between">
         <h1>Dashboard</h1>
         <div>
-            @if (uncategorizedCount$()) {
+            @if (uncategorizedCount$() && !isSample$()) {
             <button mat-raised-button (click)="fixUncategorized()" class="mr-4">Fix Uncategorized ({{uncategorizedCount$()}})</button>
             }
-            @if (trxnCount$()) {
+            @if (trxnCount$() && !isSample$()) {
             <button mat-raised-button (click)="manageRules()" class="mr-4">Manage Category Rules</button>
             }
             <button mat-raised-button (click)="importTransactions()">Import Transactions</button>

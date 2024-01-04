@@ -4,6 +4,7 @@ import { LocalSettingsService } from "@services/local-settings.service";
 export type Theme = {
     colorSets: ColorSet[],
     otherColorSet: ColorSet,
+    incomeColorSet: ColorSet,
     normalText: string,
     mutedText: string,
     normalBackground: string
@@ -79,9 +80,15 @@ export class ThemeService {
                 text: texts[i]
             })
         }
-        var theme = {
+        var theme: Theme = {
             colorSets: colorSets.slice(0,8),
             otherColorSet: colorSets[8],
+            incomeColorSet: {
+                border: "#072207",
+                background: "#009d43",
+                hover: "#286428",
+                text: "#286428"
+            },
             mutedText: "#AAAAAA",
             normalText: "#444444",
             normalBackground: "#FFFFFF"
@@ -113,6 +120,12 @@ export class ThemeService {
         return {
             colorSets: colorSets.slice(0,8),
             otherColorSet: colorSets[8],
+            incomeColorSet: {
+                border: "#072207",
+                background: "#286428",
+                hover: "#174317",
+                text: "#286428"
+            },
             mutedText: "#888888",
             normalText: "#FFFFFF",
             normalBackground: "#303030"

@@ -247,12 +247,13 @@ export class chartDataService {
 
     getMonthlyBarData(catName: string | undefined, subcatName: string | undefined, showSubcategories: boolean) {
         var stats = (catName && subcatName) || showSubcategories
-            ? this.statService.getSubcatMonthStats().filter(z => (!catName || z.subcategory.catName == catName) && (!subcatName || z.subcategory.subcatName == subcatName))
-            : this.statService.getCatMonthStats().filter(z => !catName || z.catName == catName);
+            ? this.statService.getSubcatMonthStats().filter(z => z.subcategory.catName != "income" || catName == "income").filter(z => (!catName || z.subcategory.catName == catName) && (!subcatName || z.subcategory.subcatName == subcatName))
+            : this.statService.getCatMonthStats().filter(z => z.catName != "income" || catName == "income").filter(z => !catName || z.catName == catName);
         var maxCategories = this.settingsService.getSettings().maxGraphCategories;
         if (!stats.length) {
             return
         }
+        var invertAmount = catName == "income" ? -1 : 1;
         var dateItems: BarDateItem[] = [];
         var monthGroups = groupBy<SubcatMonthStat | CatMonthStat, Date>(stats, z => z.month);
         for (var monthGroup of monthGroups) {
@@ -265,7 +266,7 @@ export class chartDataService {
                     label: subcatName ?? catName,
                     catName: catName,
                     subcatName: subcatName,
-                    amount: eitherMonthStat.sumAmount,
+                    amount: eitherMonthStat.sumAmount * invertAmount,
                     colorSet: this.categoryColorService.getColorSet(catName)
                 }
             });

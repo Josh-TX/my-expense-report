@@ -19,6 +19,7 @@ export class DashboardComponent {
     donutCurrentDate: Date | undefined;
     uncategorizedCount$: Signal<number>;
     trxnCount$: Signal<number>;
+    isSample$: Signal<boolean>;
     isHosted: boolean = environment.storageUrl != null;
 
     constructor(
@@ -26,6 +27,7 @@ export class DashboardComponent {
         private transactionService: TransactionService
         ) {
         this.trxnCount$ = computed(() => this.transactionService.getTransactions().length);
+        this.isSample$ = computed(() => this.transactionService.isSampleData());
         this.uncategorizedCount$ = computed(() => this.transactionService.getTransactions().filter(z => z.catName == "other" && z.subcatName == "uncategorized").length);
     }
 

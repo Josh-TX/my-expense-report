@@ -331,7 +331,7 @@ export class StatService {
         //The last sort will have the highest priorty, hence my last sort is sorting by month
         //but among categories with the same month, the catMonth whose category has the higher amount will be first (except uncategorized). 
         sortByDesc(catMonthStats, z => recentCatSumAmounts.find(zz => zz.catName == z.catName)!.sumAmount);
-        sortByDesc(catMonthStats, z => z.catName == "other" ? -1 : 0); //the other category should be sorted last
+        sortByDesc(catMonthStats, z => z.catName == "other" ? -1 : (z.catName == "income" ? -2 : 0)); //the other category should be sorted last
         sortByDesc(catMonthStats, z => z.month.getTime());
 
         //subcatMonthStats will be sorted very similar to catMonthStats
@@ -341,7 +341,7 @@ export class StatService {
             .map(z => ({subcategory: z.key, sumAmount: getSum(z.items.map(zz => zz.sumAmount))}));
         sortByDesc(subcatMonthStats, z => recentSubcatSumAmounts.find(zz => areValuesSame(z.subcategory, zz.subcategory))!.sumAmount);
         sortByDesc(subcatMonthStats, z => recentCatSumAmounts.find(zz => zz.catName == z.subcategory.catName)!.sumAmount);
-        sortByDesc(subcatMonthStats, z => z.subcategory.catName == "other" ? -1 : 0); //the other category should be sorted last
+        sortByDesc(subcatMonthStats, z => z.subcategory.catName == "other" ? -1 : z.subcategory.catName == "income" ? -2 : 0); //the other category should be sorted last
         sortByDesc(subcatMonthStats, z => z.month.getTime());
         return {
             catMonthStats: catMonthStats,
