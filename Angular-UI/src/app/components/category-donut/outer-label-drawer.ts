@@ -3,7 +3,7 @@ import { ChartArea } from "chart.js";
 
 export type outerLabelData = {
     fontSize: number,
-    inwardDistance: number,
+    inwardPercent: number,
     items: outerLabelDataItem[]
 }
 export type outerLabelDataItem = {
@@ -19,7 +19,7 @@ type LabelCalculatedPosition = {
     textHalfWidth: number,
 
     fontSize: number,
-    inwardDistance: number,
+    inwardPercent: number,
     displayText: string,
     color: string,
 }
@@ -48,7 +48,7 @@ export class OuterLableDrawer{
         ){
             this.cx = chartArea.left + chartArea.width / 2;
             this.cy = chartArea.top + chartArea.height / 2;
-            this.r = chartArea.height / 2;
+            this.r = Math.min(chartArea.height, chartArea.width) / 2;
             this.circumRatio = outerCircumferenceDegrees / 360;
     }
 
@@ -70,7 +70,7 @@ export class OuterLableDrawer{
                 }
                 var startAngle = currentAngle;
                 var endAngle = currentAngle + angleRange;
-                var labelPosition = this.getLabelPosition(item, startAngle, endAngle, labelData.fontSize, labelData.inwardDistance);
+                var labelPosition = this.getLabelPosition(item, startAngle, endAngle, labelData.fontSize, labelData.inwardPercent);
                 if (labelPosition){
                     labelPositions.push(labelPosition);
                 }
@@ -80,15 +80,15 @@ export class OuterLableDrawer{
         return labelPositions;
     }
 
-    private getLabelPosition(item: outerLabelDataItem, startAngle: number, endAngle: number, fontSize: number, inwardDistance: number): LabelCalculatedPosition | null {
+    private getLabelPosition(item: outerLabelDataItem, startAngle: number, endAngle: number, fontSize: number, inwardPercent: number): LabelCalculatedPosition | null {
         var angle = startAngle + (endAngle - startAngle) / 2
         var x1,x2,x3,y1,y2,side: number;
         for (var remainingAttempts = 3; remainingAttempts > 0; remainingAttempts--){
             side = angle < Math.PI ? 1 : -1;
             //because angle zero is up, I use sin for x and cos for y
-            x1 = this.cx + Math.sin(angle) * (this.r - inwardDistance);
+            x1 = this.cx + Math.sin(angle) * (this.r - this.r*(inwardPercent/100));
             //since higher Y values are further down, I subtract cos rather than add
-            y1 = this.cy - Math.cos(angle) * (this.r - inwardDistance);
+            y1 = this.cy - Math.cos(angle) * (this.r - this.r*(inwardPercent/100));
             x2 = this.cx + Math.sin(angle) * (this.r + 12);
             y2 = this.cy - Math.cos(angle) * (this.r + 12);
             x3 = x2 + (12 * side);
@@ -138,7 +138,7 @@ export class OuterLableDrawer{
             textRadius: textRadius,
 
             displayText: item.displayText,
-            inwardDistance: inwardDistance,
+            inwardPercent: inwardPercent,
             color: item.color,
             fontSize: fontSize,
         };
@@ -152,7 +152,7 @@ export class OuterLableDrawer{
         var lineAngle = labelPosition.lineAngle * Math.min(1, easeOutCubic);
         var textAngle = labelPosition.textAngle * Math.min(1, easeOutCubic);
         var textSide = textAngle < Math.PI ? 1 : -1;
-        var inwardDistance = labelPosition.inwardDistance;
+        var inwardDistance = this.r * (labelPosition.inwardPercent/100);
 
         //because angle zero is up, I use sin for x and cos for y
         var x1 = this.cx + Math.sin(lineAngle) * (this.r - inwardDistance);

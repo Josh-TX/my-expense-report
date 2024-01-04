@@ -44,6 +44,8 @@ type StoredTransactionPlusId = StoredTransaction & { tempId: number }
 export class TransactionService {
     private nextTempId: number = 1;
     private transactions$: Signal<Transaction[]>;
+    private _isSampleData: boolean = false;
+    private isSampleData$: Signal<boolean>;
     private storedTransactions$: WritableSignal<StoredTransactionPlusId[]>;
     private effectFired: boolean = false;
 
@@ -53,22 +55,29 @@ export class TransactionService {
         private storageService: StorageService,
         private settingsService: SettingsService
     ) {
+        this.isSampleData$ = computed(() => this.transactions$() && this._isSampleData)
         this.storedTransactions$ = signal(this.getStoredTrxns());
         this.transactions$ = computed(() => this.getComputedTrxns(this.storedTransactions$(), this.categoryRuleService.getRules()))
         effect(() => this.setStoredTrxns(this.storedTransactions$()))
+        
+    }
+
+    isSampleData(): boolean {
+        return this.isSampleData$();
     }
 
     addTransactions(trxns: TransactionToAdd[], filename: string) {
         var importDate = new Date();
         importDate.setMilliseconds(0); //needed for filters to work on transactions page when copy-pasting
         var translatedTrxns = trxns.map(z => (<StoredTransactionPlusId>{
-            tempId: this.nextTempId++,
-            name: z.name,
-            amount: z.amount,
-            date: z.date,
-            importDate: importDate,
-            importFrom: filename
-        }));
+                tempId: this.nextTempId++,
+                name: z.name,
+                amount: z.amount,
+                date: z.date,
+                importDate: importDate,
+                importFrom: filename,
+                manualSubcategory: this.getSubcategoryIfValid(z.manualSubcategory)
+            }));
         var storedTransactions = [ ...this.storedTransactions$(), ...translatedTrxns ]
         this.storedTransactions$.set(storedTransactions);
     }
@@ -84,19 +93,43 @@ export class TransactionService {
     deleteTrxns(trxns: Transaction[]){
         var trxnIds = trxns.map(z => z.tempId);
         var remainingStoredTrxns = this.storedTransactions$().filter(z => !trxnIds.includes(z.tempId));
-        this.storedTransactions$.set(remainingStoredTrxns);
+        this.updateStoredTransactions(remainingStoredTrxns);
+    }
+
+    assignManualCats(trxns: Transaction[], subcategory: Subcategory){
+        var storedTrxns = trxns.map(trxn => this.storedTransactions$().find(z => z.tempId == trxn.tempId)!);
+        storedTrxns.forEach(z => { z.manualSubcategory = this.getSubcategoryIfValid(subcategory) });
+        this.updateStoredTransactions([...this.storedTransactions$()]);
+    }
+
+    removeManualCats(trxns: Transaction[]){
+        var storedTrxns = trxns.map(trxn => this.storedTransactions$().find(z => z.tempId == trxn.tempId)!);
+        storedTrxns.forEach(z => { z.manualSubcategory = undefined });
+        this.updateStoredTransactions([...this.storedTransactions$()]);
     }
 
     negateAmounts(trxns: Transaction[]){
         var storedTrxns = trxns.map(trxn => this.storedTransactions$().find(z => z.tempId == trxn.tempId)!);
         storedTrxns.forEach(z => z.amount = -z.amount);
-        this.storedTransactions$.set([...this.storedTransactions$()]);
+        this.updateStoredTransactions([...this.storedTransactions$()]);
     }
 
     editSubcategories(trxns: Transaction[], subcategory: Subcategory){
         var storedTrxns = trxns.map(trxn => this.storedTransactions$().find(z => z.tempId == trxn.tempId)!);
         storedTrxns.forEach(z => z.manualSubcategory = subcategory);
-        this.storedTransactions$.set([...this.storedTransactions$()]);
+        this.updateStoredTransactions([...this.storedTransactions$()]);
+    }
+
+    private updateStoredTransactions(storedTrxns: StoredTransactionPlusId[]){
+        this.categoryService.clearFromManualCategories();
+        this.storedTransactions$.set(storedTrxns);
+    }
+
+    private getSubcategoryIfValid(subcat: Subcategory | undefined): Subcategory | undefined{
+        if (subcat && subcat.catName && subcat.subcatName && (subcat.catName != "other" || subcat.subcatName != "uncategorized")){
+            return subcat
+        }
+        return undefined;
     }
 
     private getComputedTrxns(storedTransactions: StoredTransactionPlusId[], rules: CategoryRule[]): Transaction[] {
@@ -158,6 +191,9 @@ export class TransactionService {
         }
         if (!output.length){
             output = this.getSampleTransactions();
+            this._isSampleData = true;
+        } else {
+            this._isSampleData = false;
         }
         output.sort((z1, z2) => z2.date.getTime() - z1.date.getTime());
         return output;
@@ -197,7 +233,7 @@ export class TransactionService {
 
     
     private getSampleTransactions(): Transaction[]{
-        var rent = randAmount(500, 800);
+        var rent = randAmount(500, 900);
         var rules: SampleTransactionRule[] = [
             ["mcdonalds" + randomSuffix(), "food", "fast food", 5, 25, 1,5, null],
             ["Chick-fil-A" + randomSuffix(), "food", "fast food", 10, 30, 1,5, null],
@@ -250,7 +286,7 @@ export class TransactionService {
                         catName: subcategory.catName,
                         subcatName: subcategory.subcatName,
                         catSource: "manual category",
-                        tempId: 0,
+                        tempId: -1,
                         importDate: now,
                         importFrom: "sample transaction generator",
                     })

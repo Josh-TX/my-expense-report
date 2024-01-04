@@ -3,7 +3,7 @@ import { SettingsService } from "@services/settings.service";
 import { CatMonthStat, CatYearStat, StatService, SubcatMonthStat, SubcatYearStat } from './stat.service';
 import { getSum, groupBy } from '@services/helpers';
 import { ColorSet, ThemeService } from './theme.service';
-import { CatColorService } from './catColor.service';
+import { CategoryColorService } from './category-color.service';
 
 export type DonutData = {
     isYearly: boolean,
@@ -51,7 +51,7 @@ export class chartDataService {
         private statService: StatService,
         private themeService: ThemeService,
         private settingsService: SettingsService,
-        private catColorService: CatColorService,
+        private categoryColorService: CategoryColorService,
         ) {
     }
 
@@ -266,7 +266,7 @@ export class chartDataService {
                     catName: catName,
                     subcatName: subcatName,
                     amount: eitherMonthStat.sumAmount,
-                    colorSet: this.catColorService.getColorSet(catName)
+                    colorSet: this.categoryColorService.getColorSet(catName)
                 }
             });
             if (catItems.length > maxCategories){
@@ -275,7 +275,7 @@ export class chartDataService {
                     catName: "other",
                     subcatName: undefined,
                     amount: getSum(catItems.slice(maxCategories - 1).map(z => z.amount)),
-                    colorSet: this.catColorService.getColorSet("other")
+                    colorSet: this.categoryColorService.getColorSet("other")
                 }];
             }
             dateItems.push({
@@ -312,7 +312,7 @@ export class chartDataService {
                     catName: catName,
                     subcatName: subcatName,
                     amount: eitherYearStat.sumAmount,
-                    colorSet: this.catColorService.getColorSet(catName)
+                    colorSet: this.categoryColorService.getColorSet(catName)
                 }
             });
             if (catItems.length > maxCategories){
@@ -321,7 +321,7 @@ export class chartDataService {
                     catName: "other",
                     subcatName: undefined,
                     amount: getSum(catItems.slice(maxCategories - 1).map(z => z.amount)),
-                    colorSet: this.catColorService.getColorSet("other")
+                    colorSet: this.categoryColorService.getColorSet("other")
                 }];
             }
             dateItems.push({

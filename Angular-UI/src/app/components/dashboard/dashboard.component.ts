@@ -25,8 +25,8 @@ export class DashboardComponent {
         private dialog: MatDialog,
         private transactionService: TransactionService
         ) {
-            this.trxnCount$ = computed(() => this.transactionService.getTransactions().length)
-            this.uncategorizedCount$ = computed(() => this.transactionService.getTransactions().filter(z => z.catName == "other" && z.subcatName == "uncategorized").length)
+        this.trxnCount$ = computed(() => this.transactionService.getTransactions().length);
+        this.uncategorizedCount$ = computed(() => this.transactionService.getTransactions().filter(z => z.catName == "other" && z.subcatName == "uncategorized").length);
     }
 
     barClicked(event: Date | undefined) {

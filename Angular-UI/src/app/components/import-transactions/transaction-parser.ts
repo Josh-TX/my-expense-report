@@ -4,7 +4,9 @@ export type ParsedTransactionGrid = {
     rows: ParsedTransactionRow[],
     nameColumnIndex: number,
     amountColumnIndex: number,
-    dateColumnIndex: number
+    dateColumnIndex: number,
+    catNameColumnIndex: number | undefined,
+    subcatNameColumnIndex: number | undefined,
 }
 
 export type ParsedTransactionRow = {
@@ -65,6 +67,8 @@ export function parseTransactions(rows: string[][], filename: string): ParsedTra
         nameColumnIndex: colIndexes.name,
         dateColumnIndex: colIndexes.date,
         amountColumnIndex: colIndexes.amount,
+        catNameColumnIndex: colIndexes.catName,
+        subcatNameColumnIndex: colIndexes.subcatName,
         rows: parsedRows
     };
     return parsedGrid;
@@ -74,6 +78,8 @@ function getColumnIndexes(rowCount: number, metrics: ColumnMetric[], headers: st
     var amountScores = [];
     var dateScores = [];
     var nameScores = [];
+    var catNameIndex: number | undefined;
+    var subcatNameIndex: number | undefined;
     //to decide which column is the amount, date, or date, I'll use a scoring system
     //this way I can still utilize the headers to help infer which columns to use
     //but I'm not dependant on headers (some banks export files with no headers)
@@ -81,32 +87,38 @@ function getColumnIndexes(rowCount: number, metrics: ColumnMetric[], headers: st
         amountScores.push(0);
         dateScores.push(0);
         nameScores.push(0);
-        if (headers != null) {
+        if (headers != null && headers[i]) {
             //date headers
-            if (headers[i] && headers[i].toLowerCase() == "date") {
+            if (headers[i].toLowerCase() == "date") {
                 dateScores[i] += 10;
             }
-            else if (headers[i] && headers[i].toLowerCase().includes("date")) {
+            else if (headers[i].toLowerCase().includes("date")) {
                 dateScores[i] += 5;
             }
             //amount headers
-            if (headers[i] && headers[i].toLowerCase() == "amount") {
+            if (headers[i].toLowerCase() == "amount") {
                 amountScores[i] += 10
             }
-            else if (headers[i] && headers[i].toLowerCase().includes("amount")) {
+            else if (headers[i].toLowerCase().includes("amount")) {
                 amountScores[i] += 5;
-            } else if (headers[i] && headers[i].toLowerCase() == "debit") {
+            } else if (headers[i].toLowerCase() == "debit") {
                 amountScores[i] += 2;
             }
-            else if (headers[i] && headers[i].toLowerCase() == "balance") {
+            else if (headers[i].toLowerCase() == "balance") {
                 amountScores[i] -= 2;
             }
             //name headers
-            if (headers[i] && headers[i].toLowerCase().includes("description")) {
+            if (headers[i].toLowerCase().includes("description")) {
                 nameScores[i] += 8;
             }
-            else if (headers[i] && headers[i].toLowerCase().includes("name")) {
+            else if (headers[i].toLowerCase().includes("name")) {
                 nameScores[i] += 5;
+            }
+            if (headers[i].toLowerCase() == "category"){
+                catNameIndex = i;
+            }
+            if (headers[i].toLowerCase() == "subcategory"){
+                subcatNameIndex = i;
             }
         }
         var metric = metrics[i];
@@ -123,7 +135,9 @@ function getColumnIndexes(rowCount: number, metrics: ColumnMetric[], headers: st
     var colIndexes: ColumnIndexes = {
         date: dateScores.indexOf(Math.max(...dateScores)),
         amount: amountScores.indexOf(Math.max(...amountScores)),
-        name: nameScores.indexOf(Math.max(...nameScores))
+        name: nameScores.indexOf(Math.max(...nameScores)),
+        catName: subcatNameIndex != null ? catNameIndex : undefined, //don't catName without a subcatName or visa versa
+        subcatName: catNameIndex != null ? subcatNameIndex : undefined,
     }
     if (colIndexes.date == colIndexes.amount
         || colIndexes.date == colIndexes.name || colIndexes.amount == colIndexes.name) {
@@ -173,6 +187,8 @@ type ColumnIndexes = {
     date: number,
     amount: number,
     name: number,
+    catName: number | undefined,
+    subcatName: number | undefined
 }
 
 type ColumnMetric = {

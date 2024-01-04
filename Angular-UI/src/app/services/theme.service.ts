@@ -1,5 +1,5 @@
 import { Injectable, WritableSignal, computed, signal, Signal, effect, untracked } from '@angular/core';
-import { LocalSettingsService } from "@services/localSettings.service";
+import { LocalSettingsService } from "@services/local-settings.service";
 
 export type Theme = {
     colorSets: ColorSet[],
@@ -26,8 +26,7 @@ export class ThemeService {
     private currentTheme$: Signal<Theme>;
 
     constructor(private localSettingsService: LocalSettingsService) {
-        var darkModeOrUndefined$= this.localSettingsService.getValue$("darkMode");
-        this.darkMode$ = computed(() => this.getDefaultDarkMode(darkModeOrUndefined$()));
+        this.darkMode$ = computed(() => this.getDefaultDarkMode(this.localSettingsService.getValue("darkMode")));
         this.currentTheme$ = computed(() => this.darkMode$() ? this.createDarkTheme() : this.createLightTheme());
         effect(() => this.updateCSS(this.darkMode$()));
 

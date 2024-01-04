@@ -9,7 +9,7 @@ import { ReportColumnComponent } from '@components/report-column/report-column.c
 import { MatDialog } from '@angular/material/dialog';
 import { ReportService, Report, ReportCell, ReportRow, ReportHeader } from '@services/report.service';
 import { ExportService } from '@services/export.service';
-import { CatColorService } from '@services/catColor.service';
+import { CategoryColorService } from '@services/category-color.service';
 
 
 @Component({
@@ -28,7 +28,7 @@ export class ReportComponent {
 
     constructor(
         private reportService: ReportService,
-        private catColorService: CatColorService,
+        private categoryColorService: CategoryColorService,
         private dialog: MatDialog,
         private exportService: ExportService
     ) {
@@ -101,7 +101,7 @@ export class ReportComponent {
     }
 
     getColorStyles(header: ReportHeader){
-        var colorSet = this.catColorService.getColorSet(header.name);
+        var colorSet = this.categoryColorService.getColorSet(header.name);
         return `background: ${colorSet.background}; border: 1px solid ${colorSet.border}`
     }
 

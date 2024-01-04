@@ -13,7 +13,7 @@ import {
 } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { CatColorService } from '@services/catColor.service';
+import { CategoryColorService } from '@services/category-color.service';
 
 @Component({
     standalone: true,
@@ -33,7 +33,7 @@ export class ReportRowComponent {
     title: string = "";
     constructor(
         private transactionService: TransactionService,
-        private catColorService: CatColorService
+        private categoryColorService: CategoryColorService
     ) {
     }
 
@@ -58,7 +58,7 @@ export class ReportRowComponent {
     }
 
     getColorStyles(){
-        var colorSet = this.catColorService.getColorSet(this.filterCat!);
+        var colorSet = this.categoryColorService.getColorSet(this.filterCat!);
         return `background: ${colorSet.background}; border: 1px solid ${colorSet.border}`
     }
 

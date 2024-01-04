@@ -128,11 +128,23 @@ export class ImportTransactionsComponent {
 
     importTransactions() {
         var sign = this.expensesAreNegative ? -1 : 1;
-        var trxnsToAdd: TransactionToAdd[] = this.currentGrid!.rows.filter((z, i) => !z.invalidIndexes.length && !this.duplicateRowIndexes.includes(i)).map(z => ({
-            name: <string>z.cells[this.currentGrid!.nameColumnIndex],
-            amount: <number>z.cells[this.currentGrid!.amountColumnIndex] * sign,
-            date: <Date>z.cells[this.currentGrid!.dateColumnIndex],
-        }));
+        var trxnsToAdd: TransactionToAdd[] = this.currentGrid!.rows.filter((z, i) => !z.invalidIndexes.length && !this.duplicateRowIndexes.includes(i)).map(z => {
+            var trxnToAdd: TransactionToAdd = {
+                name: <string>z.cells[this.currentGrid!.nameColumnIndex],
+                amount: <number>z.cells[this.currentGrid!.amountColumnIndex] * sign,
+                date: <Date>z.cells[this.currentGrid!.dateColumnIndex],
+            }
+            if (this.currentGrid!.catNameColumnIndex != undefined && this.currentGrid!.subcatNameColumnIndex != undefined){
+                var manualSubcategory = {
+                    catName: <string>z.cells[this.currentGrid!.catNameColumnIndex],
+                    subcatName: <string>z.cells[this.currentGrid!.subcatNameColumnIndex],
+                }
+                if (manualSubcategory.catName && manualSubcategory.subcatName){
+                    trxnToAdd.manualSubcategory = manualSubcategory;
+                }
+            }
+            return trxnToAdd;
+        });
         this.transactionService.addTransactions(trxnsToAdd, this.currentGrid!.filename)
         this.snackBar.open("Imported " + trxnsToAdd.length + " Transactions", "", { duration: 3000 });
         if (this.currentGridIndex == this.grids!.length - 1) {

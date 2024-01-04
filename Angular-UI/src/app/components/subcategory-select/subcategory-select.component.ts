@@ -33,6 +33,9 @@ export class SubcategorySelectComponent {
 
     ngOnChanges(changes: SimpleChanges){
         if (changes['subcategoryBinding']){
+            if (this.subcategoryBinding && this.subcategoryBinding.catName == this.catNameInput && this.subcategoryBinding.subcatName == this.getSubcatName() ){
+                return;
+            }
             this.catNameInput = this.subcategoryBinding ? this.subcategoryBinding.catName : null;
             this.subcategoryInput = this.subcategoryBinding ? this.subcategoryBinding : null;
             if (!this.catNameInput){

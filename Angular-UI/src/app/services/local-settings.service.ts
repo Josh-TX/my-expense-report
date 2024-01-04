@@ -32,7 +32,7 @@ export class LocalSettingsService {
     //     return this.localSettings[key];
     // }
 
-    getValue$<K extends keyof LocalSettings>(key: K): Signal<LocalSettings[K]>{
-        return computed(() => this.localSettings$()[key]); 
+    getValue<K extends keyof LocalSettings>(key: K): LocalSettings[K]{
+        return this.localSettings$()[key]
     }
 }

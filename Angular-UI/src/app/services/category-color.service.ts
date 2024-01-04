@@ -10,7 +10,7 @@ type CatColorSetMap = {[catName: string]: ColorSet }
 @Injectable({
   providedIn: 'root'
 })
-export class CatColorService {
+export class CategoryColorService {
 
     catColorSetMap$: Signal<CatColorSetMap>;
     otherColorSet$: Signal<ColorSet>;

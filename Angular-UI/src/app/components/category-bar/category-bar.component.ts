@@ -4,7 +4,7 @@ import { ChartDataset, ChartEvent, Interaction, InteractionItem, InteractionOpti
 import { Chart, registerables } from 'chart.js';
 import { DatePipe, CurrencyPipe, DecimalPipe } from '@angular/common';
 import { Subcategory } from '@services/category.service';
-import { BarData, chartDataService } from '@services/chartData.service';
+import { BarData, chartDataService } from '@services/chart-data.service';
 import { Theme, ThemeService } from '@services/theme.service';
 import { getSum } from '@services/helpers';
 Chart.register(...registerables);

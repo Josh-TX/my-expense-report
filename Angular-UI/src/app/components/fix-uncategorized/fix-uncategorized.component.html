@@ -1,6 +1,6 @@
 <h2 mat-dialog-title>Fix Uncategorized Transactions</h2>
 <mat-dialog-content class="mat-typography">
-    @if (currentUncatTransaction && currentSuggestionInfo && suggestionInfos){
+    @if (currentUncatTransaction && suggestionInfos){
     <div class="grid grid-cols-4 gap-4">
         <div>
             <div>Date</div>
@@ -11,13 +11,13 @@
             <h3 class="text-body">{{currentUncatTransaction.amount | currency}}</h3>
         </div>
         <div class="col-span-2">
-            <div>Description</div>
+            <div>Name</div>
             <h3 class="text-body">{{currentUncatTransaction.name}}</h3>
         </div>
     </div>
     <div class="grid grid-cols-2 gap-4 mb-3">
         <div class="flex flex-col" style="height: 160px;">
-            @if (currentSuggestionInfo.matches.length){
+            @if (currentSuggestionInfo && currentSuggestionInfo.matches.length){
             <h4 class="mb-1">Proposed rule would affect the following transactions
                 ({{currentSuggestionInfo.matches.length}})</h4>
             <div class="grow" style="overflow: auto">
@@ -34,7 +34,7 @@
             }
         </div>
         <div class="flex flex-col" style="height: 160px;">
-            @if (currentSuggestionInfo.conflicts.length){
+            @if (currentSuggestionInfo && currentSuggestionInfo.conflicts.length){
             <h4 class="mb-1">Proposed rule conflicts with already-categorized transactions</h4>
             <div class="grow" style="overflow: auto">
                 <table class="table table-outline table-sm mb-0">
@@ -57,7 +57,7 @@
     <div class="">
         @for(info of suggestionInfos; track info){
         <button class="mr-2" mat-raised-button [class.border-primary]="info == currentSuggestionInfo"
-            (click)="selectSuggestion(info)">
+            (click)="selectSuggestion(info)" [disabled]="isManual">
             {{info.text}}
             <span class="text-muted primary-button-muted-text">({{info.matches.length}})</span>
         </button>
@@ -67,7 +67,7 @@
     <div class="mt-2 grid grid-cols-4 gap-4">
         <mat-form-field>
             <mat-label>rule text</mat-label>
-            <input matInput [(ngModel)]="ruleTextInput" (ngModelChange)="ruleTextChanged()">
+            <input matInput [(ngModel)]="ruleTextInput" (ngModelChange)="ruleTextChanged()" [disabled]="isManual">
         </mat-form-field>
         <mer-subcategory-select 
             [(subcategory)]="selectedSubcategory"
@@ -90,7 +90,11 @@
     }
 
 </mat-dialog-content>
-<mat-dialog-actions align="end">
+<mat-dialog-actions align="end" class="">
+    <div class="pl-4">
+        <mat-slide-toggle [(ngModel)]="isManual" (ngModelChange)="isManualChange()">Assign Manual Category</mat-slide-toggle>
+    </div>
+    <div class="flex-grow"></div>
     <button mat-raised-button mat-dialog-close>Close</button>
     <button mat-raised-button (click)="skip()">Skip</button>
 </mat-dialog-actions>

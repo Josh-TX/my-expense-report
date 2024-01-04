@@ -14,7 +14,9 @@
         @for (header of currentGrid.headers; track header; let index = $index){
         @if (currentGrid.nameColumnIndex == index
         || currentGrid.amountColumnIndex == index
-        || currentGrid.dateColumnIndex == index) {
+        || currentGrid.dateColumnIndex == index
+        || currentGrid.catNameColumnIndex == index
+        || currentGrid.subcatNameColumnIndex == index) {
         <th class="text-primary">{{header}}</th>
         } @else {
         <td class="text-muted">{{header}}</td>
@@ -41,7 +43,7 @@
           {{cell | currency}}
         </td>
         }
-        @else if (currentGrid.nameColumnIndex == index){
+        @else if (currentGrid.nameColumnIndex == index || currentGrid.catNameColumnIndex == index || currentGrid.subcatNameColumnIndex == index){
         <td [class.text-muted]="row.invalidIndexes.length || duplicateRowIndexes.includes(index)">
           {{cell}}
         </td>

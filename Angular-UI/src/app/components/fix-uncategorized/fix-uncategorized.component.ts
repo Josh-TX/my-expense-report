@@ -12,6 +12,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { TransactionService, Transaction } from '@services/transaction.service';
 import { CategoryRuleService } from '@services/category-rule.service';
 import { MatInputModule } from '@angular/material/input'
+import { MatSlideToggleModule } from '@angular/material/slide-toggle'
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { SubcategorySelectComponent } from '@components/subcategory-select/subcategory-select.component';
@@ -20,7 +21,7 @@ import { Subcategory } from '@services/category.service';
 @Component({
     standalone: true,
     imports: [CommonModule, FormsModule, MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose, 
-        MatButtonModule, MatInputModule, SubcategorySelectComponent],
+        MatButtonModule, MatInputModule, SubcategorySelectComponent, MatSlideToggleModule],
     templateUrl: './fix-uncategorized.component.html'
 })
 export class FixUncategorizedComponent {
@@ -31,7 +32,7 @@ export class FixUncategorizedComponent {
     suggestionInfos: SuggestionInfo[] = [];
     currentSuggestionInfo: SuggestionInfo | undefined;
     ruleTextInput: string = "";
-    isUpdating: boolean = false;
+    isManual: boolean = false;
 
     selectedSubcategory: Subcategory | undefined;
     isNewSubcategory: boolean | undefined;
@@ -63,15 +64,29 @@ export class FixUncategorizedComponent {
                 };
                 this.suggestionInfos.push(info);
             }
-            this.selectSuggestion(this.suggestionInfos[0]);
-            for (var i = 1; i < this.suggestionInfos.length; i++){
-                var addedText = this.suggestionInfos[i].text.slice(this.suggestionInfos[i-1].text.length);
-                if (/^[A-Za-z\- ']+$/.test(addedText)){
-                    this.selectSuggestion(this.suggestionInfos[i]);
-                } else {
-                    break;
-                }
+            this.selectBestSuggestion();
+        }
+    }
+
+
+    private selectBestSuggestion(){
+        this.selectSuggestion(this.suggestionInfos[0]);
+        for (var i = 1; i < this.suggestionInfos.length; i++){
+            var addedText = this.suggestionInfos[i].text.slice(this.suggestionInfos[i-1].text.length);
+            if (/^[A-Za-z\- ']+$/.test(addedText)){
+                this.selectSuggestion(this.suggestionInfos[i]);
+            } else {
+                break;
             }
+        }
+    }
+
+    isManualChange(){
+        if (this.isManual){
+            this.currentSuggestionInfo = undefined;
+            this.ruleTextInput = "";
+        } else {
+            this.selectBestSuggestion();
         }
     }
 
@@ -98,7 +113,7 @@ export class FixUncategorizedComponent {
 
     submit() {
         var error = "";
-        if (!this.ruleTextInput) {
+        if (!this.isManual && !this.ruleTextInput) {
             error = "rule text required"
         }
         else if (!this.selectedSubcategory || !this.selectedSubcategory.catName) {
@@ -107,18 +122,22 @@ export class FixUncategorizedComponent {
         else if (!this.selectedSubcategory.subcatName) {
             error = "subcategory required"
         }
-        else if (!this.categoryRuleService.doesRuleTextMatch(this.currentUncatTransaction!, this.ruleTextInput)) {
+        else if (!this.isManual && !this.categoryRuleService.doesRuleTextMatch(this.currentUncatTransaction!, this.ruleTextInput)) {
             error = "rule text doesn't match current transaction"
         }
         if (error){
             this.snackBar.open(error, "", { panelClass: "snackbar-error", duration: 3000 });
             return
         }
-        this.categoryRuleService.addRules([{
-            catName: this.selectedSubcategory!.catName,
-            subcatName: this.selectedSubcategory!.subcatName,
-            text: this.ruleTextInput
-        }]);
+        if (this.isManual){
+            this.transactionService.assignManualCats([this.currentUncatTransaction!], this.selectedSubcategory!)
+        } else {
+            this.categoryRuleService.addRules([{
+                catName: this.selectedSubcategory!.catName,
+                subcatName: this.selectedSubcategory!.subcatName,
+                text: this.ruleTextInput
+            }]);
+        }
         this.update();
     }
 

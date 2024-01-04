@@ -6,7 +6,7 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { OuterLableDrawer, outerLabelData } from './outer-label-drawer';
 import { Theme, ThemeService } from '@services/theme.service';
 import { getSum } from '@services/helpers';
-import { DonutData, DonutDataRing, chartDataService } from '@services/chartData.service';
+import { DonutData, DonutDataRing, chartDataService } from '@services/chart-data.service';
 Chart.register(...registerables);
 
 export type DonutClickData = {
@@ -29,6 +29,7 @@ export class CategoryDonutComponent {
     @Input("chartType") inputChartType: DonutChartType = "both";
     @Output("itemClick") clickEmitter = new EventEmitter<DonutClickData | null>();
     height: number = 500;
+    clickable: boolean = false;
 
     private date$: WritableSignal<Date | undefined>;
     private isYearly$: WritableSignal<boolean>;
@@ -137,6 +138,7 @@ export class CategoryDonutComponent {
                 }, 25);
             }
         }
+        this.clickable = !!pointItems.length;
         return this.activeItems;
     }
     private innerLabelBeforeDraw(chart: Chart<"doughnut", number[], unknown>, args: { cancelable: true }, options: any): boolean | void {
@@ -276,7 +278,8 @@ export class CategoryDonutComponent {
         var { top, bottom, left, right, width, height } = chart.chartArea;
         var cx = left + width / 2;
         var cy = top + height / 2;
-        var baseR = height / 2;
+
+        var baseR = Math.min(width, height) / 2;
         //I'm using the terms "inner" & "outer" to distingish datasets 0 & 1 from datasets 3 & 4
         //so I'm using largeR and smallR to refer to the 2 radiuses for the missing section
         var largeR = isInner 
@@ -310,7 +313,7 @@ export class CategoryDonutComponent {
         ctx.fillStyle = this.theme!.mutedText + "20";
         ctx.fill();
         var requiredDegreesForLabel = isInner ? 20 : 15;
-        if (this.outerRingCount == 2 && 360 - circum > requiredDegreesForLabel){
+        if (baseR > 150 && 360 - circum > requiredDegreesForLabel){
             var amount = this.maxTotal - this.minTotal;
             var amountStr = "$" + new DecimalPipe('en-US').transform(amount, ".0-0")!;
             var midAngle = (startAngle + endAngle - extraAngle*2) / 2 + extraAngle;
@@ -330,7 +333,7 @@ export class CategoryDonutComponent {
 
         var labelDatas: outerLabelData[] = [{
             fontSize: 20,
-            inwardDistance: 10,
+            inwardPercent: 4,//10,
             items: this.donutData.outerRings[0].items.map(z => ({
                 displayText: z.label,
                 amount: z.amount,
@@ -340,7 +343,7 @@ export class CategoryDonutComponent {
         if (this.outerRingCount == 2){
             var subcategoryLabelData: outerLabelData = {
                 fontSize: 12,
-                inwardDistance: 36,
+                inwardPercent: 14,//36,
                 items: this.donutData.outerRings[1].items.map(z => ({
                     displayText: z.label,
                     amount: z.amount,
@@ -418,9 +421,6 @@ export class CategoryDonutComponent {
         } else {
             this.weights = [1, 0.25, 0.65]
         }
-
-
-
         this.chartRenderStartTime = new Date().getTime();
         this.clickedItems = [];
         this.activeItems = [];
@@ -476,8 +476,8 @@ export class CategoryDonutComponent {
                 maintainAspectRatio: false,
                 layout: {
                     padding: {
-                        left: 80,
-                        right: 80,
+                        left: 120,
+                        right: 120,
                         top: 22,
                         bottom: 22
                     }

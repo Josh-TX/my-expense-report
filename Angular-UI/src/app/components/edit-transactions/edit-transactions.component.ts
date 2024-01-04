@@ -21,6 +21,7 @@ import { MatButtonModule } from '@angular/material/button';
 })
 export class EditTransactionsComponent {
     transactions: Transaction[] = [];
+    anyManualCats: boolean = false;
     title: string = "";
     constructor(
         private transactionService: TransactionService,
@@ -31,10 +32,15 @@ export class EditTransactionsComponent {
 
     init(transactions: Transaction[]) {
         this.transactions = transactions;
+        this.anyManualCats = this.transactions.some(z => z.catSource == "manual category")
     }
 
     negateAmounts() {
-        if (confirm("are you sure you want to flip income/expenses for all the transactions?")) {
+        if (this.transactions.some(z => z.tempId == -1)){
+            alert("cannot edit sample data");
+            return;
+        }
+        if (this.transactions.length == 1 || confirm(`are you sure you want to flip income/expenses for all ${this.transactions.length} transactions?`)) {
             this.transactionService.negateAmounts(this.transactions);
             this.snackBar.open("flipped income/expenses for " + this.transactions.length + " transactions", "", { duration: 3000 });
             this.dialogRef.close();
@@ -42,7 +48,11 @@ export class EditTransactionsComponent {
     }
 
     hideTransactions() {
-        if (confirm("are you sure you want to hide the transactions?")) {
+        if (this.transactions.some(z => z.tempId == -1)){
+            alert("cannot edit sample data");
+            return;
+        }
+        if (this.transactions.length == 1 || confirm(`are you sure you want to hide all ${this.transactions.length} transactions?`)) {
             this.transactionService.editSubcategories(this.transactions, { catName: "hidden", subcatName: "hidden" });
             this.snackBar.open("hid " + this.transactions.length + " transactions", "", { duration: 3000 });
             this.dialogRef.close();
@@ -50,9 +60,25 @@ export class EditTransactionsComponent {
     }
 
     deleteTransactions() {
-        if (confirm("are you sure you want to delete the transactions?")) {
+        if (this.transactions.some(z => z.tempId == -1)){
+            alert("cannot edit sample data");
+            return;
+        }
+        if (this.transactions.length == 1 || confirm(`are you sure you want to delete all ${this.transactions.length} transactions?`)) {
             this.transactionService.deleteTrxns(this.transactions);
             this.snackBar.open("deleted " + this.transactions.length + " Transactions", "", { duration: 3000 });
+            this.dialogRef.close();
+        }
+    }
+
+    removeManualCats(){
+        if (this.transactions.some(z => z.tempId == -1)){
+            alert("cannot edit sample data");
+            return;
+        }
+        if (this.transactions.length == 1 || confirm(`are you sure you want to remove the manual categorization for all ${this.transactions.length} transactions?`)) {
+            this.transactionService.removeManualCats(this.transactions);
+            this.snackBar.open("removed manual categorization for " + this.transactions.length + " Transactions", "", { duration: 3000 });
             this.dialogRef.close();
         }
     }
