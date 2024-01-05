@@ -13,10 +13,10 @@ import { TransactionService, Transaction } from '@services/transaction.service';
 import { CategoryRuleService } from '@services/category-rule.service';
 import { MatInputModule } from '@angular/material/input'
 import { MatSlideToggleModule } from '@angular/material/slide-toggle'
-import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { SubcategorySelectComponent } from '@components/subcategory-select/subcategory-select.component';
-import { Subcategory } from '@services/category.service';
+import { CategoryService, Subcategory } from '@services/category.service';
+import { getDistinct, getDistinctBy, getSum, sortBy } from '@services/helpers';
 
 @Component({
     standalone: true,
@@ -25,20 +25,26 @@ import { Subcategory } from '@services/category.service';
     templateUrl: './fix-uncategorized.component.html'
 })
 export class FixUncategorizedComponent {
-    private skipCount: number = 0;
     private catTransactions: Transaction[] = [];
     private uncatTransactions: Transaction[] = [];
+    skippedTransactions: Transaction[] = [];
     currentUncatTransaction: Transaction | undefined;
     suggestionInfos: SuggestionInfo[] = [];
     currentSuggestionInfo: SuggestionInfo | undefined;
     ruleTextInput: string = "";
     isManual: boolean = false;
+    finished: boolean = false;
+    catNames: string[] = [];
+    subcats: Subcategory[] = [];
+    filteredSubcats: Subcategory[] = [];
+    forExistingCatName: string | undefined;
 
     selectedSubcategory: Subcategory | undefined;
     isNewSubcategory: boolean | undefined;
 
     constructor(
         private transactionService: TransactionService,
+        private categoryService: CategoryService,
         private categoryRuleService: CategoryRuleService,
         private snackBar: MatSnackBar) {
     }
@@ -48,37 +54,59 @@ export class FixUncategorizedComponent {
 
     private update() {
         this.ruleTextInput = "";
+        this.currentUncatTransaction = undefined;
         this.selectedSubcategory = undefined;
+        this.subcats = this.categoryService.getSubcategories();
+        this.filteredSubcats = this.subcats;
+        this.catNames = getDistinct(this.subcats.map(z => z.catName));
         var allTransactions = this.transactionService.getTransactions();
         this.catTransactions = allTransactions.filter(z => !this.isUncategorized(z));
-        this.uncatTransactions = allTransactions.filter(z => this.isUncategorized(z)).slice(this.skipCount);
-        this.currentUncatTransaction = this.uncatTransactions[0];
-        if (this.currentUncatTransaction) {
-            var suggestionStrings = getSuggestionStrings(this.currentUncatTransaction.name);
-            this.suggestionInfos = [];
-            for (var suggestionString of suggestionStrings) {
-                var info: SuggestionInfo = {
-                    text: suggestionString,
-                    conflicts: this.catTransactions.filter(trxn => this.categoryRuleService.doesRuleTextMatch(trxn, suggestionString)),
-                    matches: this.uncatTransactions.filter(trxn => this.categoryRuleService.doesRuleTextMatch(trxn, suggestionString)),
-                };
-                this.suggestionInfos.push(info);
-            }
-            this.selectBestSuggestion();
+        this.uncatTransactions = allTransactions.filter(z => this.isUncategorized(z) && !this.skippedTransactions.some(zz => zz.name == z.name));
+        if (!this.uncatTransactions.length){
+            this.finished = true;
+            return;
         }
+        this.currentUncatTransaction = this.uncatTransactions[0];
+        var maxAmount = 0;
+        //sort the uncategorized transactions based on the total amount that the suggested rule would match.
+        for (var uncatTransaction of this.uncatTransactions){
+            var bestSuggestion = this.getBestSuggestion(this.getSuggestions(uncatTransaction.name));
+            var amount = getSum(bestSuggestion.matches.map(z => z.amount));
+            if (amount > maxAmount){
+                maxAmount = amount; 
+                this.currentUncatTransaction = uncatTransaction;
+            }
+        }
+        this.suggestionInfos = this.getSuggestions(this.currentUncatTransaction.name);
+        this.selectSuggestion(this.getBestSuggestion(this.suggestionInfos));
     }
 
+    private getSuggestions(trxnName: string): SuggestionInfo[]{
+        trxnName = trxnName.replace(/^[Ss][Qq] *\* */,"")
+        var suggestionStrings = getSuggestionStrings(trxnName);
+        var suggestionInfos = [];
+        for (var suggestionString of suggestionStrings) {
+            var info: SuggestionInfo = {
+                text: suggestionString,
+                conflicts: this.catTransactions.filter(trxn => this.categoryRuleService.doesRuleTextMatch(trxn, suggestionString)),
+                matches: this.uncatTransactions.filter(trxn => this.categoryRuleService.doesRuleTextMatch(trxn, suggestionString)),
+            };
+            suggestionInfos.push(info);
+        }
+        return suggestionInfos;
+    }
 
-    private selectBestSuggestion(){
-        this.selectSuggestion(this.suggestionInfos[0]);
-        for (var i = 1; i < this.suggestionInfos.length; i++){
-            var addedText = this.suggestionInfos[i].text.slice(this.suggestionInfos[i-1].text.length);
+    private getBestSuggestion(suggestionInfos: SuggestionInfo[]){
+        var bestSuggestion = suggestionInfos[0];
+        for (var i = 1; i < Math.min(3, suggestionInfos.length); i++){
+            var addedText = suggestionInfos[i].text.slice(suggestionInfos[i-1].text.length);
             if (/^[A-Za-z\- ']+$/.test(addedText)){
-                this.selectSuggestion(this.suggestionInfos[i]);
+                bestSuggestion = suggestionInfos[i];
             } else {
                 break;
             }
         }
+        return bestSuggestion;
     }
 
     isManualChange(){
@@ -86,7 +114,7 @@ export class FixUncategorizedComponent {
             this.currentSuggestionInfo = undefined;
             this.ruleTextInput = "";
         } else {
-            this.selectBestSuggestion();
+            this.selectSuggestion(this.getBestSuggestion(this.suggestionInfos));
         }
     }
 
@@ -106,9 +134,16 @@ export class FixUncategorizedComponent {
         }
     }
 
-    skip() {
-        this.skipCount++;
+    back() {
+        this.skippedTransactions.pop();
         this.update();
+    }
+
+    skip() {
+        if (this.currentUncatTransaction){
+            this.skippedTransactions.push(this.currentUncatTransaction!);
+            this.update();
+        }
     }
 
     submit() {
@@ -139,6 +174,31 @@ export class FixUncategorizedComponent {
             }]);
         }
         this.update();
+    }
+
+    selectedSubcategoryChange(){
+        this.filteredSubcats = this.subcats
+        this.forExistingCatName = undefined;
+        if (this.selectedSubcategory && this.selectedSubcategory.catName){
+            this.filteredSubcats = this.subcats.filter(z => z.catName.toLowerCase() == this.selectedSubcategory!.catName.toLowerCase());
+            if (this.filteredSubcats.length){
+                this.forExistingCatName = this.selectedSubcategory.catName;
+            } else {
+                this.filteredSubcats = this.subcats.filter(z => z.catName.toLowerCase().includes(this.selectedSubcategory!.catName.toLowerCase()));
+            }
+        }
+    }
+
+    selectCatName(catName: string){
+        this.selectedSubcategory = {
+            catName: catName,
+            subcatName: ""
+        };
+        this.selectedSubcategoryChange();
+    }
+
+    selectSubcat(subcat: Subcategory){
+        this.selectedSubcategory = subcat;
     }
 
     isAddingNewSubcategory(){

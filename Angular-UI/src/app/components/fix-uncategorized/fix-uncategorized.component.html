@@ -1,20 +1,21 @@
 <h2 mat-dialog-title>Fix Uncategorized Transactions</h2>
 <mat-dialog-content class="mat-typography">
     @if (currentUncatTransaction && suggestionInfos){
-    <div class="grid grid-cols-4 gap-4">
-        <div>
-            <div>Date</div>
-            <h3 class="text-body">{{currentUncatTransaction.date | date:'M/d/yy'}}</h3>
-        </div>
-        <div>
-            <div>Amount</div>
-            <h3 class="text-body">{{currentUncatTransaction.amount | currency}}</h3>
-        </div>
-        <div class="col-span-2">
-            <div>Name</div>
-            <h3 class="text-body">{{currentUncatTransaction.name}}</h3>
-        </div>
-    </div>
+    <table class="table mat-elevation-z2 mb-4">
+        <tr>
+            <th>Date</th>
+            <th>Name</th>
+            <th>Amount</th>
+            <th>Source</th>
+
+        </tr>
+        <tr>
+            <td>{{currentUncatTransaction.date | date:'M/d/yy'}}</td>
+            <td>{{currentUncatTransaction.name}}</td>
+            <td>{{currentUncatTransaction.amount | currency}}</td>
+            <td>{{currentUncatTransaction.importFrom}}</td>
+        </tr>
+    </table>
     <div class="grid grid-cols-2 gap-4 mb-3">
         <div class="flex flex-col" style="height: 160px;">
             @if (currentSuggestionInfo && currentSuggestionInfo.matches.length){
@@ -69,32 +70,58 @@
             <mat-label>rule text</mat-label>
             <input matInput [(ngModel)]="ruleTextInput" (ngModelChange)="ruleTextChanged()" [disabled]="isManual">
         </mat-form-field>
-        <mer-subcategory-select 
-            [(subcategory)]="selectedSubcategory"
-            [(isNew)]="isNewSubcategory"
-        
-        class="col-span-2">
+        <mer-subcategory-select [(subcategory)]="selectedSubcategory" (subcategoryChange)="selectedSubcategoryChange()"
+            [(isNew)]="isNewSubcategory" class="col-span-2">
 
         </mer-subcategory-select>
         @if(isAddingNewSubcategory()){
-            <button class="input-height-btn" mat-raised-button color="accent" (click)="submit()">
-                <small>new category/subcategory</small><br>
-                Submit
-            </button>
+        <button class="input-height-btn" mat-raised-button color="accent" (click)="submit()">
+            <small>new category/subcategory</small><br>
+            Submit
+        </button>
 
         } @else {
-            <button class="input-height-btn" mat-raised-button color="primary" (click)="submit()">Submit</button>
+        <button class="input-height-btn" mat-raised-button color="primary" (click)="submit()">Submit</button>
         }
     </div>
+    @if (catNames.length){
+    <div>
+        @if (!selectedSubcategory || !selectedSubcategory.catName){
+        <h4 class="inline-block mr-1">Existing Categories</h4>
+        @for (catName of catNames; track catName){
 
+        <button mat-raised-button class="btn-sm mx-1" (click)="selectCatName(catName)">{{catName}}</button>
+        }
+        } @else if (forExistingCatName) {
+        <h4 class="inline-block mr-1">Existing Subcategories of {{this.forExistingCatName}}</h4>
+        @for (subcat of filteredSubcats; track subcat){
+        <button mat-raised-button class="btn-sm mx-1" (click)="selectSubcat(subcat)">{{subcat.subcatName}}</button>
+        }
+        } @else  {
+            <h4 class="inline-block mr-1">Existing Subcategories </h4>
+            @for (subcat of filteredSubcats; track subcat){
+            <button mat-raised-button class="btn-sm mx-1" (click)="selectSubcat(subcat)">{{subcat.catName}} - {{subcat.subcatName}}</button>
+            }
+            }
+
+    </div>
+    }
+
+
+    } @else {
+    <h3 style="margin: 100px auto" class="text-center">No More Transactions to Categorize</h3>
     }
 
 </mat-dialog-content>
 <mat-dialog-actions align="end" class="">
     <div class="pl-4">
-        <mat-slide-toggle [(ngModel)]="isManual" (ngModelChange)="isManualChange()">Assign Manual Category</mat-slide-toggle>
+        <mat-slide-toggle [(ngModel)]="isManual" (ngModelChange)="isManualChange()">Assign Manual
+            Category</mat-slide-toggle>
     </div>
     <div class="flex-grow"></div>
-    <button mat-raised-button mat-dialog-close>Close</button>
+    @if(skippedTransactions.length){
+    <button mat-raised-button (click)="back()">Back</button>
+    }
     <button mat-raised-button (click)="skip()">Skip</button>
+    <button mat-raised-button mat-dialog-close>Close</button>
 </mat-dialog-actions>

@@ -19,7 +19,7 @@
         </mat-autocomplete>
     </mat-form-field>
     <mat-form-field class="flex-grow">
-        <mat-label>subcategory</mat-label>
+        <mat-label>subcategory</mat-label> 
         <input type="text" placeholder="Select a Subcategory" matInput
             [matAutocomplete]="subcategoryRef" [(ngModel)]="subcategoryInput" (ngModelChange)="subcategoryInputChange($event)">
         <mat-autocomplete #subcategoryRef="matAutocomplete" autoActiveFirstOption [displayWith]="displayFn">
