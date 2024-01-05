@@ -37,7 +37,6 @@ export class ReportComponent {
     }
 
     ngOnInit() {
-        console.log("test", this.localSettingsService.getValue("reportSubcat"))
         this.showSubcategories = this.localSettingsService.getValue("reportSubcat") ?? false;
         this.updateReport();
     }

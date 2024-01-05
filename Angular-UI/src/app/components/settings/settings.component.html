@@ -34,20 +34,9 @@
         <p class="col-span-3 mb-0">
             The various graphs will display the categories ordered by amount (based on the recent average).
             So the highest category will be 1st and colored red, the 2nd highest category will be 2nd & blue, etc.
-            If you have many categories and find it overwhelming, you can limit how many different categories can be displayed on the graphs.
+            If you have many categories and find it overwhelming, you can limit how many different categories can be displayed on the graphs 
+            ("Other" and "Income" don't count toward this limit).
             Any category in excess of this limit will be displayed as a subcategory of the "other" category. 
-        </p>
-    </div>
-
-    <hr class="my-4">
-    <div class="grid grid-cols-4 gap-4">
-        <mat-form-field>
-            <mat-label>Maximum Rendered Transaction Rows</mat-label>
-            <input matInput type="number" [(ngModel)]="settings.maxRenderTransactionRows" (ngModelChange)="change()">
-        </mat-form-field>
-        <p class="col-span-3">
-            If you have tons of transactions, the browser might struggle to render them. If the transactions page seems
-            slow, try lowering this.
         </p>
     </div>
     <hr class="my-4">

@@ -234,6 +234,7 @@ export class TransactionService {
     
     private getSampleTransactions(): Transaction[]{
         var rent = randAmount(500, 900);
+        var income = -(rent + 2000)/2;
         var rules: SampleTransactionRule[] = [
             ["mcdonalds" + randomSuffix(), "food", "fast food", 5, 25, 1,5, null],
             ["Chick-fil-A" + randomSuffix(), "food", "fast food", 10, 30, 1,5, null],
@@ -261,6 +262,9 @@ export class TransactionService {
             ["eye specialist" + randomSuffix(), "health", "doctor", 150, 250, -10, 1, null],
             ["health insurance" + randomSuffix(), "health", "insurance", 100, 100, 1, 1, null],
             ["dental" + randomSuffix(), "health", "dental", 20, 80, -6, 1, null],
+            ["PayPal" + randomSuffix(), "other", "misc", 20, 300, -3, 1, null],
+            ["Direct Deposit" + randomSuffix(), "income", "income", income, income, 1, 1, 1],
+            ["Direct Deposit" + randomSuffix(), "income", "income", income, income, 1, 1, 15],
         ]
         var now = new Date();
         var maxDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);

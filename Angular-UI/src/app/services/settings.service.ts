@@ -31,7 +31,7 @@ export class SettingsService {
   private createDefault(): Settings{
     return {
       recentMonthCount: 12,
-      maxGraphCategories: 9,
+      maxGraphCategories: 8,
       requiredDaysForLatestMonth: 25,
       maxRenderTransactionRows: 2000,
       reportColorDeadZone: 5,
