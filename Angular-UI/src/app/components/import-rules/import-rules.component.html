@@ -22,7 +22,7 @@
         [class.invalid-cell]="parsedRule.invalidIndexes.includes(1)">{{parsedRule.subcatName}}</td>
       <td [class.text-muted]="parsedRule.isDuplicate || parsedRule.invalidIndexes.length"
         [class.invalid-cell]="parsedRule.invalidIndexes.includes(2)"
-        [class.warning-row]="!replace && !parsedRule.invalidIndexes.length && parsedRule.isDuplicate">
+        [class.warning-cell]="!replace && !parsedRule.invalidIndexes.length && parsedRule.isDuplicate">
         {{parsedRule.text}}
       </td>
     </tr>
@@ -41,7 +41,7 @@
   <div class="invalid-cell ml-3 p-2">{{invalidCount}} invalid rows</div>
   }
   @if (duplicateCount){
-  <div class="warning-row ml-3 p-2">{{duplicateCount}} duplicate rows</div>
+  <div class="warning-cell ml-3 p-2">{{duplicateCount}} duplicate rows</div>
   }
   <div style="flex-grow: 1;"></div>
   }

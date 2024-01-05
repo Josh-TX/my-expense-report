@@ -1,108 +1,123 @@
 <div style="display: flex; justify-content: space-between;">
-  <h2 class="mat-mdc-dialog-title mdc-dialog__title">Import Transactions</h2>
-  @if (currentGrid){
-  <div style="padding: 24px;">
-    <mat-slide-toggle [(ngModel)]="expensesAreNegative" (ngModelChange)="expensesAreNegativeChanged()">expensese are negative</mat-slide-toggle>
-  </div>
-  }
+    <h2 class="mat-mdc-dialog-title mdc-dialog__title">Import Transactions</h2>
+    @if (grid){
+    <span class="mt-4">{{currentFile?.name}}</span>
+    <div style="padding: 24px;">
+        <mat-slide-toggle [(ngModel)]="expensesAreNegative" (ngModelChange)="expensesAreNegativeChanged()">expensese are
+            negative</mat-slide-toggle>
+    </div>
+    }
 </div>
 <mat-dialog-content class="mat-typography pt-0">
-  @if (currentGrid){
-  <table class="table mat-elevation-z4 mt-3">
-    @if(currentGrid.headers){
-      <tr class="sticky-table-header">
-        @for (header of currentGrid.headers; track header; let index = $index){
-        @if (currentGrid.nameColumnIndex == index
-        || currentGrid.amountColumnIndex == index
-        || currentGrid.dateColumnIndex == index
-        || currentGrid.catNameColumnIndex == index
-        || currentGrid.subcatNameColumnIndex == index) {
-        <th class="text-primary">{{header}}</th>
-        } @else {
-        <td class="text-muted">{{header}}</td>
+    @if (grid){
+    <table class="table mat-elevation-z4 mt-3">
+        @if(grid.headers){
+        <tr class="sticky-table-header">
+            @for (header of grid.headers; track header; let index = $index){
+            @if (grid.nameColumnIndex == index
+            || grid.amountColumnIndex == index
+            || grid.dateColumnIndex == index
+            || grid.catNameColumnIndex == index
+            || grid.subcatNameColumnIndex == index) {
+            <th class="text-primary">{{header}}</th>
+            } @else {
+            <td class="text-muted">{{header}}</td>
+            }
+            }
+            <td></td>
+        </tr>
         }
+        @for (row of grid.rows; track row; let rowIndex = $index){
+        <tr>
+            @for (cell of row.cells; track cell; let colIndex = $index){
+            @if (row.invalidIndexes.includes(colIndex)){
+            <td class="invalid-cell">
+                {{cell}}
+            </td>
+            }
+            @else if (isDate(cell)){
+            <td [ngClass]="getClass(row, rowIndex, cell)">
+                {{cell | date:'M/d/yy'}}
+            </td>
+            }
+            @else if (grid.amountColumnIndex == colIndex && isNumber(cell)){
+            <td [ngClass]="getClass(row, rowIndex, cell)">
+                {{cell | currency}}
+            </td>
+            }
+            @else if (grid.nameColumnIndex == colIndex || grid.catNameColumnIndex == colIndex ||
+            grid.subcatNameColumnIndex == colIndex){
+            <td [ngClass]="getClass(row, rowIndex, cell)">
+                {{cell}}
+            </td>
+            }
+            @else {
+            <td class="text-muted">
+                {{cell}}
+            </td>
+            }
+            }
+            <td>
+                @if (!row.invalidIndexes.length){
+                <mat-checkbox (change)="$event ? selection.toggle(row) : null" color="primary"
+                    [checked]="selection.isSelected(row)">
+                </mat-checkbox>
+                }
+            </td>
+
+        </tr>
         }
-      </tr>
+    </table>
     }
-      @for (row of currentGrid.rows; track row; let index = $index){
-      <tr [class.warning-row]="duplicateRowIndexes.includes(index)">
-        @for (cell of row.cells; track cell; let index = $index){
-        @if (row.invalidIndexes.includes(index)){
-        <td class="invalid-cell">
-          {{cell}}
-        </td>
+    @else {
+    <mer-file-drop (import)="addFiles($event)"></mer-file-drop>
+    @if (files.length){
+    <table class="table mat-elevation-z4 mt-4">
+        <tr>
+            <th>file name</th>
+            <th>file type</th>
+            <th>file size</th>
+            <th></th>
+        </tr>
+        @for (file of files; track file){
+        <tr>
+            <td>{{file.name}}</td>
+            <td>{{file.type}}</td>
+            <td>{{formatBytes(file.size, 2)}}</td>
+            <td class="flex justify-end items-center">
+                @if (isImported(file)){
+                <button mat-raised-button color="accent" disabled>Imported!</button>
+                } @else {
+                <button mat-raised-button color="primary" (click)="beginImport(file)">Begin Import</button>
+                }
+                <button mat-icon-button (click)="removeFile(file)" class="ml-2"><mat-icon>clear</mat-icon></button>
+            </td>
+        </tr>
         }
-        @else if (isDate(cell)){
-        <td [class.text-muted]="row.invalidIndexes.length || duplicateRowIndexes.includes(index)">
-          {{cell | date:'M/d/yy'}}
-        </td>
-        }
-        @else if (currentGrid.amountColumnIndex == index && isNumber(cell)){
-        <td [class.text-muted]="row.invalidIndexes.length || duplicateRowIndexes.includes(index)"
-        [class.success-cell]="(expensesAreNegative && cell > 0) || (!expensesAreNegative && cell < 0)">
-          {{cell | currency}}
-        </td>
-        }
-        @else if (currentGrid.nameColumnIndex == index || currentGrid.catNameColumnIndex == index || currentGrid.subcatNameColumnIndex == index){
-        <td [class.text-muted]="row.invalidIndexes.length || duplicateRowIndexes.includes(index)">
-          {{cell}}
-        </td>
-        }
-        @else {
-        <td class="text-muted">
-          {{cell}}
-        </td>
-        }
-        }
-      </tr>
-      }
-  </table>
-  }
-  @else if (files){
-  <table class="table mat-elevation-z4">
-    <tr>
-      <th>file name</th>
-      <th>file type</th>
-      <th>file size</th>
-    </tr>
-    @for (file of files; track file){
-    <tr>
-      <td>{{file.name}}</td>
-      <td>{{file.type}}</td>
-      <td>{{formatBytes(file.size, 2)}}</td>
-    </tr>
+    </table>
     }
-  </table>
-  } @else {
-  <mer-file-drop (import)="processFiles($event)"></mer-file-drop>
-  }
+    }
 
 
 
 </mat-dialog-content>
 <mat-dialog-actions align="end">
-  @if (duplicateCount || invalidCount || incomeCount){
+    @if (duplicateCount || invalidCount || incomeCount){
     @if (invalidCount){
-      <div class="invalid-cell ml-3 p-2">{{invalidCount}} invalid rows</div>
+    <div class="invalid-cell ml-3 p-2">{{invalidCount}} invalid rows</div>
     }
     @if (duplicateCount){
-      <div class="warning-row ml-3 p-2">{{duplicateCount}} duplicate rows</div>
+    <div class="warning-cell ml-3 p-2">{{duplicateCount}} duplicate rows</div>
     }
     @if (incomeCount){
-      <div class="success-cell ml-3 p-2">{{incomeCount}} income rows</div>
+    <div class="success-cell ml-3 p-2">{{incomeCount}} income rows</div>
     }
     <div style="flex-grow: 1;"></div>
-  }
+    }
 
-
-  <button mat-raised-button mat-dialog-close>Close</button>
-  @if (currentGrid){
-  @if (currentGridIndex == 0){
-  <button mat-raised-button (click)="backToStart()">Back</button>
-  }
-  <button mat-raised-button color="primary" (click)="importTransactions()">Import ({{importCount}} of {{ currentGrid.rows.length}})</button>
-  } @else if (files){
-  <button mat-raised-button (click)="backToStart()">Back</button>
-  <button mat-raised-button color="primary" (click)="next()">Next</button>
-  }
+    <button mat-raised-button mat-dialog-close>Close</button>
+    @if (grid){
+    <button mat-raised-button (click)="back()">Back</button>
+    <button mat-raised-button color="primary" (click)="importTransactions()">Import ({{selection.selected.length}})</button>
+    }
 </mat-dialog-actions>
