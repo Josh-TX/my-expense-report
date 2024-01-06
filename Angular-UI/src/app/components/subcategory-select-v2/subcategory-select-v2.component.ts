@@ -33,7 +33,6 @@ export class SubcategorySelectv2Component {
     }
 
     ngOnChanges(simpleChanges: SimpleChanges){
-        console.log("ngOnChanges", simpleChanges)
         if (this.catNameBinding != this.catNameInput){
             this.catNameInput = this.catNameBinding || "";
         }
