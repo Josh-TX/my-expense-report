@@ -38,6 +38,7 @@ export class FixUncategorizedComponent {
     subcats: Subcategory[] = [];
     filteredSubcats: Subcategory[] = [];
     forExistingCatName: string | undefined;
+    allowMismatchText: boolean = false;
 
     selectedSubcategory: Subcategory | undefined;
     isNewSubcategory: boolean | undefined;
@@ -82,7 +83,7 @@ export class FixUncategorizedComponent {
     }
 
     private getSuggestions(trxnName: string): SuggestionInfo[]{
-        trxnName = trxnName.replace(/^[Ss][Qq] *\* */,"")
+        trxnName = trxnName.replace(/^[Ss][QqPp] *\* */,"")
         var suggestionStrings = getSuggestionStrings(trxnName);
         var suggestionInfos = [];
         for (var suggestionString of suggestionStrings) {
@@ -157,8 +158,12 @@ export class FixUncategorizedComponent {
         else if (!this.selectedSubcategory.subcatName) {
             error = "subcategory required"
         }
-        else if (!this.isManual && !this.categoryRuleService.doesRuleTextMatch(this.currentUncatTransaction!, this.ruleTextInput)) {
-            error = "rule text doesn't match current transaction"
+        else if (!this.isManual && !this.categoryRuleService.doesRuleTextMatch(this.currentUncatTransaction!, this.ruleTextInput) && !this.allowMismatchText) {
+            if (confirm("rule text doesn't match current transaction. Create Rule Anyways?")){
+                this.allowMismatchText = true;
+            } else {
+                error = "rule text doesn't match current transaction";
+            }
         }
         if (error){
             this.snackBar.open(error, "", { panelClass: "snackbar-error", duration: 3000 });

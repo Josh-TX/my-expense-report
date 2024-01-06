@@ -41,6 +41,7 @@ export class SubcategorySelectComponent {
             this.subcategoryInput = this.subcategoryBinding ? this.subcategoryBinding : null;
             this.updateFilters();
             setTimeout(() => {
+                //IsNew might be changed, but we'll get an error if we emit synchronously
                 this.update();
             })
         }
