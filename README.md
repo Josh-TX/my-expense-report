@@ -1,18 +1,33 @@
 # My Expense Report
- a free, open-source, local web-app for tracking your personal expenses.
 
- ## How it works
-Rather than integrating with financial institutions directly, you instead export your transactions to a CSV file,
-and inport the file within the web app. You can then set up category-rules to automatically assign categories and subcategories to each transaction.
+An offline web app for tracking and analyzing your personal expenses. There's no login system, and all data is stored in the browser's LocalStorage. Currently hosted by github pages and available at
 
-There are 2 versions of the web-app: The browser-only version, and a hosted version. These versions only differ in how the data (transactions and category-rules) is stored. With the browser-only version, the data is stored via localStorage, and the data never leaves your browser. 
+[https://josh-tx.github.io/my-expense-report](https://josh-tx.github.io/my-expense-report)
 
-### Hosted Version
+## How it works
 
-The hosted version stores the json strings on a server rather than localStorage. I don't have a hosted version publically available (I don't want your data), and if you find one online you probably shouldn't trust it.
+Although an internet connection is needed to load the web app once, you could then disconnect your internet connection and the wep app would still function normally. The technical term for this is "Progressive Web App". Most websites can't work without internet because login information and user data is stored on one (or multiple) servers. But this app has no login information, and all data is stored in the browser's LocalStorage. Using LocalStorage to store data is some pros and cons
 
-(in progress)
-~~To host your own instance of the web-app, the easiest method is to use the docker image. There isn't any security / authentication on it, so only host it in a private network that only you have access to. If you don't want to use docker, then you'll have to implement your own hosting solution. To do this, you'll want to update `environment.hosted.ts` to point to your server, and build the angular project with the `--configuration=hosted` flag.~~
+#### LocalStorage Pros
+* Data is available without an internet connection
+* Data is not residing on a server where the data can be sold or hacked
+* I don't have to pay for server hosting
+
+#### LocalStorage Cons
+* Data is only accessible on a single browser
+* Anyone with phsyical access to the browser (i.e. shared computer) can access the data. 
+* Data is lost if the browser is uninstalled or removed
+* (very unlikely) The browser could delete LocalStorage to clear up disk space.
+
+## Hosted Version
+
+Everything described above is talking specifically about the "Browser-Only" version of the web app. If you want the web app to be accessible from multiple devices, you can host a docker container that serves a "Hosted" version of the web app. The hosted version still doesn't have a login system, but the data will be stored in the docker container rather than in LocalStorage. Because there's no login system, you should only host this version on a private LAN that only you or your family has access to. Obviously, the Hosted version requires a network connection to the docker container to function correctly. 
+
+## Where does the data come from?
+
+This web app doesn't have any way to integrate with financial institutions directly (like Mint), so all data has to be provided by the user. That might sound tedious, however, most financial institutions have a way to export transactions to a file. If so, that file can probably be imported into the web app without any modifications. More info in the Usage Guide below
+
+The way transactions are categorized is also a manual process. There are very few built-in categories, and there's no Merchent Category Codes. What it does have though, is what's called a "Category-Rule", wherein transactions are automatically assigned a category of your choice based on a text match. These category-rules can take time to set up, but once finished it'll be 95% automatic (depending on spending habbits). More info in the Usage Guide below
 
 # Usage Guide
 
@@ -35,7 +50,7 @@ instead of importing from file, you can manually add a transaction via a form. T
 
 Rather than have a pre-defined list of categories, you decide the different categories to use. The upside is that you have complete flexibility what the categories are and how transactions are assigned to it. The downside is that it takes a bit of time to get things set up. If you have any uncategorized transactions, the dashboard will have a "Fixed Uncategorized" button that makes helps assign category-rules quickly.
 
-Note that if you assign a category, you also must assign a subcategory. 
+Subcategories are required. They will always be contextually alongside their corresponding category, so you don't have to repeat the category name within the subcategory name. For example, the "car" category might have a subcategory of "gas" or "Insurance". Even though you might have a "health" > "insurance" or "utilities" > "gas" subcategories, it's ok since you'll never see the "gas" subcategory in isolation.
 
 ### Assigning Categories
 

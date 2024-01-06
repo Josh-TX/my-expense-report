@@ -89,7 +89,7 @@ export class FixUncategorizedComponent {
     }
 
     private getSuggestions(trxnName: string): SuggestionInfo[]{
-        trxnName = trxnName.replace(/^[Ss][QqPp] *\* */,"")
+        trxnName = trxnName.replace(/^[A-Za-z]{1,3} *\* */,"")
         var suggestionStrings = getSuggestionStrings(trxnName);
         var suggestionInfos = [];
         for (var suggestionString of suggestionStrings) {

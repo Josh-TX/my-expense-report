@@ -39,6 +39,7 @@ export class SubcategorySelectv2Component {
         if (this.subcatNameBinding != this.subcatNameInput){
             this.subcatNameInput = this.subcatNameBinding || "";
         }
+        setTimeout(() => this.updateIsNew())
     }
 
     catNameInputChange(){
@@ -68,22 +69,23 @@ export class SubcategorySelectv2Component {
         if (!this.catNameInput || !this.subcatNameInput){
             return false;
         }
-        return !this.categoryService.getSubcategories().some(z => z.catName.toLowerCase() == this.catNameInput.toLowerCase());
+        return !this.categoryService.getSubcategories().some(z => z.catName.toLowerCase() == this.catNameInput.toLowerCase() 
+            && z.subcatName.toLowerCase() == this.subcatNameInput.toLowerCase());
     }
 
     clearCat() {
+        this.clearSubcat();
         this.catNameInput = "";
         this.catNameInputChange();
     }
 
     clearSubcat() {
-        this.clearCat();
         this.subcatNameInput = "";
-        this.catNameInputChange();
+        this.subcatNameInputChange();
     }
 
     private updateIsNew(){
-        var isNew = this.isCatNameNew() && this.isSubcatNameNew();
+        var isNew = this.isSubcatNameNew();
         if (this.isNewBinding != isNew){
             this.isNewBinding = isNew;
             this.isNewEmitter.emit(isNew);
