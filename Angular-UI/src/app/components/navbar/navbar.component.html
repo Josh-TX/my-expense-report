@@ -1,4 +1,4 @@
-<mat-toolbar class="px-1">
+<mat-toolbar class="t-px-1">
   @if(mobileWidth()){
   <button mat-icon-button [matMenuTriggerFor]="menu">
     <mat-icon>menu</mat-icon>
@@ -10,8 +10,8 @@
     <button mat-menu-item [class.mer-menu-active]="routePath() == '/yearly'" [routerLink]="['/yearly']">Yearly Report</button>
   </mat-menu>
   }
-  <div [ngClass]="mobileWidth() ? 'pl-1' : 'pl-3 pr-4'">
-    <div style="position: relative;">
+  <div [ngClass]="mobileWidth() ? 't-pl-1' : 't-pl-3 t-pr-4'">
+    <div class="t-relative">
       My Expense Report
       <strong id="subtitle"><i></i>{{isHosted ? 'HOSTED' : 'BROWSER-ONLY'}}</strong>
     </div>
@@ -33,7 +33,7 @@
     <mat-tab label="Yearly Report"></mat-tab>
   </mat-tab-group> -->
   }
-  <span class="flex-1"></span>
+  <span class="t-flex-grow"></span>
   <button mat-icon-button (click)="openSettings()">
     <mat-icon>settings</mat-icon>
   </button>
@@ -42,8 +42,8 @@
   </button>
 </mat-toolbar>
 @if (isSampleData$()){
-  <div class="warning-toolbar mt-4 py-1">
-    <h2 class="text-center mb-0 w-full">Displaying Sample Data</h2>
-    <div class="text-center w-full" style="font-size: 0.75rem;">Sample data will disappear immediately after you import transactions</div>
+  <div class="warning-toolbar t-mt-4 t-py-1">
+    <h2 class="t-text-center t-mb-0 t-w-full">Displaying Sample Data</h2>
+    <div class="t-text-center t-w-full" style="font-size: 0.75rem;">Sample data will disappear immediately after you import transactions</div>
   </div>
 }

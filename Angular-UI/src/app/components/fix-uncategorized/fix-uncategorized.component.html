@@ -1,5 +1,5 @@
 <h2 mat-dialog-title>Fix Uncategorized Transactions</h2>
-<div style="padding: 0 20px;">
+<div class="t-px-6">
     @if (currentUncatTransaction && suggestionInfos){
     <table class="table mat-elevation-z2 mb-4">
         <tr>
@@ -16,13 +16,13 @@
             <td>{{currentUncatTransaction.importFrom}}</td>
         </tr>
     </table>
-    <div class="grid grid-cols-2 gap-4 mb-3">
-        <div class="flex flex-col" style="height: 160px;">
+    <div class="t-grid t-grid-cols-2 t-gap-4 t-mb-3">
+        <div class="t-flex t-flex-col" style="height: 160px;">
             @if (currentSuggestionInfo && currentSuggestionInfo.matches.length){
-            <h4 class="mb-1">Proposed rule would affect the following transactions
+            <h4 class="t-mb-1">Proposed rule would affect the following transactions
                 ({{currentSuggestionInfo.matches.length}})</h4>
-            <div class="grow" style="overflow: auto">
-                <table class="table table-outline table-sm mb-0">
+            <div class="t-grow t-overflow-auto">
+                <table class="table table-outline table-sm t-mb-0">
                     @for(match of currentSuggestionInfo.matches; track match){
                     <tr>
                         <td>{{match.date | date:'M/d/yy'}}</td>
@@ -34,11 +34,11 @@
             </div>
             }
         </div>
-        <div class="flex flex-col" style="height: 160px;">
+        <div class="t-flex t-flex-col" style="height: 160px;">
             @if (currentSuggestionInfo && currentSuggestionInfo.conflicts.length){
-            <h4 class="mb-1">Proposed rule conflicts with already-categorized transactions</h4>
-            <div class="grow" style="overflow: auto">
-                <table class="table table-outline table-sm mb-0">
+            <h4 class="t-mb-1">Proposed rule conflicts with already-categorized transactions</h4>
+            <div class="t-grow t-overflow-auto" >
+                <table class="table table-outline table-sm t-mb-0">
                     @for(conflict of currentSuggestionInfo.conflicts; track conflict){
                     <tr>
                         <td>{{conflict.date | date:'M/d/yy'}}</td>
@@ -54,10 +54,10 @@
         </div>
     </div>
     @if (suggestionInfos.length){
-    <h4 class="mb-1">rule text suggestions</h4>
-    <div class="">
+    <h4 class="t-mb-1">rule text suggestions</h4>
+    <div>
         @for(info of suggestionInfos; track info){
-        <button class="mr-2" mat-raised-button [class.border-primary]="info == currentSuggestionInfo"
+        <button class="t-mr-2" mat-raised-button [class.border-primary]="info == currentSuggestionInfo"
             (click)="selectSuggestion(info)" [disabled]="isManual">
             {{info.text}}
             <span class="text-muted primary-button-muted-text">({{info.matches.length}})</span>
@@ -65,7 +65,7 @@
         }
     </div>
     }
-    <div class="mt-2 grid grid-cols-4 gap-4">
+    <div class="t-mt-2 t-grid t-grid-cols-4 t-gap-4">
         <mat-form-field>
             <mat-label>rule text</mat-label>
             <input matInput [(ngModel)]="ruleTextInput" (ngModelChange)="ruleTextChanged()" [disabled]="isManual">
@@ -87,14 +87,14 @@
     @if (catNames.length){
     <div style="height: 68px;">
         @if (!showSubcatButtons){
-        <h4 class="inline-block mr-1">Existing Categories: </h4>
+        <h4 class="t-inline-block t-mr-1">Existing Categories: </h4>
         @for (catNameOption of filteredCatNames; track catNameOption){
-        <button mat-raised-button class="btn-sm mx-1" (click)="clickCatName(catNameOption)">{{catNameOption}}</button>
+        <button mat-raised-button class="btn-sm t-mx-1" (click)="clickCatName(catNameOption)">{{catNameOption}}</button>
         }
         } @else if (showSubcatButtons) {
-        <h4 class="inline-block mr-1">Existing Subcategories of {{catName}}: </h4>
+        <h4 class="t-inline-block t-mr-1">Existing Subcategories of {{catName}}: </h4>
         @for (subcat of filteredSubcats; track subcat){
-        <button mat-raised-button class="btn-sm mx-1" (click)="clickSubcat(subcat)">{{subcat.subcatName}}</button>
+        <button mat-raised-button class="btn-sm t-mx-1" (click)="clickSubcat(subcat)">{{subcat.subcatName}}</button>
         }
         }
 
@@ -103,16 +103,16 @@
 
 
     } @else {
-    <h3 style="margin: 100px auto" class="text-center">No More Transactions to Categorize</h3>
+    <h3 style="margin: 100px auto" class="t-text-center">No More Transactions to Categorize</h3>
     }
 
 </div>
-<mat-dialog-actions align="end" class="">
-    <div class="pl-4">
+<mat-dialog-actions align="end">
+    <div class="t-pl-4">
         <mat-slide-toggle [(ngModel)]="isManual" (ngModelChange)="isManualChange()">Assign Manual
             Category</mat-slide-toggle>
     </div>
-    <div class="flex-grow"></div>
+    <div class="t-flex-grow"></div>
     @if(skippedTransactions.length){
     <button mat-raised-button (click)="back()">Back</button>
     }

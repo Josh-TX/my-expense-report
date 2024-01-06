@@ -1,5 +1,5 @@
 <div class="flex">
-    <mat-form-field class="flex-grow mr-4">
+    <mat-form-field class="t-flex-grow t-mr-4">
         <mat-label>category</mat-label>
         <input type="text" placeholder="Select a Category" matInput
             [matAutocomplete]="catNameRef" [(ngModel)]="catNameInput" (ngModelChange)="catNameInputChange($event)">
@@ -18,7 +18,7 @@
             }
         </mat-autocomplete>
     </mat-form-field>
-    <mat-form-field class="flex-grow">
+    <mat-form-field class="t-flex-grow">
         <mat-label>subcategory</mat-label> 
         <input type="text" placeholder="Select a Subcategory" matInput
             [matAutocomplete]="subcategoryRef" [(ngModel)]="subcategoryInput" (ngModelChange)="subcategoryInputChange($event)">

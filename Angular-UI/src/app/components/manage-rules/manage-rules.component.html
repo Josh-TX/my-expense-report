@@ -1,6 +1,6 @@
-<div style="display: flex; justify-content: space-between;">
+<div class="t-flex t-justify-between">
     <h2 class="mat-mdc-dialog-title mdc-dialog__title">Manage Category Rules</h2>
-    <div style="position: relative; top: 20px">
+    <div class="t-relative t-pt-5">
         <mat-form-field>
             <mat-label>Filter</mat-label>
             <input matInput [(ngModel)]="filterText" (ngModelChange)="filterTextChanged()">
@@ -8,12 +8,12 @@
         <button mat-icon-button (click)="clearFilters()"
             [class.text-muted]="!filterText"><mat-icon>clear</mat-icon></button>
     </div>
-    <div style="padding: 20px 24px 0 0;">
+    <div class="t-pt-5 t-pr-6">
         @if (uncategorizedCount$()) {
-            <button mat-raised-button (click)="fixUncategorized()" class="mr-4">Fix Uncategorized ({{uncategorizedCount$()}})</button>
+            <button mat-raised-button (click)="fixUncategorized()" class="t-mr-4">Fix Uncategorized ({{uncategorizedCount$()}})</button>
          }
-        <button mat-raised-button (click)="import()" class="mr-4">Import from CSV</button>
-        <button mat-raised-button (click)="export()" class="mr-4">Export to CSV</button>
+        <button mat-raised-button (click)="import()" class="t-mr-4">Import from CSV</button>
+        <button mat-raised-button (click)="export()" class="t-mr-4">Export to CSV</button>
         <button class="large-icon-btn" mat-raised-button color="primary"
             (click)="startAdd()"><mat-icon>add</mat-icon></button>
     </div>
@@ -58,9 +58,9 @@
                 {{rule.text}}
             </td>
             <td>
-                <button mat-raised-button class="mr-4" (click)="editText(rule)">Edit Text</button>
+                <button mat-raised-button class="t-mr-4" (click)="editText(rule)">Edit Text</button>
 
-                <button mat-raised-button [matMenuTriggerFor]="moveMenu" class="mr-4">Move
+                <button mat-raised-button [matMenuTriggerFor]="moveMenu" class="t-mr-4">Move
                     <mat-icon>arrow_drop_down</mat-icon></button>
                 <mat-menu #moveMenu="matMenu">
                     <button mat-menu-item (click)="moveToTop(rule)">to top</button>
@@ -78,7 +78,7 @@
     }
 
 </mat-dialog-content>
-<mat-dialog-actions align="end" style="justify-content: space-between;">
-    <div style="padding-left: 15px;">Rules are evaluated top to bottom, and stop on first match</div>
+<mat-dialog-actions align="end" class="t-justify-between">
+    <div class="t-pl-4">Rules are evaluated top to bottom, and stop on first match</div>
     <button mat-raised-button mat-dialog-close>Close</button>
 </mat-dialog-actions>

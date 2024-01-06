@@ -1,12 +1,12 @@
-<div class="p-4">
+<div class="t-p-4">
     <div style="display: grid; grid-template: 1fr 1fr 0.5fr / 14rem 1fr 14rem;">
         <h2 class="mb-0">Transactions</h2>
         <div style="grid-row: span 2; display: flex; justify-content: center;">
-            <mat-form-field class="mr-3" style="flex-grow: 0.5">
+            <mat-form-field class="t-mr-3" style="flex-grow: 0.5">
                 <mat-label>Filter</mat-label>
                 <input matInput [(ngModel)]="filterText" (ngModelChange)="filterTextChanged()" (paste)="onPaste()">
             </mat-form-field>
-            <mat-form-field class="mr-3" style="flex-grow: 0.1">
+            <mat-form-field class="t-mr-3" style="flex-grow: 0.1">
                 <mat-label>Filter Column</mat-label>
                 <mat-select [(value)]="selectedFilterColumn" (selectionChange)="filterChanged()">
                     @for (filterableColumn of filterableColumns; track filterableColumn) {
@@ -30,14 +30,14 @@
             <mat-slide-toggle [(ngModel)]="showHidden"
             (ngModelChange)="showHiddenChanged()">Show Hidden Transactions</mat-slide-toggle>
         </div>
-        <div style="grid-row: span 2">
+        <div class="t-row-span-2">
             @if (selection.selected.length){
                 <button mat-raised-button color="primary" (click)="editSelected()">
                     Edit Transaction{{selection.selected.length > 1 ? 's (' + selection.selected.length  + ')' : ''}}
                 </button>
             }
         </div>
-        <div style="grid-row: span 2; display: flex; justify-content: end; font-size: 2rem;">
+        <div class="t-row-span-2 t-flex t-justify-end" style="font-size: 2rem;">
             @if (dataSource.filteredData.length){
                 <button class="mr-3" mat-raised-button (click)="exportTransactions()">
                     Export ({{dataSource.filteredData.length}})
@@ -45,7 +45,7 @@
             }
             <button class="large-icon-btn" mat-raised-button color="primary" (click)="add()"><mat-icon>add</mat-icon></button>
         </div>
-        <p class="text-center mb-0" style="position: relative; top: -12px; overflow: hidden;">
+        <p class="t-text-center t-mb-0" style="position: relative; top: -12px; overflow: hidden;">
             @if (filterText && !debounceActive){
                 Filtered to {{dataSource.filteredData.length}} of {{dataSource.data.length}} transactions (total {{getTotalAmount() | currency }})
             }

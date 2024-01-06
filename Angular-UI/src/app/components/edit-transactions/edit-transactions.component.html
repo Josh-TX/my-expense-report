@@ -1,12 +1,12 @@
 <h2 mat-dialog-title>Edit Transactions</h2>
 <mat-dialog-content class="mat-typography">
 
-    <div class="flex flex-col mb-3" style="height: 160px;">
+    <div class="t-flex t-flex-col t-mb-3" style="height: 160px;">
         @if (transactions.length){
-        <h4 class="mb-1">Edits will affect the following transactions
+        <h4 class="t-mb-1">Edits will affect the following transactions
             ({{transactions.length}})</h4>
-        <div class="grow" style="overflow: auto">
-            <table class="table table-outline table-sm mb-0">
+        <div class="t-grow t-overflow-auto">
+            <table class="table table-outline table-sm t-mb-0">
                 @for(transaction of transactions; track transaction){
                 <tr>
                     <td>{{transaction.date | date:'M/d/yy'}}</td>

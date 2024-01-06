@@ -1,16 +1,16 @@
-<div style="display: flex; justify-content: space-between;">
+<div class="t-flex t-justify-between">
     <h2 class="mat-mdc-dialog-title mdc-dialog__title">Import Transactions</h2>
     @if (grid){
-    <span class="mt-4">{{currentFile?.name}}</span>
-    <div style="padding: 24px;">
+    <span class="t-mt-4">{{currentFile?.name}}</span>
+    <div class="t-p-6">
         <mat-slide-toggle [(ngModel)]="expensesAreNegative" (ngModelChange)="expensesAreNegativeChanged()">expensese are
             negative</mat-slide-toggle>
     </div>
     }
 </div>
-<mat-dialog-content class="mat-typography pt-0">
+<mat-dialog-content class="mat-typography t-pt-0">
     @if (grid){
-    <table class="table mat-elevation-z4 mt-3">
+    <table class="table mat-elevation-z4 t-mt-3">
         @if(grid.headers){
         <tr class="sticky-table-header">
             @for (header of grid.headers; track header; let index = $index){
@@ -84,13 +84,13 @@
             <td>{{file.name}}</td>
             <td>{{file.type}}</td>
             <td>{{formatBytes(file.size, 2)}}</td>
-            <td class="flex justify-end items-center">
+            <td class="t-flex t-justify-end t-items-center">
                 @if (isImported(file)){
                 <button mat-raised-button color="accent" disabled>Imported!</button>
                 } @else {
                 <button mat-raised-button color="primary" (click)="beginImport(file)">Begin Import</button>
                 }
-                <button mat-icon-button (click)="removeFile(file)" class="ml-2"><mat-icon>clear</mat-icon></button>
+                <button mat-icon-button (click)="removeFile(file)" class="t-ml-2"><mat-icon>clear</mat-icon></button>
             </td>
         </tr>
         }

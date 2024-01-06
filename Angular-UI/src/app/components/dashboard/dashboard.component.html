@@ -1,5 +1,5 @@
-<div class="p-4">
-    <div class="flex justify-between">
+<div class="t-p-4">
+    <div class="t-flex t-justify-between">
         <h1>Dashboard</h1>
         <div>
             @if (uncategorizedCount$() && !isSample$()) {
@@ -12,7 +12,7 @@
         </div>
     </div>
     @if (trxnCount$()) {
-    <div class="grid grid-cols-2 gap-4">
+    <div class="t-grid t-grid-cols-2 t-gap-4">
         <mer-category-donut [currentDate]="donutCurrentDate" [isYearly]="false"></mer-category-donut>
         <mer-category-bar (dateClick)="barClicked($event)"></mer-category-bar>
     </div>
@@ -27,20 +27,20 @@
     }
     <div style="margin-top: 100px">
         @if (!isHosted){
-        <p class="text-center text-muted">
+        <p class="t-text-center text-muted">
             This is the "browser-only" version of the web-app, meaning that all data is stored in the browser via
             localStorage.
             <br>
             You can also set up a private "hosted" version via docker (<a href="https://github.com/Josh-TX/my-expense-report#hosted-version" target="_blank">more info</a>)
         </p>
         } @else {
-        <p class="text-center text-muted">
+        <p class="t-text-center text-muted">
             This is the "hosted" version of the web-app, meaning that most of the data is being stored on a server someone is
             hosting (hopefully someone you know)
         </p>
         }
 
-        <div class="text-right">
+        <div class="t-text-right">
             <small>
                 <a href="https://github.com/Josh-TX/my-expense-report" target="_blank">Github</a>
                 <span class="text-muted"> | Created By Josh Allen</span>
