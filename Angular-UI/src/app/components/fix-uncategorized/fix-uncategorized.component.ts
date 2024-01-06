@@ -14,14 +14,14 @@ import { CategoryRuleService } from '@services/category-rule.service';
 import { MatInputModule } from '@angular/material/input'
 import { MatSlideToggleModule } from '@angular/material/slide-toggle'
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { SubcategorySelectComponent } from '@components/subcategory-select/subcategory-select.component';
+import { SubcategorySelectv2Component } from '@components/subcategory-select-v2/subcategory-select-v2.component';
 import { CategoryService, Subcategory } from '@services/category.service';
 import { getDistinct, getDistinctBy, getSum, sortBy } from '@services/helpers';
 
 @Component({
     standalone: true,
     imports: [CommonModule, FormsModule, MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose, 
-        MatButtonModule, MatInputModule, SubcategorySelectComponent, MatSlideToggleModule],
+        MatButtonModule, MatInputModule, SubcategorySelectv2Component, MatSlideToggleModule],
     templateUrl: './fix-uncategorized.component.html'
 })
 export class FixUncategorizedComponent {
@@ -31,17 +31,20 @@ export class FixUncategorizedComponent {
     currentUncatTransaction: Transaction | undefined;
     suggestionInfos: SuggestionInfo[] = [];
     currentSuggestionInfo: SuggestionInfo | undefined;
+
     ruleTextInput: string = "";
     isManual: boolean = false;
     finished: boolean = false;
     catNames: string[] = [];
+    filteredCatNames: string[] = [];
     subcats: Subcategory[] = [];
     filteredSubcats: Subcategory[] = [];
-    forExistingCatName: string | undefined;
+    showSubcatButtons: boolean = false;
     allowMismatchText: boolean = false;
 
-    selectedSubcategory: Subcategory | undefined;
-    isNewSubcategory: boolean | undefined;
+    catName: string = "";
+    subcatName: string = "";
+    isNew: boolean | undefined;
 
     constructor(
         private transactionService: TransactionService,
@@ -56,10 +59,13 @@ export class FixUncategorizedComponent {
     private update() {
         this.ruleTextInput = "";
         this.currentUncatTransaction = undefined;
-        this.selectedSubcategory = undefined;
+        this.catName = "";
+        this.subcatName = "";
         this.subcats = this.categoryService.getSubcategories();
         this.filteredSubcats = this.subcats;
+        this.showSubcatButtons = false;
         this.catNames = getDistinct(this.subcats.map(z => z.catName));
+        this.filteredCatNames = this.catNames;
         var allTransactions = this.transactionService.getTransactions();
         this.catTransactions = allTransactions.filter(z => !this.isUncategorized(z));
         this.uncatTransactions = allTransactions.filter(z => this.isUncategorized(z) && !this.skippedTransactions.some(zz => zz.name == z.name));
@@ -152,10 +158,10 @@ export class FixUncategorizedComponent {
         if (!this.isManual && !this.ruleTextInput) {
             error = "rule text required"
         }
-        else if (!this.selectedSubcategory || !this.selectedSubcategory.catName) {
+        else if (!this.catName) {
             error = "category required"
         }
-        else if (!this.selectedSubcategory.subcatName) {
+        else if (!this.subcatName) {
             error = "subcategory required"
         }
         else if (!this.isManual && !this.categoryRuleService.doesRuleTextMatch(this.currentUncatTransaction!, this.ruleTextInput) && !this.allowMismatchText) {
@@ -170,47 +176,44 @@ export class FixUncategorizedComponent {
             return
         }
         if (this.isManual){
-            this.transactionService.assignManualCats([this.currentUncatTransaction!], this.selectedSubcategory!)
+            this.transactionService.assignManualCats([this.currentUncatTransaction!], {
+                catName: this.catName,
+                subcatName: this.subcatName
+            });
         } else {
             this.categoryRuleService.addRules([{
-                catName: this.selectedSubcategory!.catName,
-                subcatName: this.selectedSubcategory!.subcatName,
+                catName: this.catName,
+                subcatName: this.subcatName,
                 text: this.ruleTextInput
             }]);
         }
         this.update();
     }
 
-    selectedSubcategoryChange(){
+    updateCategoryButtons(){
+        this.showSubcatButtons = false;
+        this.filteredCatNames = this.catNames;
         this.filteredSubcats = this.subcats
-        this.forExistingCatName = undefined;
-        if (this.selectedSubcategory && this.selectedSubcategory.catName){
-            this.filteredSubcats = this.subcats.filter(z => z.catName.toLowerCase() == this.selectedSubcategory!.catName.toLowerCase());
+        if (this.catName){
+            this.filteredCatNames = this.catNames.filter(z => z.toLowerCase().includes(this.catName.toLowerCase()));
+            this.filteredSubcats = this.subcats.filter(z => z.catName.toLowerCase() == this.catName.toLowerCase());
             if (this.filteredSubcats.length){
-                this.forExistingCatName = this.selectedSubcategory.catName;
-            } else {
-                this.filteredSubcats = this.subcats.filter(z => z.catName.toLowerCase().includes(this.selectedSubcategory!.catName.toLowerCase()));
+                this.showSubcatButtons = true;
+                if (this.subcatName){
+                    this.filteredSubcats = this.filteredSubcats.filter(z => z.subcatName.toLowerCase().includes(this.subcatName.toLowerCase()))
+                }
             }
         }
     }
 
-    selectCatName(catName: string){
-        this.selectedSubcategory = {
-            catName: catName,
-            subcatName: ""
-        };
-        this.selectedSubcategoryChange();
+    clickCatName(catName: string){
+        this.catName = catName
+        this.updateCategoryButtons();
     }
 
-    selectSubcat(subcat: Subcategory){
-        this.selectedSubcategory = subcat;
-    }
-
-    isAddingNewSubcategory(){
-        if (!this.selectedSubcategory || !this.selectedSubcategory.catName || !this.selectedSubcategory.subcatName){
-            return false;
-        }
-        return this.isNewSubcategory
+    clickSubcat(subcat: Subcategory){
+        this.subcatName = subcat.subcatName;
+        this.updateCategoryButtons();
     }
 
     private isUncategorized(subcategory: Subcategory): boolean{

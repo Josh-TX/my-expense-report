@@ -1,5 +1,5 @@
 <h2 mat-dialog-title>Fix Uncategorized Transactions</h2>
-<mat-dialog-content class="mat-typography">
+<div style="padding: 0 20px;">
     @if (currentUncatTransaction && suggestionInfos){
     <table class="table mat-elevation-z2 mb-4">
         <tr>
@@ -70,11 +70,11 @@
             <mat-label>rule text</mat-label>
             <input matInput [(ngModel)]="ruleTextInput" (ngModelChange)="ruleTextChanged()" [disabled]="isManual">
         </mat-form-field>
-        <mer-subcategory-select [(subcategory)]="selectedSubcategory" (subcategoryChange)="selectedSubcategoryChange()"
-            [(isNew)]="isNewSubcategory" class="col-span-2">
+        <mer-subcategory-select-v2 [(catName)]="catName" [(subcatName)]="subcatName" [(isNew)]="isNew"
+            (catNameChange)="updateCategoryButtons()" (subcatNameChange)="updateCategoryButtons()" class="col-span-2">
 
-        </mer-subcategory-select>
-        @if(isAddingNewSubcategory()){
+        </mer-subcategory-select-v2>
+        @if (isNew){
         <button class="input-height-btn" mat-raised-button color="accent" (click)="submit()">
             <small>new category/subcategory</small><br>
             Submit
@@ -85,24 +85,18 @@
         }
     </div>
     @if (catNames.length){
-    <div>
-        @if (!selectedSubcategory || !selectedSubcategory.catName){
-        <h4 class="inline-block mr-1">Existing Categories</h4>
-        @for (catName of catNames; track catName){
-
-        <button mat-raised-button class="btn-sm mx-1" (click)="selectCatName(catName)">{{catName}}</button>
+    <div style="height: 68px;">
+        @if (!showSubcatButtons){
+        <h4 class="inline-block mr-1">Existing Categories: </h4>
+        @for (catNameOption of filteredCatNames; track catNameOption){
+        <button mat-raised-button class="btn-sm mx-1" (click)="clickCatName(catNameOption)">{{catNameOption}}</button>
         }
-        } @else if (forExistingCatName) {
-        <h4 class="inline-block mr-1">Existing Subcategories of {{this.forExistingCatName}}</h4>
+        } @else if (showSubcatButtons) {
+        <h4 class="inline-block mr-1">Existing Subcategories of {{catName}}: </h4>
         @for (subcat of filteredSubcats; track subcat){
-        <button mat-raised-button class="btn-sm mx-1" (click)="selectSubcat(subcat)">{{subcat.subcatName}}</button>
+        <button mat-raised-button class="btn-sm mx-1" (click)="clickSubcat(subcat)">{{subcat.subcatName}}</button>
         }
-        } @else  {
-            <h4 class="inline-block mr-1">Existing Subcategories </h4>
-            @for (subcat of filteredSubcats; track subcat){
-            <button mat-raised-button class="btn-sm mx-1" (click)="selectSubcat(subcat)">{{subcat.catName}} - {{subcat.subcatName}}</button>
-            }
-            }
+        }
 
     </div>
     }
@@ -112,7 +106,7 @@
     <h3 style="margin: 100px auto" class="text-center">No More Transactions to Categorize</h3>
     }
 
-</mat-dialog-content>
+</div>
 <mat-dialog-actions align="end" class="">
     <div class="pl-4">
         <mat-slide-toggle [(ngModel)]="isManual" (ngModelChange)="isManualChange()">Assign Manual

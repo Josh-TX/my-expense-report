@@ -1,0 +1,28 @@
+<div class="flex">
+    <mat-form-field class="flex-grow mr-4 relative">
+        <mat-label>category             </mat-label>
+        <input type="text" placeholder="Enter a Category" matInput
+             [(ngModel)]="catNameInput" (ngModelChange)="catNameInputChange()">
+        @if (isCatNameNew()){
+            <small style="position: absolute; right: 0; top: 0;">NEW</small>
+        }
+        @if (catNameInput){
+            <div class="text-muted" style="position: absolute; right: -16px; top: 4px;">
+                <button mat-icon-button (click)="clearCat()"><mat-icon>clear</mat-icon></button>
+            </div>
+        }
+    </mat-form-field>
+    <mat-form-field class="flex-grow">
+        <mat-label>subcategory</mat-label> 
+        <input type="text" placeholder="Enter a Subcategory" matInput
+            [(ngModel)]="subcatNameInput" (ngModelChange)="subcatNameInputChange()">
+        @if (isSubcatNameNew()){
+            <small style="position: absolute; right: 0; top: 0;">NEW</small>
+        }
+        @if (subcatNameInput){
+            <div class="text-muted" style="position: absolute; right: -16px; top: 4px;">
+                <button mat-icon-button (click)="clearSubcat()"><mat-icon>clear</mat-icon></button>
+            </div>
+        }
+    </mat-form-field>
+</div>
