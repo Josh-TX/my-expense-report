@@ -18,7 +18,6 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ImportRulesComponent } from '@components/import-rules/import-rules.component';
 import {MatMenuModule} from '@angular/material/menu';
 import { ExportService } from '@services/export.service';
-import { SubcategorySelectComponent } from '@components/subcategory-select/subcategory-select.component';
 import { TransactionService } from '@services/transaction.service';
 import { FixUncategorizedComponent } from '@components/fix-uncategorized/fix-uncategorized.component';
 import { Subcategory } from '@services/category.service';
@@ -27,14 +26,13 @@ import { Subcategory } from '@services/category.service';
 @Component({
     standalone: true,
     imports: [CommonModule, MatDialogTitle, MatDialogContent, MatDialogActions, FormsModule, MatInputModule,
-         MatDialogClose, MatButtonModule, MatMenuModule, MatIconModule, SubcategorySelectComponent],
+         MatDialogClose, MatButtonModule, MatMenuModule, MatIconModule],
     templateUrl: './manage-rules.component.html'
 })
 export class ManageRulesComponent {
     rules: CategoryRule[] = [];
     filteredRules: CategoryRule[] = [];
     filterText: string = "";
-    isAdding: boolean = false;
     selectedSubcategory: Subcategory | undefined;
     isNew: boolean | undefined;
     ruleTextInput: string = "";
@@ -72,14 +70,9 @@ export class ManageRulesComponent {
     }
 
     startAdd(){
-        this.isAdding = true;
-    }
-
-    stopAdd(){
-        this.isAdding = false;
-        this.selectedSubcategory = undefined;
-        this.isNew = undefined;
-        this.ruleTextInput = "";
+        this.dialogRef.close();
+        var ref = this.dialog.open(FixUncategorizedComponent, { panelClass: "dialog-xl", autoFocus: false })
+        ref.componentInstance.isFixingUncat = false;
     }
 
 
@@ -88,31 +81,6 @@ export class ManageRulesComponent {
             return false;
         }
         return this.isNew
-    }
-
-    submit(){
-        var error = "";
-        if (!this.ruleTextInput) {
-            error = "rule text required"
-        }
-        else if (!this.selectedSubcategory || !this.selectedSubcategory.catName) {
-            error = "category required"
-        }
-        else if (!this.selectedSubcategory.subcatName) {
-            error = "subcategory required"
-        }
-        if (error){
-            this.snackBar.open(error, "", { panelClass: "snackbar-error", duration: 3000 });
-            return
-        }
-        this.categoryRuleService.addRules([{
-            catName: this.selectedSubcategory!.catName,
-            subcatName: this.selectedSubcategory!.subcatName,
-            text: this.ruleTextInput
-        }]);
-        this.rules = this.categoryRuleService.getRules();
-        this.filterTextChanged();
-        this.stopAdd();
     }
 
     import(){

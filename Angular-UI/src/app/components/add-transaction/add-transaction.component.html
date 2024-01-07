@@ -21,8 +21,8 @@
     <mat-card>
         <mat-card-content>
             <div class="t-mb-2">Manual Category (optional)</div>
-            <mer-subcategory-select [(subcategory)]="selectedSubcategory" [(isNew)]="isNew"></mer-subcategory-select>
-            @if(isNew && selectedSubcategory && selectedSubcategory.catName && selectedSubcategory.subcatName){
+            <mer-subcategory-select [(catName)]="catName" [(subcatName)]="subcatName" [(isNew)]="isNew"></mer-subcategory-select>
+            @if(isNew){
                 <span>this will create a new Category/Subcategory</span>
             }
         </mat-card-content>

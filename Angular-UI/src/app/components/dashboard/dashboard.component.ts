@@ -9,6 +9,7 @@ import { CategoryBarComponent } from "@components/category-bar/category-bar.comp
 import { ManageRulesComponent } from '@components/manage-rules/manage-rules.component';
 import { TransactionService } from '@services/transaction.service';
 import { environment } from '../../../environments/environment';
+import { StatService } from '@services/stat.service';
 
 @Component({
     standalone: true,
@@ -19,15 +20,18 @@ export class DashboardComponent {
     donutCurrentDate: Date | undefined;
     uncategorizedCount$: Signal<number>;
     trxnCount$: Signal<number>;
+    anyStats$: Signal<boolean>;
     isSample$: Signal<boolean>;
     isHosted: boolean = environment.storageUrl != null;
 
     constructor(
         private dialog: MatDialog,
-        private transactionService: TransactionService
+        private transactionService: TransactionService,
+        private statService: StatService,
         ) {
         this.trxnCount$ = computed(() => this.transactionService.getTransactions().length);
         this.isSample$ = computed(() => this.transactionService.isSampleData());
+        this.anyStats$ = computed(() => !!this.statService.getCatMonthStats().length);
         this.uncategorizedCount$ = computed(() => this.transactionService.getTransactions().filter(z => z.catName == "other" && z.subcatName == "uncategorized").length);
     }
 

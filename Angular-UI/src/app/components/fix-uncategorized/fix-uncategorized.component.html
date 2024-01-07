@@ -1,4 +1,11 @@
-<h2 mat-dialog-title>Fix Uncategorized Transactions</h2>
+<h2 mat-dialog-title>
+    @if (isFixingUncat){
+    Fix Uncategorized Transactions
+    }
+    @else {
+    Add Category Rule
+    }
+</h2>
 <div class="t-px-6">
     @if (currentUncatTransaction && suggestionInfos){
     <table class="table mat-elevation-z2 mb-4">
@@ -16,9 +23,14 @@
             <td>{{currentUncatTransaction.importFrom}}</td>
         </tr>
     </table>
+    }
+
     <div class="t-grid t-grid-cols-2 t-gap-4 t-mb-3">
         <div class="t-flex t-flex-col" style="height: 160px;">
-            @if (currentSuggestionInfo && currentSuggestionInfo.matches.length){
+            @if (!isFixingUncat && !currentSuggestionInfo){
+                <h4 class="t-mb-1">Proposed rule would affect the following transactions (0)</h4>
+            }
+            @if (currentSuggestionInfo){
             <h4 class="t-mb-1">Proposed rule would affect the following transactions
                 ({{currentSuggestionInfo.matches.length}})</h4>
             <div class="t-grow t-overflow-auto">
@@ -37,7 +49,7 @@
         <div class="t-flex t-flex-col" style="height: 160px;">
             @if (currentSuggestionInfo && currentSuggestionInfo.conflicts.length){
             <h4 class="t-mb-1">Proposed rule conflicts with already-categorized transactions</h4>
-            <div class="t-grow t-overflow-auto" >
+            <div class="t-grow t-overflow-auto">
                 <table class="table table-outline table-sm t-mb-0">
                     @for(conflict of currentSuggestionInfo.conflicts; track conflict){
                     <tr>
@@ -53,7 +65,7 @@
             }
         </div>
     </div>
-    @if (suggestionInfos.length){
+    @if (suggestionInfos && suggestionInfos.length){
     <h4 class="t-mb-1">rule text suggestions</h4>
     <div>
         @for(info of suggestionInfos; track info){
@@ -65,15 +77,16 @@
         }
     </div>
     }
+    @if (!finished){
     <div class="t-mt-2 t-grid t-grid-cols-4 t-gap-4">
         <mat-form-field>
             <mat-label>rule text</mat-label>
             <input matInput [(ngModel)]="ruleTextInput" (ngModelChange)="ruleTextChanged()" [disabled]="isManual">
         </mat-form-field>
-        <mer-subcategory-select-v2 [(catName)]="catName" [(subcatName)]="subcatName" [(isNew)]="isNew"
-            (catNameChange)="updateCategoryButtons()" (subcatNameChange)="updateCategoryButtons()" class="col-span-2">
+        <mer-subcategory-select [(catName)]="catName" [(subcatName)]="subcatName" [(isNew)]="isNew"
+            (catNameChange)="updateCategoryButtons()" (subcatNameChange)="updateCategoryButtons()" class="t-col-span-2">
 
-        </mer-subcategory-select-v2>
+        </mer-subcategory-select>
         @if (isNew){
         <button class="input-height-btn" mat-raised-button color="accent" (click)="submit()">
             <small>new category/subcategory</small><br>
@@ -84,7 +97,15 @@
         <button class="input-height-btn" mat-raised-button color="primary" (click)="submit()">Submit</button>
         }
     </div>
-    @if (catNames.length){
+    } @else {
+        @if (isFixingUncat){
+            <div class="t-text-center t-mt-6">Done fixing uncategorized transactions</div>
+        } 
+        <div class="t-text-center" style="margin: 100px 0">
+            <button mat-raised-button color="primary" (click)="startAddingRule()">Add Category-Rule</button>
+        </div>
+    }
+    @if (catNames.length && !finished){
     <div style="height: 68px;">
         @if (!showSubcatButtons){
         <h4 class="t-inline-block t-mr-1">Existing Categories: </h4>
@@ -100,22 +121,21 @@
 
     </div>
     }
-
-
-    } @else {
-    <h3 style="margin: 100px auto" class="t-text-center">No More Transactions to Categorize</h3>
-    }
-
 </div>
 <mat-dialog-actions align="end">
+    @if(currentUncatTransaction){
     <div class="t-pl-4">
         <mat-slide-toggle [(ngModel)]="isManual" (ngModelChange)="isManualChange()">Assign Manual
             Category</mat-slide-toggle>
     </div>
+    }
     <div class="t-flex-grow"></div>
+    @if(isFixingUncat){
     @if(skippedTransactions.length){
     <button mat-raised-button (click)="back()">Back</button>
     }
     <button mat-raised-button (click)="skip()">Skip</button>
+    }
+
     <button mat-raised-button mat-dialog-close>Close</button>
 </mat-dialog-actions>

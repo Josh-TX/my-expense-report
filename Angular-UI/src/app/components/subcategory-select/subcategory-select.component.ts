@@ -5,132 +5,90 @@ import { Subcategory, CategoryService } from '@services/category.service';
 import { MatInputModule } from '@angular/material/input'
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { areValuesSame } from '@services/helpers';
 
 @Component({
     selector: "mer-subcategory-select",
     standalone: true,
-    imports: [CommonModule, FormsModule, MatInputModule, MatButtonModule, MatAutocompleteModule],
+    imports: [CommonModule, FormsModule, MatInputModule, MatButtonModule, MatAutocompleteModule, MatIconModule],
     templateUrl: './subcategory-select.component.html'
 })
 export class SubcategorySelectComponent {
-    @Input("subcategory") subcategoryBinding: Subcategory | undefined;
-    @Output("subcategoryChange") subcategoryChange = new EventEmitter<Subcategory | undefined>()
+    @Input("catName") catNameBinding: string | undefined;
+    @Output("catNameChange") catNameEmitter = new EventEmitter<string>()
+
+    @Input("subcatName") subcatNameBinding: string | undefined;
+    @Output("subcatNameChange") subcatNameEmitter = new EventEmitter<string>()
 
     @Input("isNew") isNewBinding: boolean | undefined;
-    @Output("isNewChange") isNewChange = new EventEmitter<boolean | undefined>()
+    @Output("isNewChange") isNewEmitter = new EventEmitter<boolean | undefined>()
 
-    allCatNames: string[] = [];
-    filteredCatNames: string[] = [];
-    catNameInput: string | null = "";
+    catNameInput: string = "";
+    subcatNameInput: string = "";
 
-    allSubcategories: Subcategory[] = [];
-    filteredSubcategories: Subcategory[] = [];
-    subcategoryInput: string | Subcategory | null = "";
 
     constructor(
         private categoryService: CategoryService) {
     }
 
-    ngOnChanges(changes: SimpleChanges){
-        if (changes['subcategoryBinding']){
-            if (this.subcategoryBinding && this.subcategoryBinding.catName == this.catNameInput && this.subcategoryBinding.subcatName == this.getSubcatName() ){
-                return;
-            }
-            this.catNameInput = this.subcategoryBinding ? this.subcategoryBinding.catName : null;
-            this.subcategoryInput = this.subcategoryBinding ? this.subcategoryBinding : null;
-            this.updateFilters();
-            setTimeout(() => {
-                //IsNew might be changed, but we'll get an error if we emit synchronously
-                this.update();
-            })
+    ngOnChanges(simpleChanges: SimpleChanges){
+        if (this.catNameBinding != this.catNameInput){
+            this.catNameInput = this.catNameBinding || "";
         }
-    }
-
-    ngOnInit() {
-        this.allSubcategories = this.categoryService.getSubcategories().filter(z => !(z.catName == "other" && z.subcatName == "uncategorized"));
-        this.allCatNames = [...new Set(this.allSubcategories.map(z => z.catName))];
-        if (!this.allCatNames.includes("other")){
-            this.allCatNames.push("other");
+        if (this.subcatNameBinding != this.subcatNameInput){
+            this.subcatNameInput = this.subcatNameBinding || "";
         }
-        this.filteredCatNames = this.allCatNames;
-        this.filteredSubcategories = this.allSubcategories;
+        setTimeout(() => this.updateIsNew())
     }
 
-    updateFilters(){
-        this.filteredCatNames = this.allCatNames;
-        this.filteredSubcategories = this.allSubcategories;
-        if (this.catNameInput){
-            this.filteredCatNames = this.allCatNames.filter(z => z.toLowerCase().startsWith(this.catNameInput!.toLowerCase()));
-            this.filteredSubcategories = this.allSubcategories.filter(z => z.catName.toLowerCase() == this.catNameInput!.toLowerCase())
+    catNameInputChange(){
+        if (this.catNameBinding != this.catNameInput){
+            this.catNameBinding = this.catNameInput;
+            this.catNameEmitter.emit(this.catNameInput);
         }
-        if (this.subcategoryInput){
-            if (this.catNameInput){
-                this.filteredSubcategories = this.filteredSubcategories.filter(z => z.subcatName.toLowerCase() == this.getSubcatName().toLowerCase())
-            } else if (typeof this.subcategoryInput == "string"){
-                this.filteredSubcategories = this.filteredSubcategories.filter(info => this.filterMatchesTarget(<any>this.subcategoryInput, [info.catName, info.subcatName]));
-            }
+        this.updateIsNew();
+    }
+
+    subcatNameInputChange(){
+        if (this.subcatNameBinding != this.subcatNameInput){
+            this.subcatNameBinding = this.subcatNameInput;
+            this.subcatNameEmitter.emit(this.subcatNameInput);
         }
+        this.updateIsNew();
     }
 
-
-    subcategoryInputChange(event: string | Subcategory) {
-        this.updateFilters();
-        this.update();
-    }
-
-    catNameInputChange(filter: string) {
-        this.updateFilters();
-        this.update();
-    }
-
-    displayFn(data: Subcategory | string): string {
-        if (typeof data == "string"){
-            return data;
+    isCatNameNew(): boolean{
+        if (!this.catNameInput){
+            return false;
         }
-        return data?.subcatName || "";
+        return !this.categoryService.getSubcategories().some(z => z.catName.toLowerCase() == this.catNameInput.toLowerCase());
     }
 
-    quickSelectSubcategory(subcategory: Subcategory) {
-        this.catNameInput = subcategory.catName;
-        this.subcategoryInput = subcategory.subcatName;
-        this.update();
+    isSubcatNameNew(): boolean{
+        if (!this.catNameInput || !this.subcatNameInput){
+            return false;
+        }
+        return !this.categoryService.getSubcategories().some(z => z.catName.toLowerCase() == this.catNameInput.toLowerCase() 
+            && z.subcatName.toLowerCase() == this.subcatNameInput.toLowerCase());
     }
 
-    getSubcategoriesFromCatName(catName: string) {
-        return this.allSubcategories.filter(z => z.catName == catName);
-    }
-    private getSubcatName(): string {
-        if (!this.subcategoryInput) {
-            return "";
-        }
-        if (typeof this.subcategoryInput == "object") {
-            return this.subcategoryInput.subcatName
-        }
-        return this.subcategoryInput;
+    clearCat() {
+        this.clearSubcat();
+        this.catNameInput = "";
+        this.catNameInputChange();
     }
 
-    private filterMatchesTarget(filter: string, targets: string[]): boolean {
-        var filterParts = filter.split(" ");
-        for (var filterPart of filterParts) {
-            if (!targets.some(target => target.toLowerCase().startsWith(filterPart.toLowerCase()))) {
-                return false;
-            }
-        }
-        return true;
+    clearSubcat() {
+        this.subcatNameInput = "";
+        this.subcatNameInputChange();
     }
 
-    private update() {
-        var newSubcategoryBinding = { catName: this.catNameInput || "", subcatName: this.getSubcatName() };
-        if (!areValuesSame(this.subcategoryBinding, newSubcategoryBinding)){
-            this.subcategoryBinding = newSubcategoryBinding;
-            this.subcategoryChange.emit(this.subcategoryBinding);
-        }
-        var isNew = !this.allSubcategories.find(z => z.catName.toLowerCase() == this.subcategoryBinding!.catName.toLowerCase() 
-            && z.subcatName.toLowerCase() == this.subcategoryBinding!.subcatName.toLowerCase());
-        if (isNew != this.isNewBinding){
+    private updateIsNew(){
+        var isNew = this.isSubcatNameNew();
+        if (this.isNewBinding != isNew){
             this.isNewBinding = isNew;
-            this.isNewChange.emit(this.isNewBinding);
+            this.isNewEmitter.emit(isNew);
         }
     }
 }

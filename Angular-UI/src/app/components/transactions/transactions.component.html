@@ -39,11 +39,13 @@
         </div>
         <div class="t-row-span-2 t-flex t-justify-end" style="font-size: 2rem;">
             @if (dataSource.filteredData.length){
-                <button class="mr-3" mat-raised-button (click)="exportTransactions()">
+                <button class="t-mr-3" mat-raised-button (click)="exportTransactions()">
                     Export ({{dataSource.filteredData.length}})
                 </button>
             }
-            <button class="large-icon-btn" mat-raised-button color="primary" (click)="add()"><mat-icon>add</mat-icon></button>
+            <button mat-raised-button color="primary" (click)="add()">
+                Add
+            </button>
         </div>
         <p class="t-text-center t-mb-0" style="position: relative; top: -12px; overflow: hidden;">
             @if (filterText && !debounceActive){

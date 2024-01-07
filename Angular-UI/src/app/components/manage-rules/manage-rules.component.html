@@ -14,35 +14,11 @@
          }
         <button mat-raised-button (click)="import()" class="t-mr-4">Import from CSV</button>
         <button mat-raised-button (click)="export()" class="t-mr-4">Export to CSV</button>
-        <button class="large-icon-btn" mat-raised-button color="primary"
-            (click)="startAdd()"><mat-icon>add</mat-icon></button>
+        <button mat-raised-button color="primary"
+            (click)="startAdd()">Add</button>
     </div>
 </div>
 <mat-dialog-content class="mat-typography" style="height: 60vh;">
-    @if (isAdding){
-    <div style="width: 60%; margin-left: auto; margin-right: auto; margin-top: 30px;">
-        <h4>Add Category Rule</h4>
-        <div class="flex">
-            <mer-subcategory-select [(subcategory)]="selectedSubcategory" [(isNew)]="isNew"></mer-subcategory-select>
-            <mat-form-field class="mx-4">
-                <mat-label>rule text</mat-label>
-                <input matInput [(ngModel)]="ruleTextInput" (ngModelChange)="ruleTextChanged()">
-            </mat-form-field>
-            @if(isAddingNewSubcategory()){
-            <button class="input-height-btn" mat-raised-button color="accent" (click)="submit()">
-                <small>new category/subcategory</small><br>
-                Submit
-            </button>
-
-            } @else {
-            <button class="input-height-btn flex-grow" mat-raised-button color="primary" (click)="submit()">Submit</button>
-            }
-        </div>
-        <div>
-            <button mat-raised-button (click)="stopAdd()" style="float: right">cancel</button>
-        </div>
-    </div>
-    } @else {
     <table class="table mat-elevation-z4">
         <tr>
             <th>Category</th>
@@ -75,8 +51,10 @@
         </tr>
         }
     </table>
+    @if (!filteredRules.length){
+        <h3 class="t-text-center">No Category-Rules Added</h3>
+        <div class="t-text-center">To add category rules, click "fix uncategorized"</div>
     }
-
 </mat-dialog-content>
 <mat-dialog-actions align="end" class="t-justify-between">
     <div class="t-pl-4">Rules are evaluated top to bottom, and stop on first match</div>

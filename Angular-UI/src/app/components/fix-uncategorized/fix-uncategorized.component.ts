@@ -14,19 +14,20 @@ import { CategoryRuleService } from '@services/category-rule.service';
 import { MatInputModule } from '@angular/material/input'
 import { MatSlideToggleModule } from '@angular/material/slide-toggle'
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { SubcategorySelectv2Component } from '@components/subcategory-select-v2/subcategory-select-v2.component';
+import { SubcategorySelectComponent } from '@components/subcategory-select/subcategory-select.component';
 import { CategoryService, Subcategory } from '@services/category.service';
 import { getDistinct, getDistinctBy, getSum, sortBy } from '@services/helpers';
 
 @Component({
     standalone: true,
     imports: [CommonModule, FormsModule, MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose, 
-        MatButtonModule, MatInputModule, SubcategorySelectv2Component, MatSlideToggleModule],
+        MatButtonModule, MatInputModule, SubcategorySelectComponent, MatSlideToggleModule],
     templateUrl: './fix-uncategorized.component.html'
 })
 export class FixUncategorizedComponent {
     private catTransactions: Transaction[] = [];
     private uncatTransactions: Transaction[] = [];
+    isFixingUncat: boolean = true;
     skippedTransactions: Transaction[] = [];
     currentUncatTransaction: Transaction | undefined;
     suggestionInfos: SuggestionInfo[] = [];
@@ -53,15 +54,20 @@ export class FixUncategorizedComponent {
         private snackBar: MatSnackBar) {
     }
     ngOnInit() {
-        this.update();
+        this.reset();
+        if (this.isFixingUncat){
+            this.updateNextUncat();
+        }
     }
 
-    private update() {
+    private reset(){
         this.ruleTextInput = "";
         this.currentUncatTransaction = undefined;
         this.catName = "";
         this.subcatName = "";
         this.subcats = this.categoryService.getSubcategories();
+        this.currentSuggestionInfo = undefined;
+        this.suggestionInfos = [];
         this.filteredSubcats = this.subcats;
         this.showSubcatButtons = false;
         this.catNames = getDistinct(this.subcats.map(z => z.catName));
@@ -69,6 +75,9 @@ export class FixUncategorizedComponent {
         var allTransactions = this.transactionService.getTransactions();
         this.catTransactions = allTransactions.filter(z => !this.isUncategorized(z));
         this.uncatTransactions = allTransactions.filter(z => this.isUncategorized(z) && !this.skippedTransactions.some(zz => zz.name == z.name));
+    }
+
+    private updateNextUncat() {
         if (!this.uncatTransactions.length){
             this.finished = true;
             return;
@@ -142,14 +151,17 @@ export class FixUncategorizedComponent {
     }
 
     back() {
+        this.finished = false;
         this.skippedTransactions.pop();
-        this.update();
+        this.reset();
+        this.updateNextUncat();
     }
 
     skip() {
         if (this.currentUncatTransaction){
             this.skippedTransactions.push(this.currentUncatTransaction!);
-            this.update();
+            this.reset();
+            this.updateNextUncat();
         }
     }
 
@@ -164,7 +176,7 @@ export class FixUncategorizedComponent {
         else if (!this.subcatName) {
             error = "subcategory required"
         }
-        else if (!this.isManual && !this.categoryRuleService.doesRuleTextMatch(this.currentUncatTransaction!, this.ruleTextInput) && !this.allowMismatchText) {
+        else if (this.isFixingUncat && !this.isManual && !this.categoryRuleService.doesRuleTextMatch(this.currentUncatTransaction!, this.ruleTextInput) && !this.allowMismatchText) {
             if (confirm("rule text doesn't match current transaction. Create Rule Anyways?")){
                 this.allowMismatchText = true;
             } else {
@@ -187,7 +199,17 @@ export class FixUncategorizedComponent {
                 text: this.ruleTextInput
             }]);
         }
-        this.update();
+        this.reset();
+        if (this.isFixingUncat){
+            this.updateNextUncat();
+        } else {
+            this.finished = true;
+        }
+    }
+
+    startAddingRule(){
+        this.finished = false;
+        this.isFixingUncat = false;
     }
 
     updateCategoryButtons(){

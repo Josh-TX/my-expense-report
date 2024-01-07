@@ -30,8 +30,9 @@ export class AddTransactionComponent {
     name: string = "";
     amount: number | undefined;
     date: Date | undefined;
-    selectedSubcategory: Subcategory | undefined
     isNew: boolean | undefined;
+    catName: string = "";
+    subcatName: string = ""
 
     constructor(
         private transactionService: TransactionService,
@@ -50,6 +51,7 @@ export class AddTransactionComponent {
         var now = new Date();
         var tooEarly = new Date(2000,1,1);
         var date = this.date instanceof Date ? this.date : new Date(<any>this.date)
+        var subcategory: Subcategory | undefined;
         var error = "";
         if (!this.name) {
             error = "name required"
@@ -63,13 +65,15 @@ export class AddTransactionComponent {
         else if (date!.getTime() > now.getTime() || date.getTime() < new Date(2000,1,1).getTime()) {
             error = "invalid date"
         }
-        else if (this.selectedSubcategory) {
-            if (this.selectedSubcategory.catName && !this.selectedSubcategory.subcatName){
+        else if (this.catName || this.subcatName) {
+            if (this.catName && !this.subcatName){
                 error = "must provide subcategory when category is provided"
-            } else if (!this.selectedSubcategory.catName && this.selectedSubcategory.subcatName){
+            } else if (!this.catName && this.subcatName){
                 error = "must provide category when subcategory is provided"
-            } else if (!this.selectedSubcategory.catName) {
-                this.selectedSubcategory = undefined;
+            }
+            subcategory = {
+                catName: this.catName,
+                subcatName: this.subcatName,
             }
         }
         if (error){
@@ -80,7 +84,7 @@ export class AddTransactionComponent {
             amount: this.amount!,
             date: date,
             name: this.name,
-            manualSubcategory: this.selectedSubcategory
+            manualSubcategory: subcategory
         }
         this.transactionService.addTransactions([transactionToAdd], "manually added");
         this.snackBar.open("Transaction manually added", "", { duration: 3000 });
