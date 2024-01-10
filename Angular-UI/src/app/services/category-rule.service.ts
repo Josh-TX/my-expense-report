@@ -1,7 +1,7 @@
 import { Injectable, Signal, WritableSignal, signal } from '@angular/core';
 import { Settings, SettingsService } from './settings.service';
 import { StorageService } from './storage.service';
-import { CategoryService } from './category.service';
+import { CategoryService, Subcategory } from './category.service';
 
 
 export type CategoryRule = {
@@ -50,6 +50,23 @@ export class CategoryRuleService {
         this.categoryService.clearFromCategoryRules();
         this.rules$.set([]);
         this.addRules(rules);
+    }
+
+    renameCats(exisingCatname: string, newCatName: string) {
+        var allRules = this.rules$();
+        var rulesToEdit = allRules.filter(z => z.catName == exisingCatname);
+        rulesToEdit.forEach(z => z.catName = newCatName);
+        this.replaceRules(allRules);
+    }
+
+    renameSubcats(existingSubcat: Subcategory, newSubcat: Subcategory) {
+        var allRules = this.rules$();
+        var rulesToEdit = allRules.filter(z => z.catName == existingSubcat.catName && z.subcatName == existingSubcat.subcatName);
+        rulesToEdit.forEach(z => {
+            z.catName = newSubcat.catName,
+            z.subcatName = newSubcat.subcatName
+        });
+        this.replaceRules(allRules);
     }
 
     private _addRule(newRule: CategoryRule){

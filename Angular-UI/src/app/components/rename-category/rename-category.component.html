@@ -1,0 +1,70 @@
+<div class="t-py-5 t-px-6 t-flex t-justify-between">
+    <h2 class="t-mb-0">Rename Category</h2>
+    <small>This renaming process works by bulk editing category-rules and manually assigned categories</small>
+</div>
+
+<div class="t-px-6">
+    <div style="height: 68px;">
+        <h4 class="t-inline-block t-mr-1">Select a Category: </h4>
+        @if (!selectedCatName){
+        @for (existingCatName of existingCatNames; track existingCatName){
+        <button mat-raised-button class="btn-sm t-mx-1"
+            (click)="clickExistingCatName(existingCatName)">{{existingCatName}}</button>
+        }
+        } @else {
+        {{selectedCatName}} &nbsp; <span class="t-cursor-pointer" (click)="clearExistingCat()">&times;</span>
+        }
+    </div>
+    <div>
+        @if (!selectedCatName){
+        <h4 class="t-inline-block t-mr-1 text-muted">(Selected a Category First)</h4>
+        } @else {
+        <h4 class="t-inline-block t-mr-1">Select a Subcategory <span class="text-muted">(optional)</span>:</h4>
+        @if (!selectedSubcatName){
+        @for (existingSubcat of filteredExistingSubcats; track existingSubcat){
+        <button mat-raised-button class="btn-sm t-mx-1"
+            (click)="clickExistingSubcat(existingSubcat)">{{existingSubcat.subcatName}}</button>
+        }
+        } @else {
+        {{selectedSubcatName}} &nbsp; <span class="t-cursor-pointer" (click)="clearExistingSubcat()">&times;</span>
+        }
+        }
+    </div>
+    <hr class="t-my-4">
+    @if (selectedCatName && !selectedSubcatName){
+    <div class="t-flex t-items-center t-mb-4">
+        <h3 class="t-mb-0 t-mr-6">Rename category "{{selectedCatName}}" to...</h3> 
+        <small>(this will affect all subcategories of {{selectedCatName}})</small>
+    </div>
+    <div class="t-flex">
+        <mat-form-field class="t-flex-grow t-basis-0 t-mr-4 t-relative">
+            <mat-label>category</mat-label>
+            <input type="text" placeholder="Enter a Category" matInput [(ngModel)]="newCatName">
+            @if (isCatNameNew()){
+            <small style="position: absolute; right: 0; top: 0;">NEW</small>
+            }
+            @if (newCatName){
+            <div class="text-muted" style="position: absolute; right: -16px; top: 4px;">
+                <button mat-icon-button tabindex="-1" (click)="clearCat()"><mat-icon>clear</mat-icon></button>
+            </div>
+            }
+        </mat-form-field>
+        <div class="t-flex-grow"></div>
+    </div>
+    }
+    @if (selectedCatName && selectedSubcatName){
+    <h3 class="t-mb-4">Rename category "{{selectedCatName}}", subcategory "{{selectedSubcatName}}" to...</h3>
+    <mer-subcategory-select [(catName)]="newCatName" [(subcatName)]="newSubcatName" [(isNew)]="isNew"
+        class="t-col-span-2">
+
+    </mer-subcategory-select>
+    }
+
+
+</div>
+<mat-dialog-actions align="end">
+    <small class="t-pl-2">It's perfectly valid to rename one category to another category. This essentially merges the categories (or subcategories)</small>
+    <div class="t-flex-grow"></div>
+    <button mat-raised-button mat-dialog-close>Close</button>
+    <button mat-raised-button color="primary" (click)="submit()">Submit</button>
+</mat-dialog-actions>

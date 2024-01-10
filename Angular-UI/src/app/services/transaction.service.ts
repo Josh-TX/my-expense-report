@@ -2,7 +2,7 @@ import { Injectable, Signal, WritableSignal, computed, effect, signal } from '@a
 import { CategoryRule, CategoryRuleService } from './category-rule.service';
 import { StorageService } from './storage.service';
 import { Settings, SettingsService } from './settings.service';
-import { getStartOfMonth } from './helpers';
+import { areValuesSame, getStartOfMonth } from './helpers';
 import { CategoryService, Subcategory } from './category.service';
 
 export type Transaction = {
@@ -118,6 +118,20 @@ export class TransactionService {
         var storedTrxns = trxns.map(trxn => this.storedTransactions$().find(z => z.tempId == trxn.tempId)!);
         storedTrxns.forEach(z => z.manualSubcategory = subcategory);
         this.updateStoredTransactions([...this.storedTransactions$()]);
+    }
+
+    renameCats(existingCatName: string, newCatName: string){
+        var allStoredTrxns = this.storedTransactions$();
+        var trxnsToUpdate = allStoredTrxns.filter(z => z.manualSubcategory != null && z.manualSubcategory.catName == existingCatName);
+        trxnsToUpdate.forEach(z => z.manualSubcategory!.catName = newCatName);
+        this.updateStoredTransactions([...allStoredTrxns]);
+    }
+
+    renameSubcats(existingSubcat: Subcategory, newSubcat: Subcategory){
+        var allStoredTrxns = this.storedTransactions$();
+        var trxnsToUpdate = allStoredTrxns.filter(z => z.manualSubcategory != null && areValuesSame(z.manualSubcategory, existingSubcat));
+        trxnsToUpdate.forEach(z => z.manualSubcategory = {...newSubcat});
+        this.updateStoredTransactions([...allStoredTrxns]);
     }
 
     private updateStoredTransactions(storedTrxns: StoredTransactionPlusId[]){

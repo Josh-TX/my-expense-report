@@ -5,6 +5,9 @@
             @if (uncategorizedCount$() && !isSample$()) {
             <button mat-raised-button (click)="fixUncategorized()" class="t-mr-4">Fix Uncategorized ({{uncategorizedCount$()}})</button>
             }
+            @if (anyCategories$()){
+            <button mat-raised-button (click)="renameCategories()" class="t-mr-4">Rename Categories</button>
+            }
             @if (trxnCount$() && !isSample$()) {
             <button mat-raised-button (click)="manageRules()" class="t-mr-4">Manage Category Rules</button>
             }
