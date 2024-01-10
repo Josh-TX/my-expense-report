@@ -1,12 +1,12 @@
-<div class="t-p-4">
-    <div style="display: grid; grid-template: 1fr 1fr 0.5fr / 14rem 1fr 14rem;">
-        <h2 class="t-mb-0">Transactions</h2>
-        <div style="grid-row: span 2; display: flex; justify-content: center;">
-            <mat-form-field class="t-mr-3" style="flex-grow: 0.5">
+<div class="t-p-4 t-overflow-x-auto">
+    <div class="transactions-grid">
+        <h2 class="t-mb-0" style="grid-area: h1">Transactions</h2>
+        <div style="grid-area: filter; display: flex; justify-content: center; margin-bottom: -15px;">
+            <mat-form-field class="t-mr-3" style="flex-grow: 0.6">
                 <mat-label>Filter</mat-label>
                 <input matInput [(ngModel)]="filterText" (ngModelChange)="filterTextChanged()" (paste)="onPaste()">
             </mat-form-field>
-            <mat-form-field class="t-mr-3" style="flex-grow: 0.1">
+            <mat-form-field class="t-mr-3" style="flex-grow: 0.2">
                 <mat-label>Filter Column</mat-label>
                 <mat-select [(value)]="selectedFilterColumn" (selectionChange)="filterChanged()">
                     @for (filterableColumn of filterableColumns; track filterableColumn) {
@@ -14,7 +14,7 @@
                     }
                 </mat-select>
             </mat-form-field>
-            <mat-form-field style="flex-grow: 0.1">
+            <mat-form-field style="flex-grow: 0.2">
                 <mat-label >Filter Type</mat-label>
                 <mat-select role="listbox" [(value)]="selectedFilterType" (selectionChange)="filterChanged()">
                     @for (filterType of filterTypes; track filterType) {
@@ -26,28 +26,26 @@
                 <button mat-icon-button (click)="clearFilters()" [class.text-muted]="!filterText"><mat-icon>clear</mat-icon></button>
             </div>
         </div>
-        <div>
+        <div class="t-text-right" style="grid-area: toggle">
             <mat-slide-toggle [(ngModel)]="showHidden"
-            (ngModelChange)="showHiddenChanged()">Show Hidden Transactions</mat-slide-toggle>
+            (ngModelChange)="showHiddenChanged()">Include Hidden</mat-slide-toggle>
         </div>
-        <div class="t-row-span-2">
-            @if (selection.selected.length){
-                <button mat-raised-button color="primary" (click)="editSelected()">
-                    Edit Transaction{{selection.selected.length > 1 ? 's (' + selection.selected.length  + ')' : ''}}
-                </button>
-            }
-        </div>
-        <div class="t-row-span-2 t-flex t-justify-end" style="font-size: 2rem;">
-            @if (dataSource.filteredData.length){
-                <button class="t-mr-3" mat-raised-button (click)="exportTransactions()">
-                    Export ({{dataSource.filteredData.length}})
-                </button>
-            }
+        <div style="grid-area: add">
             <button mat-raised-button color="primary" (click)="add()">
                 Add
             </button>
+            @if (dataSource.filteredData.length){
+                <button class="t-ml-3" mat-raised-button (click)="exportTransactions()">
+                    Export ({{dataSource.filteredData.length}})
+                </button>
+            }
         </div>
-        <p class="t-text-center t-mb-0" style="position: relative; top: -12px; overflow: hidden;">
+        <div class="t-flex t-justify-end" style="grid-area: edit">
+            <button mat-raised-button color="primary" [disabled]="!selection.selected.length" (click)="editSelected()">
+                Edit Selected ({{selection.selected.length}})
+            </button>
+        </div>
+        <p class="t-text-center t-mb-0" style="grid-area: results; position: relative; top: -12px; overflow: hidden;">
             @if (filterText && !debounceActive){
                 Filtered to {{dataSource.filteredData.length}} of {{dataSource.data.length}} transactions (total {{getTotalAmount() | currency }})
             }
@@ -64,20 +62,6 @@
 
     <div class="mat-elevation-z8">
         <table mat-table matSort [dataSource]="dataSource">
-
-            <ng-container matColumnDef="select">
-                <th mat-header-cell *matHeaderCellDef>
-                    <mat-checkbox (change)="$event ? toggleAllRows() : null" color="primary"
-                        [checked]="selection.hasValue() && isAllSelected()"
-                        [indeterminate]="selection.hasValue() && !isAllSelected()">
-                    </mat-checkbox>
-                </th>
-                <td mat-cell *matCellDef="let row">
-                    <mat-checkbox (change)="$event ? selection.toggle(row) : null" color="primary"
-                        [checked]="selection.isSelected(row)">
-                    </mat-checkbox>
-                </td>
-            </ng-container>
 
             <ng-container matColumnDef="date">
                 <th mat-header-cell mat-sort-header start="desc" *matHeaderCellDef>Date</th>
@@ -96,7 +80,7 @@
 
             <ng-container matColumnDef="category">
                 <th mat-header-cell mat-sort-header *matHeaderCellDef> Category </th>
-                <td mat-cell *matCellDef="let trxn" class="relative" style="line-height: 24px;">
+                <td mat-cell *matCellDef="let trxn" class="t-relative" style="line-height: 24px;">
                     <span class="cat-box" [style]="getColorStyles(trxn)"></span>
                     {{trxn.catName}}
                     @if(trxn.catSource){
@@ -118,6 +102,20 @@
             <ng-container matColumnDef="importedOn">
                 <th mat-header-cell mat-sort-header start="desc" *matHeaderCellDef> Imported On </th>
                 <td mat-cell *matCellDef="let trxn"> {{trxn.importDate | date:'M/d/yy, h:mm:ss a'}} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="select">
+                <th mat-header-cell *matHeaderCellDef>
+                    <mat-checkbox (change)="$event ? toggleAllRows() : null" color="primary"
+                        [checked]="selection.hasValue() && isAllSelected()"
+                        [indeterminate]="selection.hasValue() && !isAllSelected()">
+                    </mat-checkbox>
+                </th>
+                <td mat-cell *matCellDef="let row">
+                    <mat-checkbox (change)="$event ? selection.toggle(row) : null" color="primary"
+                        [checked]="selection.isSelected(row)">
+                    </mat-checkbox>
+                </td>
             </ng-container>
 
             <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true;"></tr>

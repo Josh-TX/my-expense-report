@@ -2,6 +2,8 @@ import { Component, Signal, computed } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatIconModule } from '@angular/material/icon';
 import { ImportTransactionsComponent } from '@components/import-transactions/import-transactions.component';
 import { FixUncategorizedComponent } from '@components/fix-uncategorized/fix-uncategorized.component';
 import { CategoryDonutComponent } from '@components/category-donut/category-donut.component';
@@ -15,7 +17,7 @@ import { CategoryService } from '@services/category.service';
 
 @Component({
     standalone: true,
-    imports: [MatCardModule, MatButtonModule, CategoryDonutComponent, CategoryBarComponent],
+    imports: [MatCardModule, MatButtonModule, CategoryDonutComponent, CategoryBarComponent, MatMenuModule, MatIconModule],
     templateUrl: './dashboard.component.html'
 })
 export class DashboardComponent {

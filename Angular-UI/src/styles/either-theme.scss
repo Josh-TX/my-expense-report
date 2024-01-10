@@ -183,3 +183,27 @@ html {
           margin-left: 0px !important;
      }
 }
+
+.transactions-grid {
+     display: grid;
+     gap: 8px;
+     grid-template-columns: 1fr 1fr;
+     grid-template-areas:
+          "h1 toggle"
+          "filter filter"
+          "add edit"
+          "results results";
+
+}
+
+@media (min-width: 1224px) {
+     .transactions-grid {
+          grid-template-columns: 14rem 1fr 14rem;
+          grid-template-rows: 1fr 1fr 0.5fr;
+          grid-template-areas:
+               "h1 filter toggle"
+               "add filter edit"
+               "add results edit";
+     
+     }
+}

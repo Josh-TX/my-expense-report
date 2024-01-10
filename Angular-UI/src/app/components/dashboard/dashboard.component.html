@@ -2,33 +2,52 @@
     <div class="t-flex t-justify-between">
         <h1>Dashboard</h1>
         <div>
-            @if (uncategorizedCount$() && !isSample$()) {
-            <button mat-raised-button (click)="fixUncategorized()" class="t-mr-4">Fix Uncategorized ({{uncategorizedCount$()}})</button>
-            }
-            @if (anyCategories$()){
-            <button mat-raised-button (click)="renameCategories()" class="t-mr-4">Rename Categories</button>
-            }
-            @if (trxnCount$() && !isSample$()) {
-            <button mat-raised-button (click)="manageRules()" class="t-mr-4">Manage Category Rules</button>
-            }
-            <button mat-raised-button (click)="importTransactions()">Import Transactions</button>
+            <div class="t-block md:t-hidden">
+                <button mat-raised-button [matMenuTriggerFor]="actionsMenu">Actions<mat-icon>arrow_drop_down</mat-icon></button>
+                <mat-menu #actionsMenu="matMenu">
+                    @if (uncategorizedCount$() && !isSample$()) {
+                    <button mat-menu-item (click)="fixUncategorized()">Fix Uncategorized
+                        ({{uncategorizedCount$()}})</button>
+                    }
+                    @if (anyCategories$()){
+                    <button mat-menu-item (click)="renameCategories()">Rename Categories</button>
+                    }
+                    @if (trxnCount$() && !isSample$()) {
+                    <button mat-menu-item (click)="manageRules()">Manage Category Rules</button>
+                    }
+                    <button mat-menu-item (click)="importTransactions()">Import Transactions</button>
+                </mat-menu>
+            </div>
+            <div class="t-hidden md:t-block">
+                @if (uncategorizedCount$() && !isSample$()) {
+                <button mat-raised-button (click)="fixUncategorized()" class="t-mr-4">Fix Uncategorized
+                    ({{uncategorizedCount$()}})</button>
+                }
+                @if (anyCategories$()){
+                <button mat-raised-button (click)="renameCategories()" class="t-mr-4">Rename Categories</button>
+                }
+                @if (trxnCount$() && !isSample$()) {
+                <button mat-raised-button (click)="manageRules()" class="t-mr-4">Manage Category Rules</button>
+                }
+                <button mat-raised-button (click)="importTransactions()">Import Transactions</button>
+            </div>
         </div>
     </div>
     @if (trxnCount$()) {
-        @if (anyStats$()){
-            <div class="t-grid t-grid-cols-2 t-gap-4">
-                <mer-category-donut [currentDate]="donutCurrentDate" [isYearly]="false"></mer-category-donut>
-                <mer-category-bar (dateClick)="barClicked($event)"></mer-category-bar>
-            </div>
-        } @else {
-            <h3 class="t-text-center t-mt-6">
-                Unable to show graphs or reports because there isn't a full month of transactions
-            </h3>
-        }
+    @if (anyStats$()){
+    <div class="t-grid t-grid-cols-1 md:t-grid-cols-2 t-gap-4">
+        <mer-category-donut [currentDate]="donutCurrentDate" [isYearly]="false"></mer-category-donut>
+        <mer-category-bar (dateClick)="barClicked($event)"></mer-category-bar>
+    </div>
     } @else {
-        <h3 class="t-text-center t-mt-6">
-            error loading sample data
-        </h3>
+    <h3 class="t-text-center t-mt-6">
+        Unable to show graphs or reports because there isn't a full month of transactions
+    </h3>
+    }
+    } @else {
+    <h3 class="t-text-center t-mt-6">
+        error loading sample data
+    </h3>
     }
     <div style="margin-top: 100px">
         @if (!isHosted){
@@ -36,11 +55,13 @@
             This is the "browser-only" version of the web-app, meaning that all data is stored in the browser via
             localStorage.
             <br>
-            You can also set up a private "hosted" version via docker (<a href="https://github.com/Josh-TX/my-expense-report#hosted-version" target="_blank">more info</a>)
+            You can also set up a private "hosted" version via docker (<a
+                href="https://github.com/Josh-TX/my-expense-report#hosted-version" target="_blank">more info</a>)
         </p>
         } @else {
         <p class="t-text-center text-muted">
-            This is the "hosted" version of the web-app, meaning that most of the data is being stored on a server someone is
+            This is the "hosted" version of the web-app, meaning that most of the data is being stored on a server
+            someone is
             hosting (hopefully someone you know)
         </p>
         }

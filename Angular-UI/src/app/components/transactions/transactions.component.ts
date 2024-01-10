@@ -33,7 +33,7 @@ import { LocalSettingsService } from '@services/local-settings.service';
     templateUrl: './transactions.component.html'
 })
 export class TransactionsComponent {
-    displayedColumns = ['select', 'date', 'name', 'amount', 'category', 'subcategory', 'importedFrom', 'importedOn'] as const;
+    displayedColumns = ['date', 'name', 'amount', 'category', 'subcategory', 'importedFrom', 'importedOn', 'select'] as const;
     filterTypes = ["default", "starts with", "does not contain", "greater or equal", "less or equal"] as const;
     filterableColumns = ["any", "Date", "Name", "Amount", "Category / Subcategory", "Imported From", "Imported On"] as const;
     filteredTransactions: Transaction[] = [];
