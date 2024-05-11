@@ -4,3 +4,7 @@
 
 /Angular-UI/node_modules
 /Angular-UI/.angular
+/Angular-UI/dist
+/Angular-UI/dist-electron
+/Angular-UI/settings.json
+/Angular-UI/transactions.json

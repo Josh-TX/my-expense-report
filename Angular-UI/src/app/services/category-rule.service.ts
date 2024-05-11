@@ -22,10 +22,11 @@ export class CategoryRuleService {
         private categoryService: CategoryService
     ) {
         this.rules$ = signal([]);
-        var data = this.storageService.retrieve("category-rules.json");
-        if (data && Array.isArray(data)) {
-            data.forEach((z: CategoryRule) => this._addRule(z));
-        }
+        this.storageService.retrieve("category-rules.json").then(data => {
+            if (data && Array.isArray(data)) {
+                data.forEach((z: CategoryRule) => this._addRule(z));
+            }
+        });
     }
 
     doesRuleTextMatch(trxn: { name: string, amount: number }, ruleText: string): boolean {

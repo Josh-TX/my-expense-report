@@ -27,7 +27,7 @@ export class DashboardComponent {
     anyStats$: Signal<boolean>;
     isSample$: Signal<boolean>;
     anyCategories$: Signal<boolean>;
-    isHosted: boolean = environment.storageUrl != null;
+    envName: string = environment.envName;
 
     constructor(
         private dialog: MatDialog,

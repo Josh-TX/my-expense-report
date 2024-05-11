@@ -49,6 +49,16 @@ export class NavbarComponent {
         this.router.events.pipe(filter(z => z instanceof NavigationEnd)).subscribe(z => this.routePath.set((<NavigationEnd>z).url));
     }
 
+    getEnvName(){
+        if (environment.envName == "desktop"){
+            return "DESKTOP";
+        }
+        if (environment.envName == "browser"){
+            return "BROWSER-ONLY";
+        }
+        return "HOSTED";
+    }
+
     openSettings() {
         var dialogRef = this.dialog.open(SettingsComponent, { autoFocus: false })
     }

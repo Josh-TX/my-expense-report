@@ -1,54 +1,54 @@
-import { Injectable } from '@angular/core';
+import { Injectable, WritableSignal, signal } from '@angular/core';
 import { StorageService } from './storage.service';
 
 @Injectable({
-  providedIn: 'root'
+    providedIn: 'root'
 })
 export class SettingsService {
-  private _settings: Settings
-  constructor(private storageService: StorageService) { 
-    var data = this.storageService.retrieve("settings.json");
-    if (data && typeof data == "object"){
-      this._settings = data;
-    } else {
-      this._settings = this.createDefault();
+    private _settings$: WritableSignal<Settings>;
+
+    constructor(private storageService: StorageService) {
+        this._settings$ = signal(this.createDefault());
+        this.storageService.retrieve("settings.json").then(data => {
+            if (data && typeof data == "object") {
+                this._settings$.set(data);
+            }
+        });
     }
-  }
 
-  getSettings(): Settings {
-    return {...this._settings};
-  }
+    getSettings(): Settings {
+        return { ...this._settings$() };
+    }
 
-  setSettings(settingsToUpdate: Partial<Settings>) {
-    this._settings = {...this._settings, ...settingsToUpdate};
-    this.storageService.store("settings.json", this._settings);
-  }
+    setSettings(settingsToUpdate: Partial<Settings>) {
+        var newSettings = { ...this._settings$(), ...settingsToUpdate };
+        this._settings$.set(newSettings);
+        this.storageService.store("settings.json", newSettings);
+    }
 
-  resetToDefault() {
-    this._settings = this.createDefault();
-  }
-  
-  private createDefault(): Settings{
-    return {
-      recentMonthCount: 12,
-      maxGraphCategories: 8,
-      requiredDaysForLatestMonth: 25,
-      maxRenderTransactionRows: 2000,
-      reportColorDeadZone: 5,
-      reportColorHalfDeadZone: 30,
-      reportColorSevereZScore: 2.5,
-      useIncomeCategory: true
-    };
-  }
+    resetToDefault() {
+        this._settings$.set(this.createDefault());
+    }
+
+    private createDefault(): Settings {
+        return {
+            recentMonthCount: 12,
+            maxGraphCategories: 8,
+            requiredDaysForLatestMonth: 25,
+            maxRenderTransactionRows: 2000,
+            reportColorDeadZone: 5,
+            reportColorSevereZScore: 2.5,
+            useIncomeCategory: true
+        };
+    }
 }
 
 export type Settings = {
-  recentMonthCount: number,
-  maxGraphCategories: number,
-  requiredDaysForLatestMonth: number,
-  maxRenderTransactionRows: number,
-  reportColorDeadZone: number,
-  reportColorHalfDeadZone: number,
-  reportColorSevereZScore: number,
-  useIncomeCategory: boolean
+    recentMonthCount: number,
+    maxGraphCategories: number,
+    requiredDaysForLatestMonth: number,
+    maxRenderTransactionRows: number,
+    reportColorDeadZone: number,
+    reportColorSevereZScore: number,
+    useIncomeCategory: boolean
 }

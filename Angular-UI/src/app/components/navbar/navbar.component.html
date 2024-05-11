@@ -13,7 +13,7 @@
   <div [ngClass]="mobileWidth() ? 't-pl-1' : 't-pl-3 t-pr-4'">
     <div class="t-relative">
       My Expense Report
-      <strong id="subtitle"><i></i>{{isHosted ? 'HOSTED' : 'BROWSER-ONLY'}}</strong>
+      <strong id="subtitle"><i></i>{{getEnvName()}}</strong>
     </div>
   </div>
   @if(!mobileWidth()){

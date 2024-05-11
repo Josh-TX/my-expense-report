@@ -5,7 +5,7 @@
             <mat-label>Recent Month Count</mat-label>
             <input matInput type="number" [(ngModel)]="settings.recentMonthCount" (ngModelChange)="change()">
         </mat-form-field>
-        <p class="col-span-3 mb-0">The Monthly Report calculates the Average and Standard Deviation using just the
+        <p class="t-col-span-3 mb-0">The Monthly Report calculates the Average and Standard Deviation using just the
             "Recent Months".
             The "Recent Months" affects the color highlighting of the monthly report, causing specifically the recent
             months to have a more even mix of positive colors and negative colors (default 12)
@@ -45,8 +45,9 @@
             <mat-label>Report color severe z-score</mat-label>
             <input matInput type="number" [(ngModel)]="settings.reportColorSevereZScore" (ngModelChange)="change()">
         </mat-form-field>
-        <p class="col-span-3 mb-0">
-            To determine what color a report cell should be, it calculates a cell's "Z-score".
+        <p class="t-col-span-3 mb-0">
+            To determine what color a report cell should be, it calculates the cell's "Z-score". 
+            A high z-score will result in a gradually higher red color, and a negative z-score will result in a green color.
             A z-score is the difference from average, divided by the standard deviation.
             You can think of it as "how far away from the average, in terms of standard deviation units"
             In general, 99.7% of cells will have a z-score between negative 3 and positive 3.
@@ -62,25 +63,10 @@
             The report page might have a column with a low standard deviation, and this can cause unimportant changes to
             be a severe color.
             The deadzone reduces the difference from the average before calculating the z-score.
-            For example, if a column has an average of $50 and a standard deviation of 4, then a cell with $66 would
-            normally be z+4,
-            but a deadzone of $5 would treat the cell as if it was just $61 so the z-score is +2.75
-        </p>
-    </div>
-    <hr class="t-my-4">
-    <div class="t-grid t-grid-cols-4 t-gap-4">
-        <mat-form-field>
-            <mat-label>Report color half deadzone</mat-label>
-            <input matInput type="number" [(ngModel)]="settings.reportColorHalfDeadZone" (ngModelChange)="change()">
-        </mat-form-field>
-        <p class="t-col-span-3 t-mb-0">
-            This is similar to the report color deadzone, but instead of completely eliminating the difference, the
-            difference within this zone is halved.
-            Note that this halving occurs AFTER calculating the report color deadzone.
-            For example, a column has an average of $50 & a standard deviation of 4, a deadzone of $5 & the
-            half-deadzone of $10, and the cell's amount was $66.
-            First the deadzone would reduce the difference from $16 to $11, then the half-deadzone would reduce it from
-            $11 to $6, so the z-score is +1.5
+            For example, if a column has an average of $50 and a standard deviation of 4, then a cell with $60 would
+            normally have a z-score of +2.5 and might be bright red.
+            But a deadzone of $5 would treat the cell as if it was $5 closer to the average ($55), and so the z-score will be just +1.25, and the cell will only be slightly red. 
+            
         </p>
     </div>
     <hr class="t-my-4">
@@ -103,5 +89,4 @@
 </mat-dialog-content>
 <mat-dialog-actions align="end">
     <button mat-raised-button mat-dialog-close>close</button>
-    <button mat-raised-button color="primary" (click)="reload()">reload</button>
 </mat-dialog-actions>

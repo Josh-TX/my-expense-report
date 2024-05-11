@@ -1,4 +1,4 @@
 export const environment = {
-    envName: "hosted",
+    envName: "desktop",
     storageUrl: "http://google.com"
 };

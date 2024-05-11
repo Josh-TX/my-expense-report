@@ -34,6 +34,13 @@
             <th>Total</th>
         </tr>
         }
+        <tr>
+            <td class="text-muted t-py-1">Average</td>
+            @for (summary of report.columnSummaries; track summary){
+            <td class="text-muted t-py-1" [matTooltip]="getSummaryText(summary)">{{summary.amountPerPeriod | number:'.0-0'}}</td>
+            }
+            <td class="text-muted t-py-1">{{report.totalSummary.amountPerPeriod | number:'.0-0' }}</td>
+        </tr>
         @for (row of report.rows; track row; ){
         <tr>
             @if (isYearly){

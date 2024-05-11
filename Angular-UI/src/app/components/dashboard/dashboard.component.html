@@ -50,15 +50,15 @@
     </h3>
     }
     <div style="margin-top: 100px">
-        @if (!isHosted){
+        @if (envName == "browser"){
         <p class="t-text-center text-muted">
-            This is the "browser-only" version of the web-app, meaning that all data is stored in the browser via
+            This is the "browser-only" version of the app, meaning that all data is stored in the browser via
             localStorage.
             <br>
-            You can also set up a private "hosted" version via docker (<a
+            There's also a self-hosted version, as well as a desktop version (<a
                 href="https://github.com/Josh-TX/my-expense-report#hosted-version" target="_blank">more info</a>)
         </p>
-        } @else {
+        } @else if (envName == "hosted"){
         <p class="t-text-center text-muted">
             This is the "hosted" version of the web-app, meaning that most of the data is being stored on a server
             someone is

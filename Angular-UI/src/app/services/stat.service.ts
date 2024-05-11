@@ -1,7 +1,6 @@
 import { Injectable, Signal, WritableSignal, computed, signal } from '@angular/core';
 import { Settings, SettingsService } from "@services/settings.service";
 import { Transaction, TransactionService } from "@services/transaction.service";
-import { CategoryRuleService } from "@services/category-rule.service";
 import { getStartOfMonth, groupBy, getSum, sortBy, sortByDesc, areValuesSame, roundToCent, getSD, getCombinedSet } from "@services/helpers";
 import { CategoryService, Subcategory } from './category.service';
 

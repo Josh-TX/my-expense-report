@@ -1,16 +1,14 @@
 import { Injectable } from '@angular/core';
 import { Settings, SettingsService } from "@services/settings.service";
-import { Transaction, TransactionService } from "@services/transaction.service";
-import { StatService } from './stat.service';
-import { CategoryRuleService } from './category-rule.service';
+import { MonthlyInfo, Stat, StatService, YearlyInfo } from './stat.service';
 import { getSum, groupBy, areValuesSame } from '@services/helpers';
 
 export type Report = {
     headerRows: ReportHeader[][]
     rows: ReportRow[]
     columns: ReportColumn[],
-    averages: number[];
-    totalAverage: number;
+    columnSummaries: ReportSummary[];
+    totalSummary: ReportSummary;
 }
 
 export type ReportHeader = {
@@ -21,6 +19,12 @@ export type ReportHeader = {
 export type ReportColumn = {
     catName: string;
     subcatName?: string | undefined;
+}
+
+export type ReportSummary = {
+    amountPerPeriod: number;
+    trxnsPerPeriod: number;
+    amountPerTrxn: number;
 }
 
 export type ReportRow = {
@@ -34,25 +38,17 @@ export type ReportCell = {
     deviation: number;
 }
 
-type SubcategoryContainer = {
-    category: string,
-    subcategories: string[]
-}
 
 @Injectable({
     providedIn: 'root'
 })
 export class ReportService {
 
-    private allTransactions: Transaction[] = [];
-    private recentTransactions: Transaction[] = [];
     private settings: Settings;
 
     constructor(
-        private transactionsService: TransactionService, 
         private settingsService: SettingsService,
-        private statService: StatService,
-        private categoryRuleService: CategoryRuleService) {
+        private statService: StatService) {
         this.settings = this.settingsService.getSettings();
     }
 
@@ -90,8 +86,8 @@ export class ReportService {
             headerRows: headerRows,
             rows: rows,
             columns: columns,
-            averages: recentCatStats.map(z => z.sumAmount / z.monthCount),
-            totalAverage: recentTotalStat.sumAmount / recentTotalStat.monthCount
+            columnSummaries: recentCatStats.map(this.getMonthSummary),
+            totalSummary: this.getMonthSummary(recentTotalStat)
         };
         return report;
     }
@@ -131,8 +127,8 @@ export class ReportService {
             headerRows: headerRows,
             rows: rows,
             columns: columns,
-            averages: catStats.map(z => z.extrapolatedAmount / z.yearCount),
-            totalAverage: totalStat.extrapolatedAmount / totalStat.yearCount
+            columnSummaries: catStats.map(this.getYearSummary),
+            totalSummary: this.getYearSummary(totalStat)
         };
         return report;
     }
@@ -178,8 +174,8 @@ export class ReportService {
             headerRows: headerRows,
             rows: rows,
             columns: columns,
-            averages: recentSubcatStats.map(z => z.sumAmount / z.monthCount),
-            totalAverage: recentTotalStat.sumAmount / recentTotalStat.monthCount
+            columnSummaries: recentSubcatStats.map(this.getMonthSummary),
+            totalSummary: this.getMonthSummary(recentTotalStat)
         };
         return report;
     }
@@ -226,12 +222,28 @@ export class ReportService {
             headerRows: headerRows,
             rows: rows,
             columns: columns,
-            averages: subcatStats.map(z => z.extrapolatedAmount / z.yearCount),
-            totalAverage: totalStat.extrapolatedAmount / totalStat.yearCount
+            columnSummaries: subcatStats.map(this.getYearSummary),
+            totalSummary: this.getYearSummary(totalStat)
         };
         return report;
     }
 
+    private getMonthSummary(stat: Stat & MonthlyInfo): ReportSummary {
+        return {
+            amountPerPeriod: stat.sumAmount / stat.monthCount,
+            trxnsPerPeriod: stat.trxnCount / stat.monthCount,
+            amountPerTrxn: stat.sumAmount / stat.trxnCount
+        }
+    }
+
+    
+    private getYearSummary(stat: Stat & YearlyInfo): ReportSummary {
+        return {
+            amountPerPeriod: stat.sumAmount / stat.yearCount,
+            trxnsPerPeriod: stat.trxnCount / stat.yearCount,
+            amountPerTrxn: stat.sumAmount / stat.trxnCount
+        }
+    }
 
     private getDeviation(amount: number, mean: number, sd: number | undefined): number {
         if (sd == null){
@@ -241,11 +253,6 @@ export class ReportService {
         var sign = diff > 0 ? 1 : -1;
         diff = Math.abs(diff);
         diff = Math.max(0, diff - this.settings.reportColorDeadZone);
-        if (diff > this.settings.reportColorHalfDeadZone){
-            diff = diff - (this.settings.reportColorHalfDeadZone / 2);
-        } else {
-            diff = diff / 2;
-        }
         var zScore = diff / sd;
         var severity = zScore / this.settings.reportColorSevereZScore;
         severity = Math.min(1, severity);

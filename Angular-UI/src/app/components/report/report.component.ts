@@ -7,16 +7,18 @@ import { ReportCellComponent } from '@components/report-cell/report-cell.compone
 import { ReportRowComponent } from '@components/report-row/report-row.component';
 import { ReportColumnComponent } from '@components/report-column/report-column.component';
 import { MatDialog } from '@angular/material/dialog';
-import { ReportService, Report, ReportCell, ReportRow, ReportHeader } from '@services/report.service';
+import { ReportService, Report, ReportCell, ReportRow, ReportHeader, ReportSummary } from '@services/report.service';
 import { ExportService } from '@services/export.service';
 import { CategoryColorService } from '@services/category-color.service';
 import { LocalSettingsService } from '@services/local-settings.service';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { roundToCent } from '@services/helpers';
 
 
 @Component({
     selector: 'mer-report',
     standalone: true,
-    imports: [CommonModule, FormsModule, MatButtonModule, MatSlideToggleModule],
+    imports: [CommonModule, FormsModule, MatButtonModule, MatSlideToggleModule, MatTooltipModule],
     templateUrl: './report.component.html'
 })
 export class ReportComponent {
@@ -91,6 +93,13 @@ export class ReportComponent {
                 this.selectedCell = null;
             }, 50);
         })
+    }
+
+    getSummaryText(summary: ReportSummary): string{
+        var period = this.isYearly ? "year" : "month";
+        return `amount\u00A0per\u00A0${period}:\u00A0$${roundToCent(summary.amountPerPeriod)} ` 
+            + `trxns\u00A0per\u00A0${period}:\u00A0${Math.round(summary.trxnsPerPeriod * 10) / 10} `
+            + `amount\u00A0per\u00A0trxn:\u00A0$${roundToCent(summary.amountPerTrxn)}`;
     }
 
     dateClicked(row: ReportRow) {

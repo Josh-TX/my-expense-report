@@ -56,7 +56,8 @@ export class TransactionService {
         private settingsService: SettingsService
     ) {
         this.isSampleData$ = computed(() => this.transactions$() && this._isSampleData)
-        this.storedTransactions$ = signal(this.getStoredTrxns());
+        this.storedTransactions$ = signal([]);
+        this.getStoredTrxns().then(storedTransactions => this.storedTransactions$.set(storedTransactions));
         this.transactions$ = computed(() => this.getComputedTrxns(this.storedTransactions$(), this.categoryRuleService.getRules()))
         effect(() => this.setStoredTrxns(this.storedTransactions$()))
         
@@ -213,20 +214,22 @@ export class TransactionService {
         return output;
     }
 
-    private getStoredTrxns(): StoredTransactionPlusId[] {
-        var data = this.storageService.retrieve("transactions.json");
-        var storedTransactions: StoredTransaction[] = data && Array.isArray(data) ? data : [];
-        storedTransactions.forEach(z => {
-            //this shouldn't ever happen because the storageService will convert the date strings to date objects
-            //but it only looks for certain string formats. If it fails, the app is completely borked, so to be safe check again
-            if (!(z.date instanceof Date)){
-                z.date = new Date(<any>z.date)
-            }
-            if (!(z.importDate instanceof Date)){
-                z.importDate = new Date(<any>z.importDate)
-            }
+    private getStoredTrxns(): Promise<StoredTransactionPlusId[]> {
+        return this.storageService.retrieve("transactions.json").then(data => {
+            var storedTransactions: StoredTransaction[] = data && Array.isArray(data) ? data : [];
+            storedTransactions.forEach(z => {
+                //this shouldn't ever happen because the storageService will convert the date strings to date objects
+                //but it only looks for certain string formats. If it fails, the app is completely borked, so to be safe check again
+                if (!(z.date instanceof Date)){
+                    z.date = new Date(<any>z.date)
+                }
+                if (!(z.importDate instanceof Date)){
+                    z.importDate = new Date(<any>z.importDate)
+                }
+            })
+            return storedTransactions.map(z => ({...z, tempId: this.nextTempId++}))
         })
-        return storedTransactions.map(z => ({...z, tempId: this.nextTempId++}))
+        
     }
     private setStoredTrxns(storedTransactions: StoredTransactionPlusId[]){
         if (this.effectFired){ 

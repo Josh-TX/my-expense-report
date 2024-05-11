@@ -2,7 +2,6 @@ import { Component, ViewChild, effect } from '@angular/core';
 import { Transaction, TransactionService } from '@services/transaction.service';
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common'
 import { FormsModule } from '@angular/forms'
-import { SettingsService } from '@services/settings.service';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';

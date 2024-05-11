@@ -1,8 +1,5 @@
-import { Injectable, Signal, WritableSignal, computed, effect, signal } from '@angular/core';
-import { Settings, SettingsService } from './settings.service';
-import { Transaction, TransactionService } from './transaction.service';
-import { StorageService } from './storage.service';
-import { CategoryRuleService, CategoryRule } from './category-rule.service';
+import { Injectable } from '@angular/core';
+import { CategoryRule } from './category-rule.service';
 
 
 export type Subcategory = {
@@ -10,6 +7,8 @@ export type Subcategory = {
     subcatName: string
 }
 
+//the purpose of this service is to combine the ManualCategories and CategoryRules, 
+//such that we have a single place to get the complete list of categories and subcategories
 @Injectable({
     providedIn: 'root'
 })

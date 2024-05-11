@@ -24,14 +24,12 @@ export class CategoryColorService {
         this.catColorSetMap$ = computed(() => {
             var recentCatStats = this.statService.getRecentCatStatsMonthlyInfo();
             var maxCategories = this.settingsService.getSettings().maxGraphCategories;
-            var catNames = recentCatStats.map(z => z.catName).slice(0, maxCategories);
+            var catNames = recentCatStats.map(z => z.catName).filter(z => z != "other" && z != "income").slice(0, maxCategories);
             var theme = this.themeService.getTheme();
             var map: CatColorSetMap = {};
             map["income"] = theme.incomeColorSet;
             for (var i = 0; i < catNames.length; i++){
-                if (catNames[i] != "other"){
-                    map[catNames[i]] = theme.colorSets[i % theme.colorSets.length];
-                }
+                map[catNames[i]] = theme.colorSets[i % theme.colorSets.length];
             }
             return map;
         })
