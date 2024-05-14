@@ -47,17 +47,20 @@ export class TransactionService {
     private _isSampleData: boolean = false;
     private isSampleData$: Signal<boolean>;
     private storedTransactions$: WritableSignal<StoredTransactionPlusId[]>;
-    private effectFired: boolean = false;
+    private storeAttempted: boolean = false;
+    private transactionsLoaded: boolean = false;
 
     constructor(
         private categoryRuleService: CategoryRuleService,
         private categoryService: CategoryService,
-        private storageService: StorageService,
-        private settingsService: SettingsService
+        private storageService: StorageService
     ) {
         this.isSampleData$ = computed(() => this.transactions$() && this._isSampleData)
         this.storedTransactions$ = signal([]);
-        this.getStoredTrxns().then(storedTransactions => this.storedTransactions$.set(storedTransactions));
+        this.getStoredTrxns().then(storedTransactions => {
+            this.transactionsLoaded = true;
+            this.storedTransactions$.set(storedTransactions)
+        });
         this.transactions$ = computed(() => this.getComputedTrxns(this.storedTransactions$(), this.categoryRuleService.getRules()))
         effect(() => this.setStoredTrxns(this.storedTransactions$()))
         
@@ -232,9 +235,12 @@ export class TransactionService {
         
     }
     private setStoredTrxns(storedTransactions: StoredTransactionPlusId[]){
-        if (this.effectFired){ 
-            //the effect will fire once just when the signal is initialized
-            //we only need to store on subsequent signal calls. Not important for browser only
+        if (!this.transactionsLoaded){
+            return;
+        }
+        if (this.storeAttempted){ 
+            //after the transactions are loaded, the effect will fire,
+            //but we don't wanna store what we just loaded. So we ignore the first attempt to store trxns
             var trxnsWithoutId: StoredTransaction[] = storedTransactions.map(z => ({
                 date: z.date,
                 amount: z.amount,
@@ -245,7 +251,7 @@ export class TransactionService {
             }))
             this.storageService.store("transactions.json", trxnsWithoutId)
         } 
-        this.effectFired = true;
+        this.storeAttempted = true;
     }
 
     

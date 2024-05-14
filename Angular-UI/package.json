@@ -53,6 +53,12 @@
   },
   "build": {
     "appId": "com.josh-allen.my-expense-report",
+    "files": [
+      "electron-app.js",
+      "electron-preload.js",
+      "electron-icons/*",
+      "dist-electron/**/*"
+    ],
     "directories": {
       "output": "electron-published"
     },
