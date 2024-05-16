@@ -63,7 +63,6 @@ export class TransactionService {
         });
         this.transactions$ = computed(() => this.getComputedTrxns(this.storedTransactions$(), this.categoryRuleService.getRules()))
         effect(() => this.setStoredTrxns(this.storedTransactions$()))
-        
     }
 
     isSampleData(): boolean {
@@ -82,8 +81,8 @@ export class TransactionService {
                 importFrom: filename,
                 manualSubcategory: this.getSubcategoryIfValid(z.manualSubcategory)
             }));
-        var storedTransactions = [ ...this.storedTransactions$(), ...translatedTrxns ]
-        this.storedTransactions$.set(storedTransactions);
+        var storedTransactions = [ ...this.storedTransactions$(), ...translatedTrxns ];
+        this.updateStoredTransactions(storedTransactions);
     }
 
     isDuplicate(date: Date, name: string, amount: number) {

@@ -223,7 +223,7 @@ class DataCell {
         }
         var isMoney = /^\$?[+-]?\$?[0-9]{1,3}(?:,?[0-9]{3})*(?:\.[0-9]{1,2})?$/.test(str);
         if (isMoney) {
-            var money = parseFloat(str.replace(/\$|,/, ""));//remove dollars signs & commas
+            var money = parseFloat(str.replace(/\$|,/g, ""));//remove dollars signs & commas
             if (!isNaN(money)) {
                 this.money = money;
                 this.val = money;

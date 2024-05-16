@@ -280,11 +280,11 @@ export class TransactionsComponent {
     }
 
     private amountMatches(trxnAmount: number, filter: string): boolean{
-        filter = filter.replace(/\$|,/, "");
+        filter = filter.replace(/\$|,/g, "");
         if (!/^-?\d*\.?\d{0,2}$/.test(filter)){
             return this.selectedFilterType == "does not contain";
         }
-        var money = parseFloat(filter.replace(/\$|,/, ""));
+        var money = parseFloat(filter);
         if (!money){
             return this.selectedFilterType == "does not contain";
         }
