@@ -1,11 +1,12 @@
-/AspNetCore-Server/obj
-/AspNetCore-Server/bin
-/AspNetCore-Server/wwwroot
+/Express-Server/node_modules
+/Express-Server/public
+/Express-Server/data
 
 /Angular-UI/node_modules
 /Angular-UI/.angular
 /Angular-UI/dist
 /Angular-UI/dist-electron
+/Angular-UI/dist-hosted
 /Angular-UI/settings.json
 /Angular-UI/transactions.json
 /Angular-UI/electron-published

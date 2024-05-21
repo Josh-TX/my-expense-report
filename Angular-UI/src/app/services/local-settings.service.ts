@@ -6,6 +6,7 @@ export type LocalSettings = {
     reportSubcat?: boolean | undefined,
     trxnsPageSize?: number | undefined,
     largeGraph?: boolean | undefined,
+    authKey?: string | undefined,
 }
 
 @Injectable({

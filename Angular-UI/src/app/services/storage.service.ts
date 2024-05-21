@@ -1,12 +1,13 @@
 import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
+import { LocalSettingsService } from './local-settings.service';
 
 @Injectable({
     providedIn: 'root'
 })
 export class StorageService {
 
-    constructor() {
+    constructor(private localSettingsService: LocalSettingsService) {
     }
 
     store(key: string, data: any) {
@@ -18,14 +19,18 @@ export class StorageService {
         return promise.then(str => str ? this.parseWithDate(str) : null);
     }
 
-    private setString(key: string, str: string) {
+    private setString(key: string, str: string): Promise<any> {
         if (environment.envName == "browser"){
             localStorage[key] = str;
             if (navigator.storage && navigator.storage.persist != null) {
                 navigator.storage.persist();
             }
+            return Promise.resolve();
         } else if (environment.envName == "desktop"){
-            (<any>window).electronBridge.save(key, str)
+            return (<any>window).electronBridge.save(key, str);
+        } else if (environment.envName == "hosted"){
+            var secret = this.localSettingsService.getValue("authKey") || ""; 
+            return this.saveToHosted(key, str, secret);
         } else {
             throw 'unknown envName: ' + environment.envName;
         }
@@ -35,7 +40,9 @@ export class StorageService {
         if (environment.envName == "browser"){
             return Promise.resolve(localStorage[key]);
         } else if (environment.envName == "desktop"){
-            return (<any>window).electronBridge.load(key)
+            return (<any>window).electronBridge.load(key);
+        } else if (environment.envName == "hosted"){
+            return window.fetch(`/load?filename=${encodeURIComponent(key)}`).then(z => z.text());
         } else {
             throw 'unknown envName: ' + environment.envName;
         }
@@ -51,10 +58,29 @@ export class StorageService {
         });
         return resultObject;
     }
-}
 
-export enum EnvNames {
-    BrowserOnly,
-    Hosted,
-    Desktop
+    private saveToHosted(filename: string, data: string, authKey: string): Promise<any>{
+        let headers: any = {'Content-Type': 'text/plain'};
+        if (authKey) {
+            headers.Authorization = authKey;
+        }
+        return window.fetch(`/save?filename=${encodeURIComponent(filename)}`, { method: 'POST', headers: headers, body: data })
+            .then(res => {
+                if (res.status == 401){
+                    let message = authKey 
+                        ? "Failed to save: the provided AUTHKEY didn't work: Enter a new AUTHKEY" 
+                        : "Failed to save: the server requires an AUTHKEY to save. Enter it below";
+                    let newAuthKey = prompt(message)
+                    if (newAuthKey){
+                        return this.saveToHosted(filename, data, newAuthKey)
+                    }
+                }
+                else if (res.status >= 400){
+                    alert("Failed to save. The server responded with code " + res.status);
+                } else if (authKey) {
+                    this.localSettingsService.setValue("authKey", authKey); 
+                }
+                return null;
+            });
+    }
 }

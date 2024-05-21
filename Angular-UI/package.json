@@ -6,11 +6,10 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "build-ghpages": "ng build --base-href=https://josh-tx.github.io/my-expense-report/",
-    "build-electron": "ng build --base-href=./ --configuration desktop --output-path=dist-electron",
+    "build-electron": "ng build --configuration desktop --output-path=dist-electron",
+    "build-hosted": "ng build --configuration hosted --output-path=dist-hosted",
     "start-electron": "electron .",
-    "publish-electron-win": "electron-builder --win",
-    "publish-electron-mac": "electron-builder --mac"
+    "publish-electron": "electron-builder"
   },
   "main": "electron-app.js",
   "private": true,
