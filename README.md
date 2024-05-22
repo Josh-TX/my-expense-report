@@ -1,6 +1,12 @@
+<p align="center">
+  <br>
+    <img src="my-expense-report.png"/>
+  <br>
+</p>
+
 # My Expense Report
 
-An app for tracking and analyzing your personal expenses. Available as [a web app hosted on github pages](https://josh-tx.github.io/my-expense-report), a desktop app (see releases), and a docker container that you can self-host.
+An app for tracking and analyzing your personal expenses. Available as [a web app hosted on github pages](https://josh-tx.github.io/my-expense-report), a desktop app (see [releases](https://github.com/Josh-TX/my-expense-report/releases/tag/v1.0.0)), and a [docker container](https://hub.docker.com/r/joshtxdev/my-expense-report) that you can self-host.
 
 ## Where does the data come from?
 
@@ -26,11 +32,14 @@ The web app is hosted on Github Pages and available here:
 
 The desktop app is built with Electron and stores your data on your device (on windows it stores to the user's AppData/Roaming folder). The desktop app isn't signed, so your computer will likely a warn you about possible viruses when your first launch it. 
 
-I have mixed feelings about the desktop app. The fact that it isn't signed makes it kinda sketchy, and electron is inefficent because it bundles a copy chromium. Despite this, I like the reliability of the desktop app's data storage better than the web app, so this version is my 2nd favorite after self-hosted
+You can download the desktop app from the [releases page](https://github.com/Josh-TX/my-expense-report/releases/tag/v1.0.0)
 
 #### Self-Hosted
 
-The self-hosted app is a docker container that is intended to be run on your home network. The container runs an expressjs server that serves the web app, however, the served web app will not save to LocalStorage. Instead, your data will be saved to the expressjs server. When running the docker container, you'll need to mount a volume to the /data directory, and bind a port to the container's port 3000. Here's an example run command
+The self-hosted app is a docker container that is intended to be run on your home network. It's hosted on dockerhub at [https://hub.docker.com/r/joshtxdev/my-expense-report](https://hub.docker.com/r/joshtxdev/my-expense-report)
+
+
+The container runs an expressjs server that serves the web app, however, the served web app will not save to LocalStorage. Instead, your data will be saved to the expressjs server. When running the docker container, you'll need to mount a volume to the /data directory, and bind a port to the container's port 3000. Here's an example run command
 
 ```
 docker run --name expenseReport -p 3000:3000 -d myVolume:/data joshtxdev/my-expense-report
@@ -41,6 +50,10 @@ Another feature with self-hosted is that you can require an authkey to save data
 ```
 docker run --name expenseReport -p 3000:3000 -d myVolume:/data -e AUTHKEY=RandomlyGeneratedString joshtxdev/my-expense-report
 ```
+
+### Recommended Version?
+
+If you know how to host a docker container, I recommend that. Otherwise, I recommend starting with the web version, and if you like it, switch to the desktop version. While there shouldn't be any problems with localStorage, I trust the desktop app's storage more. Fortunately, changing versions is easy. You can export your data (Transaction and Category-Rules) from any version, and then import them into a different version. 
 
 # Usage Guide
 
