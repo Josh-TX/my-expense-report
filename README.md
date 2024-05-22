@@ -57,7 +57,7 @@ If you know how to host a docker container, I recommend the self-hosted version.
 
 # Usage Guide
 
-More details about how the web-app works.
+More details about how the app works, regardless of which version you use
 
 ## Importing Transactions
 
@@ -79,7 +79,7 @@ Subcategories are required. They will always be contextually alongside their cor
 ### Assigning Categories
 
 There are 2 ways to assign categories & subcategories: category-rules or manual categories
-* A category-rule defines how transactions can automatically be assigned a category. The way it works is simple: If the transaction's name starts with or includes the test (case-insensitive), it'll assign the transaction the rule's category & subcategory. It doesn't actually store the assigned category alongside the transactions. Instead, it stores the category-rule, and the category-rule is used to compute the transaction's category each time the web-app is loaded (or after changes are made).
+* A category-rule defines how transactions can automatically be assigned a category. The way it works is simple: If the transaction's name starts with or includes the rule text (case-insensitive), it'll assign the transaction the rule's category & subcategory. It doesn't actually store the assigned category alongside the transaction. Instead, the category-rule itself is stored, and the category-rule is used to compute the transaction's category each time the app is loaded (or after changes are made).
 * A manual category just means that the category is stored alongside the transaction. Manual categories will have higher precendence than category-rules.
 
 ### Special Categories
@@ -94,7 +94,7 @@ There's also a limit (adjustable in the settings) for how many different categor
 
 #### hidden
 
-Transactions in the "hidden" category will be excluded from reports & visualizations. You'll still be able to view them on transactions if you toggle "show hidden transactions". This can be useful to do instead of deleting them, since the import transactions process will still warn of duplicates if a matching transaction is already hidden. 
+Transactions in the "hidden" category will be excluded from reports & visualizations. You'll still be able to view them on transactions if you toggle "Include Hidden". This can be useful to do instead of deleting them, since the import transactions process will still warn of duplicates if a matching transaction is already hidden. 
 
 Another advantage to the "hidden" category is that you can set up a category-rule that assigns the hidden category. This has the effect of essentially auto-deleting transactions that you import. 
 
