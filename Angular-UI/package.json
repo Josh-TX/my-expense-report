@@ -55,7 +55,7 @@
     "typescript": "~5.2.2"
   },
   "build": {
-    "appId": "com.josh-allen.my-expense-report",
+    "appId": "com.josh-tx.my-expense-report",
     "files": [
       "electron-app.js",
       "electron-preload.js",

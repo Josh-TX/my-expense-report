@@ -9,14 +9,29 @@ on:
 
 env:
   #these should match the output of the electron build
-  WIN_FILENAME: my-expense-report Setup 0.0.0.exe
-  WIN-P_FILENAME: my-expense-report 0.0.0.exe
-  LIN_FILENAME: my-expense-report-0.0.0.AppImage
-  MAC_FILENAME: my-expense-report-0.0.0-arm64.dmg
+  WIN_FILENAME: my-expense-report Setup ${{ github.event.inputs.SemVer }}.exe
+  WIN-P_FILENAME: my-expense-report ${{ github.event.inputs.SemVer }}.exe
+  LIN_FILENAME: my-expense-report-${{ github.event.inputs.SemVer }}.AppImage
+  MAC_FILENAME: my-expense-report-${{ github.event.inputs.SemVer }}-arm64.dmg
 
 
 jobs:
+  validate-version:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Validate Version
+      run: |
+        VERSION=${{ github.event.inputs.SemVer }}
+        if [[ ! $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "Invalid version format: $VERSION"
+          exit 1
+        else
+          echo "Valid version format: $VERSION"
+        fi
+
+
   build-angular-web:
+    needs: validate-version
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -31,8 +46,9 @@ jobs:
       run: npm install
       working-directory: Angular-UI
 
+    # The service worker doesn't work offline properly with npm run build, so I have to use npm run build-ghpages
     - name: Build
-      run: npm run build
+      run: npm run build-ghpages
       working-directory: Angular-UI
 
     - name: Upload Artifact
@@ -70,6 +86,7 @@ jobs:
       uses: actions/deploy-pages@v4
 
   build-angular-desktop:
+    needs: validate-version
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -109,6 +126,10 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+
+    - name: Update package.json Version
+      run: npm version ${{ github.event.inputs.SemVer }} --no-git-tag-version
+      working-directory: Angular-UI
 
     - name: Download build artifacts
       uses: actions/download-artifact@v3
@@ -160,6 +181,9 @@ jobs:
   release: 
     needs: build-desktop
     runs-on: ubuntu-latest
+    environment:
+      name: release-url
+      url: https://github.com/Josh-TX/basic-site/releases/tag/v${{ github.event.inputs.SemVer }}
     permissions:
       contents: write
     steps:
@@ -196,6 +220,7 @@ jobs:
         files: dist/*
   
   build-angular-hosted:
+    needs: validate-version
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -223,7 +248,9 @@ jobs:
   publish-docker:
     needs: build-angular-hosted
     runs-on: ubuntu-latest
-
+    environment:
+      name: docker-url
+      url: https://hub.docker.com/r/joshtxdev/my-expense-report
     steps:
     - name: Checkout
       uses: actions/checkout@v2
