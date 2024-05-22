@@ -1,6 +1,6 @@
 <p align="center">
   <br>
-    <img src="my-expense-report.png"/>
+    <img src="my-expense-report.png" height="256"/>
   <br>
 </p>
 
@@ -53,7 +53,7 @@ docker run --name expenseReport -p 3000:3000 -d myVolume:/data -e AUTHKEY=Random
 
 ### Recommended Version?
 
-If you know how to host a docker container, I recommend that. Otherwise, I recommend starting with the web version, and if you like it, switch to the desktop version. While there shouldn't be any problems with localStorage, I trust the desktop app's storage more. Fortunately, changing versions is easy. You can export your data (Transaction and Category-Rules) from any version, and then import them into a different version. 
+If you know how to host a docker container, I recommend the self-hosted version. Otherwise, I recommend starting with the web version, and if you like it, switch to the desktop version. Although there shouldn't be any problems with localStorage, I trust the desktop app's storage more. Fortunately, changing versions is easy. You can export your data (Transactions and Category-Rules) from any version, and then import them into a different version. 
 
 # Usage Guide
 
