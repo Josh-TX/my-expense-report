@@ -28,8 +28,7 @@
     },
 	  {
       "name": "fonts",
-      "installMode": "lazy",
-      "updateMode": "prefetch",
+      "installMode": "prefetch",
       "resources": {
         "urls": [
           "https://fonts.googleapis.com/**",
