@@ -12,7 +12,7 @@ The way transactions are categorized is also a manual process. This is primarily
 
 All 3 versions (Web, Desktop, Self-Hosted) are nearly identical, except for the manner in which they store your data. 
 
-#### Web
+#### Web (AKA browser-only)
 
 The web app stores your data in `LocalStorage`. Your data never leaves your browser, and stays on your device. The web app is a Progressive Web App, meaning that once you've loaded the app once, you'll be able to use it without an internet connection.  
 
