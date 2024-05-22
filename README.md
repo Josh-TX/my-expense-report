@@ -1,33 +1,46 @@
 # My Expense Report
 
-An offline web app for tracking and analyzing your personal expenses. There's no login system, and all data is stored in the browser's LocalStorage. Currently hosted by github pages and available at
-
-[https://josh-tx.github.io/my-expense-report](https://josh-tx.github.io/my-expense-report)
-
-## How it works
-
-Although an internet connection is needed to load the web app once, you could then disconnect your internet connection and the wep app would still function normally. The technical term for this is "Progressive Web App". Most websites can't work without internet because login information and user data is stored on one (or multiple) servers. But this app has no login information, and all data is stored in the browser's LocalStorage. Using LocalStorage to store data is some pros and cons
-
-#### LocalStorage Pros
-* Data is available without an internet connection
-* Data is not residing on a server where the data can be sold or hacked
-* I don't have to pay for server hosting
-
-#### LocalStorage Cons
-* Data is only accessible on a single browser
-* Anyone with phsyical access to the browser (i.e. shared computer) can access the data. 
-* Data is lost if the browser is uninstalled or removed
-* (very unlikely) The browser could delete LocalStorage to clear up disk space.
-
-## Hosted Version
-
-Everything described above is talking specifically about the "Browser-Only" version of the web app. If you want the web app to be accessible from multiple devices, you can host a docker container that serves a "Hosted" version of the web app. The hosted version still doesn't have a login system, but the data will be stored in the docker container rather than in LocalStorage. Because there's no login system, you should only host this version on a private LAN that only you or your family has access to. Obviously, the Hosted version requires a network connection to the docker container to function correctly. 
+An app for tracking and analyzing your personal expenses. Available as [a web app hosted on github pages](https://josh-tx.github.io/my-expense-report), a desktop app (see releases), and a docker container that you can self-host.
 
 ## Where does the data come from?
 
 This web app doesn't have any way to integrate with financial institutions directly (like Mint), so all data has to be provided by the user. That might sound tedious, however, most financial institutions have a way to export transactions to a file. If so, that file can probably be imported into the web app without any modifications. More info in the Usage Guide below
 
-The way transactions are categorized is also a manual process. There are very few built-in categories, and there's no Merchent Category Codes. What it does have though, is what's called a "Category-Rule", wherein transactions are automatically assigned a category of your choice based on a text match. These category-rules can take time to set up, but once finished it'll be 95% automatic (depending on spending habbits). More info in the Usage Guide below
+The way transactions are categorized is also a manual process. This is primarily done by creating what's called a "Category-Rule", wherein transactions are automatically assigned a category of your choice based on a text match. These category-rules can take time to set up, but once finished it'll be automatic moving forward (depending on spending habbits). More info in the Usage Guide below
+
+## Version Differences
+
+All 3 versions (Web, Desktop, Self-Hosted) are nearly identical, except for the manner in which they store your data. 
+
+#### Web
+
+The web app stores your data in `LocalStorage`. Your data never leaves your browser, and stays on your device. The web app is a Progressive Web App, meaning that once you've loaded the app once, you'll be able to use it without an internet connection.  
+
+The biggest downside is that your data is basically tied to that browser. If you clear site data, it may delete LocalStorage too and you'd lose your data. If github discontinues github pages (unlikely), you'd also lose your data. Fortunately, the app allows use to export Transactions and Category-Rules. Exporting is a good backup, because you can then import Transactions and Category-Rules to a different version of the app
+
+The web app is hosted on Github Pages and available here:
+
+[https://josh-tx.github.io/my-expense-report](https://josh-tx.github.io/my-expense-report)
+
+#### Desktop
+
+The desktop app is built with Electron and stores your data on your device (on windows it stores to the user's AppData/Roaming folder). The desktop app isn't signed, so your computer will likely a warn you about possible viruses when your first launch it. 
+
+I have mixed feelings about the desktop app. The fact that it isn't signed makes it kinda sketchy, and electron is inefficent because it bundles a copy chromium. Despite this, I like the reliability of the desktop app's data storage better than the web app, so this version is my 2nd favorite after self-hosted
+
+#### Self-Hosted
+
+The self-hosted app is a docker container that is intended to be run on your home network. The container runs an expressjs server that serves the web app, however, the served web app will not save to LocalStorage. Instead, your data will be saved to the expressjs server. When running the docker container, you'll need to mount a volume to the /data directory, and bind a port to the container's port 3000. Here's an example run command
+
+```
+docker run --name expenseReport -p 3000:3000 -d myVolume:/data joshtxdev/my-expense-report
+```
+
+Another feature with self-hosted is that you can require an authkey to save data (It's still readable). The idea is that even on a private LAN, you might be ok with your family viewing data but not editing. If an authkey is required, the app will prompt you for it when saving, and if you provide a valid authkey it will be saved to localStorage, basically remembering your device. To set up the authkey, just add an `authkey` environmental variable when running the container, such as
+
+```
+docker run --name expenseReport -p 3000:3000 -d myVolume:/data -e AUTHKEY=RandomlyGeneratedString joshtxdev/my-expense-report
+```
 
 # Usage Guide
 
@@ -35,16 +48,14 @@ More details about how the web-app works.
 
 ## Importing Transactions
 
-There are 3 ways to add transactions. Import from file (csv), manually add, and auto-generated transactions
+There are 2 ways to add transactions. Import from file (csv) and manually add.
 
 ### Import from file (csv) 
-This is the most common and quick way to add transactions. Most credit card providers have a way to "export" transactions to a spreadsheet file such as xlsx, ods, or csv. Ideally you can export to csv, but if not you can export it to some other format, open it in Excel, and then save as a csv. Either way, once you have a csv file, you can import it. The import process will then auto-detect which columns are the name, date, and amount column respectively. If the auto-detected columns are wrong, try changing the header (the first row of the CSV) to "name", "date", or "amount" to help it auto-detect correctly. The import process allows "duplicates" within the same file, but will identify & de-select any duplicates transactions whose name, amount, and date matches any existing transation. This allows you to export & import a complete year of transactions even if you already imported some of those same transactions earlier. 
+This is the most common and quick way to add transactions. Most credit card providers have a way to "export" transactions to a spreadsheet file such as xlsx, ods, or csv. Ideally you can export to csv, but if not you can export it to some other format, open it in Excel, and then save as a csv. Either way, once you have a csv file, you can import it. The import process will then auto-detect which columns are the name, date, and amount column. If the auto-detected columns are wrong, try changing the header (the first row of the CSV) to "name", "date", or "amount" to help it auto-detect correctly. The import process allows "duplicates" within the same file, but will identify & de-select any duplicates transactions whose name, amount, and date matches any existing transation. This allows you to export & import a complete year of transactions even if you already imported some of those same transactions earlier. 
 
 ### manually add transactions
-instead of importing from file, you can manually add a transaction via a form. This is slow, but can be useful if you have a single cash purchase you want to enter. If you have many transactions to manually import, it might be easier to manually enter them into a spreadsheet, export as CSV, and then import from file. 
+instead of importing from file, you can manually add a transaction via an html form. This is slow, but can be useful if you have a single cash purchase you want to enter. If you have many transactions to manually import, it might be easier to manually enter them into a spreadsheet, export as CSV, and then import from file. 
 
-### auto-generate transactions
-(in progress, not finished yet)
 
 ## Categories
 
@@ -79,3 +90,9 @@ Another advantage to the "hidden" category is that you can set up a category-rul
 All transactions with a negative amount will be automatically assigned the income category (unless they're assigned "hidden"). Think of it as a built-in category-rule with special precedence. If you have a category-rule for the "income" category, this can take precedence over the autoomatica behavior, allowing an alternate subcategory name. 
 
 It's permissible to assign transactions with a positive amount to the "income" category, and this might be desired for work-related expenses that offset income.
+
+## Average*
+
+Whenever the app displays a category's Average amount, there's a big caveat to that. It really should say "Recent Average" of the last N months (with a default N of 12). You can change how many months count as "Recent" in the settings. 
+
+The reason for this behavior is that most users will want to compare their most recent month with their "normal spending", but our "normal spending" likely changes over the years as markets change and our cicumstances change (marriage, kids etc). By reducing the average to just recent months, it allows us to do more relevant comparisons. And if you don't like this behavior, just set the recent months to 99999 and it'll be a true average. 

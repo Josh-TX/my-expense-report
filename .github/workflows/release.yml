@@ -1,0 +1,247 @@
+name: Build and Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      SemVer:
+        description: 'Semantic Version of the release'
+        required: true
+
+env:
+  #these should match the output of the electron build
+  WIN_FILENAME: my-expense-report Setup 0.0.0.exe
+  WIN-P_FILENAME: my-expense-report 0.0.0.exe
+  LIN_FILENAME: my-expense-report-0.0.0.AppImage
+  MAC_FILENAME: my-expense-report-0.0.0-arm64.dmg
+
+
+jobs:
+  build-angular-web:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      run: npm install
+      working-directory: Angular-UI
+
+    - name: Build
+      run: npm run build
+      working-directory: Angular-UI
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: angular-web
+        path: 'Angular-UI/dist'
+
+  deploy-github-pages:
+    needs: build-angular-web
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download build artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: angular-web
+        path: dist/
+
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+
+    - name: Upload Pages artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: 'dist'
+
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
+
+  build-angular-desktop:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      run: npm install
+      working-directory: Angular-UI
+
+    - name: Build
+      run: npm run build-desktop
+      working-directory: Angular-UI
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: angular-desktop
+        path: 'Angular-UI/dist-desktop/browser'
+
+  build-desktop:
+    needs: build-angular-desktop
+
+    strategy:
+      matrix:
+        os:
+        - ubuntu-latest
+        - macOS-latest
+        - windows-latest
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: angular-desktop
+        path: Angular-UI/dist/browser/
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      run: npm install --only=dev
+      working-directory: Angular-UI
+
+    - name: Build Electron
+      run: npm run publish-desktop
+      working-directory: Angular-UI
+
+    - name: Upload Windows artifact
+      if: matrix.os == 'windows-latest'
+      uses: actions/upload-artifact@v3
+      with:
+        name: win
+        path: 'Angular-UI/published-desktop/${{ env.WIN_FILENAME }}'
+
+    - name: Upload Windows-Portable artifact
+      if: matrix.os == 'windows-latest'
+      uses: actions/upload-artifact@v3
+      with:
+        name: win-p
+        path: 'Angular-UI/published-desktop/${{ env.WIN-P_FILENAME }}'
+
+    - name: Upload Linux artifact
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v3
+      with:
+        name: lin
+        path: 'Angular-UI/published-desktop/${{ env.LIN_FILENAME }}'
+    
+    - name: Upload Mac artifact
+      if: matrix.os == 'macOS-latest'
+      uses: actions/upload-artifact@v3
+      with:
+        name: mac
+        path: 'Angular-UI/published-desktop/${{ env.MAC_FILENAME }}'
+
+  release: 
+    needs: build-desktop
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        sparse-checkout: CHANGELOG.md
+
+    - name: Download artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: dist
+    - run: ls -l dist
+
+    # the release action replaces spaces with periods, so might as well use dashes
+    - name: Rename WIN file
+      run: mv 'dist/win/${{ env.WIN_FILENAME }}' 'dist/my-expense-report-v${{ github.event.inputs.SemVer }}-Windows-Setup.exe'
+    - name: Rename WIN-P file
+      run: mv 'dist/win-p/${{ env.WIN-P_FILENAME }}' 'dist/my-expense-report-v${{ github.event.inputs.SemVer }}-Windows-Portable.exe'
+    - name: Rename LIN file
+      run: mv 'dist/lin/${{ env.LIN_FILENAME }}' 'dist/my-expense-report-v${{ github.event.inputs.SemVer }}.AppImage'
+    - name: Rename MAC file
+      run: mv 'dist/mac/${{ env.MAC_FILENAME }}' 'dist/my-expense-report-v${{ github.event.inputs.SemVer }}-Mac-arm64.dmg'
+
+    - name: Echo out 
+      run: ls -l dist
+
+    - name: Create Release (softprops)
+      uses: softprops/action-gh-release@v2
+      with:
+        name: Release v${{ github.event.inputs.SemVer }}
+        tag_name: v${{ github.event.inputs.SemVer }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+        body_path: CHANGELOG.md
+        files: dist/*
+  
+  build-angular-hosted:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      run: npm install
+      working-directory: Angular-UI
+
+    - name: Build
+      run: npm run build-hosted
+      working-directory: Angular-UI
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: angular-hosted
+        path: 'Angular-UI/dist-hosted/browser'
+
+  publish-docker:
+    needs: build-angular-hosted
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: angular-hosted
+        path: Express-Server/public/
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Publish to Registry
+      uses: elgohr/Publish-Docker-Github-Action@main
+      with:
+        name: joshtxdev/my-expense-report
+        username: ${{ secrets.DOCKER_USER }}
+        password: ${{ secrets.DOCKER_TOKEN }}
+        platforms: linux/amd64,linux/arm64
+        tags: latest,${{ github.event.inputs.SemVer }}

@@ -10,7 +10,7 @@ const createWindow = () => {
             preload: path.join(__dirname, 'electron-preload.js')
         }
     })
-    win.loadFile('dist-electron/browser/index.html');
+    win.loadFile('dist-desktop/browser/index.html');
     return win;
 }
 
@@ -31,10 +31,10 @@ app.whenReady().then(() => {
     //because angular's router replaces the state to not include index.html, this breaks electron's reload
     //therefore, I need to intercept the reload shortcut and call loadFile() which is basically a reload
     globalShortcut.register('CommandOrControl+R', () => {
-        win.loadFile('dist-electron/browser/index.html')
+        win.loadFile('dist-desktop/browser/index.html')
     });
     globalShortcut.register('CommandOrControl+Shift+R', () => {
-        win.loadFile('dist-electron/browser/index.html')
+        win.loadFile('dist-desktop/browser/index.html')
     });
 })
 

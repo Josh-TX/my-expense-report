@@ -1,15 +1,17 @@
 {
   "name": "my-expense-report",
   "version": "0.0.0",
+  "description": "A personal expense tracking app",
+  "author": "Josh-TX",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "build-electron": "ng build --configuration desktop --output-path=dist-electron",
+    "build-desktop": "ng build --configuration desktop --output-path=dist-desktop",
     "build-hosted": "ng build --configuration hosted --output-path=dist-hosted",
-    "start-electron": "electron .",
-    "publish-electron": "electron-builder"
+    "start-desktop": "electron .",
+    "publish-desktop": "electron-builder"
   },
   "main": "electron-app.js",
   "private": true,
@@ -40,6 +42,7 @@
     "@types/papaparse": "^5.3.14",
     "autoprefixer": "^10.4.16",
     "electron": "^30.0.3",
+    "electron-builder": "^24.13.3",
     "jasmine-core": "~5.1.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",
@@ -56,10 +59,10 @@
       "electron-app.js",
       "electron-preload.js",
       "electron-icons/*",
-      "dist-electron/**/*"
+      "dist-desktop/**/*"
     ],
     "directories": {
-      "output": "electron-published"
+      "output": "published-desktop"
     },
     "mac": {
       "target": "dmg",
