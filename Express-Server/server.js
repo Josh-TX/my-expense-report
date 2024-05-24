@@ -22,7 +22,7 @@ const READ_TOKEN = process.env.READ_TOKEN;
 const WRITE_TOKEN = process.env.WRITE_TOKEN;
 
 app.use(express.static('public'));
-app.use(express.text());
+app.use(express.text({ limit: '100mb'}));
 
 const checkWriteToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
