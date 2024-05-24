@@ -99,6 +99,9 @@ export class FixUncategorizedComponent {
 
     private getSuggestions(trxnName: string): SuggestionInfo[]{
         trxnName = trxnName.replace(/^[A-Za-z]{1,3} *\* */,"")
+        if (trxnName.startsWith("SP ")){ //common prefixes like SQ have a * after it. But SP sometimes doesn't have a *. 
+            trxnName = trxnName.replace(/SP +/,"")
+        }
         var suggestionStrings = getSuggestionStrings(trxnName);
         var suggestionInfos = [];
         for (var suggestionString of suggestionStrings) {

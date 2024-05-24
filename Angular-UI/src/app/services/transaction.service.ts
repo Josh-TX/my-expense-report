@@ -185,6 +185,7 @@ export class TransactionService {
                     catSource = `manual category`;
                 } else {
                     var foundRule = rules.find(rule => lowerName.startsWith(rule.text));
+                    foundRule = foundRule || rules.find(rule => lowerName.includes(rule.text));
                     if (foundRule){
                         catSource = `matched rule "${foundRule.text}"`;
                         subcategory = foundRule

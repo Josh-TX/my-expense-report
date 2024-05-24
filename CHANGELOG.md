@@ -1,1 +1,1 @@
-* Updated Express-Server's max payload size to allow up to 100MB of data instead of 16KB
+* Fixed Category-Rules performing just a StartsWith and not a Contains search. 
