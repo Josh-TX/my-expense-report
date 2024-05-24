@@ -44,12 +44,10 @@ export type ReportCell = {
 })
 export class ReportService {
 
-    private settings: Settings;
 
     constructor(
         private settingsService: SettingsService,
         private statService: StatService) {
-        this.settings = this.settingsService.getSettings();
     }
 
     getMonthlyCategoryReport(): Report | null {
@@ -249,12 +247,13 @@ export class ReportService {
         if (sd == null){
             return 0;
         }
+        var settings = this.settingsService.getSettings();
         var diff = amount - mean;
         var sign = diff > 0 ? 1 : -1;
         diff = Math.abs(diff);
-        diff = Math.max(0, diff - this.settings.reportColorDeadZone);
+        diff = Math.max(0, diff - settings.reportColorDeadZone);
         var zScore = diff / sd;
-        var severity = zScore / this.settings.reportColorSevereZScore;
+        var severity = zScore / settings.reportColorSevereZScore;
         severity = Math.min(1, severity);
         return severity * sign;
     }

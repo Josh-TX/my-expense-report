@@ -59,7 +59,7 @@ export class TransactionService {
         this.storedTransactions$ = signal([]);
         this.getStoredTrxns().then(storedTransactions => {
             this.transactionsLoaded = true;
-            this.storedTransactions$.set(storedTransactions)
+            this.updateStoredTransactions(storedTransactions);
         });
         this.transactions$ = computed(() => this.getComputedTrxns(this.storedTransactions$(), this.categoryRuleService.getRules()))
         effect(() => this.setStoredTrxns(this.storedTransactions$()))
@@ -138,7 +138,7 @@ export class TransactionService {
     }
 
     private updateStoredTransactions(storedTrxns: StoredTransactionPlusId[]){
-        this.categoryService.clearFromManualCategories();
+        this.categoryService.clearFromManualCategories(); //this is important because the sample data will initially add categories via manual categories.
         this.storedTransactions$.set(storedTrxns);
     }
 

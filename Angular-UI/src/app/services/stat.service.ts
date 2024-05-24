@@ -300,6 +300,12 @@ export class StatService {
                 });
             }
         }
+        //filter out subcatMonthStats with no transactions
+        var subcatsWithZero = groupBy(subcatMonthStats, g => g.subcategory)
+            .filter(group => getSum(group.items.map(zz => zz.trxnCount)) == 0)
+            .map(group => group.key);
+        subcatMonthStats = subcatMonthStats.filter(z => !subcatsWithZero.some(subcatWithZero => areValuesSame(z.subcategory, subcatWithZero)));  
+
         //use the subcatMonthStats to compute the catMonthStats
         var catMonthStats: CatMonthStat[] = [];
         var catMonthGroups = groupBy(subcatMonthStats, g => ({catName: g.subcategory.catName, month: g.month}));
@@ -311,13 +317,6 @@ export class StatService {
                 ...stat
             });
         }
-        //filter out catMonthStats & subcatMonthStats when the category has $0 total (considering all months)
-        //this is mostly for filtering out the default categories (other, hidden, income) if unused.
-        var catNamesWithZero = groupBy(catMonthStats, g => g.catName)
-            .filter(group => getSum(group.items.map(zz => zz.sumAmount)) == 0)
-            .map(group => group.key);
-        catMonthStats = catMonthStats.filter(z => !catNamesWithZero.includes(z.catName));
-        subcatMonthStats = subcatMonthStats.filter(z => !catNamesWithZero.includes(z.subcategory.catName));
 
         //sort the catMonthStats based on the category's total among just the recent months
         var recentCutoff = new Date(catMonthStats[0].month);

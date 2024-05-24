@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, computed, effect } from '@angular/core';
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
@@ -13,6 +13,7 @@ import { CategoryColorService } from '@services/category-color.service';
 import { LocalSettingsService } from '@services/local-settings.service';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { roundToCent } from '@services/helpers';
+import { SettingsService } from '@services/settings.service';
 
 
 @Component({
@@ -29,13 +30,29 @@ export class ReportComponent {
     selectedDate: ReportRow | null = null;
     selectedHeader: ReportHeader | null = null;
 
+    private effectRun = false;
     constructor(
         private reportService: ReportService,
         private categoryColorService: CategoryColorService,
         private localSettingsService: LocalSettingsService,
         private dialog: MatDialog,
-        private exportService: ExportService
+        private exportService: ExportService,
+        private settingsService: SettingsService
     ) {
+        var signal1 = computed(() => this.settingsService.getSettings().reportColorDeadZone);
+        var signal2 = computed(() => this.settingsService.getSettings().reportColorSevereZScore);
+        var timeoutId: any;
+        effect(() => {
+            signal1(); 
+            signal2();
+            clearTimeout(timeoutId);
+            if (this.effectRun){
+                timeoutId = setTimeout(() => {
+                    this.updateReport();
+                }, 1000)
+            }
+            this.effectRun = true;
+        })
     }
 
     ngOnInit() {

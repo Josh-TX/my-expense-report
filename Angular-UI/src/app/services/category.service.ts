@@ -57,12 +57,14 @@ export class CategoryService {
     }
 
     private register(catName: string, subcatName: string, subcatList: Subcategory[]){
-        var lowerCat = catName.toLowerCase();
-        var lowerSubcat = subcatName.toLowerCase();
-        var found = subcatList.find(z => z.catName.toLowerCase() == lowerCat && z.subcatName.toLowerCase() == lowerSubcat);
-        if (found){
-            return found;
+        var lowerCatName = catName.toLowerCase();
+        var lowerSubcatName = subcatName.toLowerCase();
+        var foundSubcat = subcatList.find(z => z.catName.toLowerCase() == lowerCatName && z.subcatName.toLowerCase() == lowerSubcatName);
+        if (foundSubcat){
+            return foundSubcat;
         } else {
+            var foundCat = subcatList.find(z => z.catName.toLowerCase() == lowerCatName);
+            catName = foundCat ? foundCat.catName : catName; //if there's an existing Category, we need to match the capitalization
             var newSubcat = {
                 catName: catName,
                 subcatName: subcatName
