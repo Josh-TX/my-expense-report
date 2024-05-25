@@ -6,10 +6,11 @@ import { StorageService } from './storage.service';
 })
 export class SettingsService {
     private _settings$: WritableSignal<Settings>;
+    public loaded: Promise<any>;
 
     constructor(private storageService: StorageService) {
         this._settings$ = signal(this.createDefault());
-        this.storageService.retrieve("settings.json").then(data => {
+        this.loaded = this.storageService.retrieve("settings.json").then(data => {
             if (data && typeof data == "object") {
                 this._settings$.set(data);
             }
@@ -37,7 +38,7 @@ export class SettingsService {
             requiredDaysForLatestMonth: 25,
             maxRenderTransactionRows: 2000,
             reportColorDeadZone: 5,
-            reportColorSevereZScore: 2.5,
+            reportColorSevereZScore: 2,
             useIncomeCategory: true
         };
     }

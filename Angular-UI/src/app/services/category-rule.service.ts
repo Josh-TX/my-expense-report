@@ -16,13 +16,15 @@ export type CategoryRule = {
 export class CategoryRuleService {
     private rules$: WritableSignal<CategoryRule[]>;
 
+    public loaded: Promise<any>;
+
     constructor(
         private settingsService: SettingsService,
         private storageService: StorageService,
         private categoryService: CategoryService
     ) {
         this.rules$ = signal([]);
-        this.storageService.retrieve("category-rules.json").then(data => {
+        this.loaded = this.storageService.retrieve("category-rules.json").then(data => {
             if (data && Array.isArray(data)) {
                 data.forEach((z: CategoryRule) => this._addRule(z));
             }

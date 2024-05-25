@@ -48,17 +48,20 @@ export class TransactionService {
     private isSampleData$: Signal<boolean>;
     private storedTransactions$: WritableSignal<StoredTransactionPlusId[]>;
     private storeAttempted: boolean = false;
-    private transactionsLoaded: boolean = false;
+    private transactionsLoaded$: WritableSignal<boolean>;
+
+    public loaded: Promise<any>;
 
     constructor(
         private categoryRuleService: CategoryRuleService,
         private categoryService: CategoryService,
         private storageService: StorageService
     ) {
-        this.isSampleData$ = computed(() => this.transactions$() && this._isSampleData)
+        this.isSampleData$ = computed(() => this.transactionsLoaded$() && this.transactions$() && this._isSampleData)
         this.storedTransactions$ = signal([]);
-        this.getStoredTrxns().then(storedTransactions => {
-            this.transactionsLoaded = true;
+        this.transactionsLoaded$ = signal(false);
+        this.loaded = this.getStoredTrxns().then(storedTransactions => {
+            this.transactionsLoaded$.set(true);
             this.updateStoredTransactions(storedTransactions);
         });
         this.transactions$ = computed(() => this.getComputedTrxns(this.storedTransactions$(), this.categoryRuleService.getRules()))
@@ -235,7 +238,7 @@ export class TransactionService {
         
     }
     private setStoredTrxns(storedTransactions: StoredTransactionPlusId[]){
-        if (!this.transactionsLoaded){
+        if (!this.transactionsLoaded$()){
             return;
         }
         if (this.storeAttempted){ 

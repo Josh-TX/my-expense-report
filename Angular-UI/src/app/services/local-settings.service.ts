@@ -4,6 +4,7 @@ import { signal,Signal, computed } from '@angular/core';
 export type LocalSettings = {
     darkMode?: boolean | undefined,
     reportSubcat?: boolean | undefined,
+    reportAverages?: boolean | undefined,
     trxnsPageSize?: number | undefined,
     largeGraph?: boolean | undefined,
     authKey?: string | undefined,

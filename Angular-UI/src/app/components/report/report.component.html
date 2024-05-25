@@ -8,9 +8,15 @@
         @if (report){
         <button mat-raised-button (click)="export()">Export to CSV</button>
         }
-        <div style="padding-top: 0.4375rem">
-            <mat-slide-toggle [(ngModel)]="showSubcategories"
-                (ngModelChange)="showSubcategoriesChanged()">Subcategories</mat-slide-toggle>
+        <div class="t-flex">
+            <div style="padding-top: 0.4375rem; margin-right: 1.5rem;">
+                <mat-slide-toggle [(ngModel)]="showAverages" (ngModelChange)="showAveragesChanged()">Show
+                    Averages</mat-slide-toggle>
+            </div>
+            <div style="padding-top: 0.4375rem;">
+                <mat-slide-toggle [(ngModel)]="showSubcategories"
+                    (ngModelChange)="showSubcategoriesChanged()">Subcategories</mat-slide-toggle>
+            </div>
         </div>
     </div>
 
@@ -24,9 +30,10 @@
                 }
             </th>
             @for (header of headerRow; track header){
-            <th [attr.colspan]="header.width" class="clickable-cell" [class.selected-cell]="header == selectedHeader" (click)="headerClicked(header)">
+            <th [attr.colspan]="header.width" class="clickable-cell" [class.selected-cell]="header == selectedHeader"
+                (click)="headerClicked(header)">
                 @if (index == 0){
-                    <span class="cat-box" [style]="getColorStyles(header)"></span>
+                <span class="cat-box" [style]="getColorStyles(header)"></span>
                 }
                 {{header.name}}
             </th>
@@ -34,20 +41,25 @@
             <th>Total</th>
         </tr>
         }
+        @if(showAverages){
         <tr>
             <td class="text-muted t-py-1">Average</td>
             @for (summary of report.columnSummaries; track summary){
-            <td class="text-muted t-py-1" [matTooltip]="getSummaryText(summary)">{{summary.amountPerPeriod | number:'.0-0'}}</td>
+            <td class="text-muted t-py-1" [matTooltip]="getSummaryText(summary)">{{summary.amountPerPeriod |
+                number:'.0-0'}}</td>
             }
             <td class="text-muted t-py-1">{{report.totalSummary.amountPerPeriod | number:'.0-0' }}</td>
         </tr>
+        }
         @for (row of report.rows; track row; ){
         <tr>
             @if (isYearly){
-            <td class="clickable-cell" [class.selected-cell]="row == selectedDate" (click)="dateClicked(row)">{{row.date | date:'y'}}
+            <td class="clickable-cell" [class.selected-cell]="row == selectedDate" (click)="dateClicked(row)">{{row.date
+                | date:'y'}}
             </td>
             } @else {
-            <td class="clickable-cell" [class.selected-cell]="row == selectedDate" (click)="dateClicked(row)">{{row.date | date:'MMM y'}}</td>
+            <td class="clickable-cell" [class.selected-cell]="row == selectedDate" (click)="dateClicked(row)">{{row.date
+                | date:'MMM y'}}</td>
             }
             @for (cell of row.cells; track cell; let index = $index){
             <td class="clickable-cell" [class.good-cell]="cell.deviation < 0" [class.bad-cell]="cell.deviation > 0"

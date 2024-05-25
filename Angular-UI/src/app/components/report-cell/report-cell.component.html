@@ -1,4 +1,10 @@
-<h2 mat-dialog-title>{{title}}</h2>
+<div class="t-relative t-my-5 t-mx-6">
+    <h1 style="position: absolute; top: 0; left: 0;">{{title}}</h1>
+    <h2 style="position: absolute; top: 0; right: 0;">
+        {{sum | currency}} 
+        <small class="text-muted">(${{getDiff() | number:'.0-0'}} {{(sum >= avg ? 'above' : 'below')}} average)</small>
+    </h2>
+</div>
 <mat-dialog-content class="mat-typography">
     <table class="table mat-elevation-z4 t-mb-0">
         @for(transaction of transactions; track transaction){

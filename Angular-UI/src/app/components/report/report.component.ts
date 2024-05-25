@@ -26,6 +26,7 @@ export class ReportComponent {
     @Input() isYearly: boolean = false;
     report: Report | null = null;
     showSubcategories: boolean = false;
+    showAverages: boolean = false;
     selectedCell: ReportCell | null = null;
     selectedDate: ReportRow | null = null;
     selectedHeader: ReportHeader | null = null;
@@ -57,12 +58,17 @@ export class ReportComponent {
 
     ngOnInit() {
         this.showSubcategories = this.localSettingsService.getValue("reportSubcat") ?? false;
+        this.showAverages = this.localSettingsService.getValue("reportAverages") ?? false;
         this.updateReport();
     }
 
     showSubcategoriesChanged() {
         this.localSettingsService.setValue("reportSubcat", this.showSubcategories);
         this.updateReport();
+    }
+
+    showAveragesChanged(){
+        this.localSettingsService.setValue("reportAverages", this.showSubcategories);
     }
 
     export() {
@@ -101,10 +107,12 @@ export class ReportComponent {
     }
 
     cellClicked(cell: ReportCell, row: ReportRow, index: number | null) {
+        //index is null when it's the total column
         this.selectedCell = cell;
         var ref = this.dialog.open(ReportCellComponent, {autoFocus: false});
         var column = index != null ? this.report!.columns[index] : null;
-        ref.componentInstance.init(row.date, column, this.isYearly);
+        var average = index != null ? this.report!.columnSummaries[index].amountPerPeriod : this.report!.totalSummary.amountPerPeriod;
+        ref.componentInstance.init(row.date, column, this.isYearly, average);
         ref.afterClosed().subscribe(() => {
             setTimeout(() => {
                 this.selectedCell = null;
