@@ -1,0 +1,13 @@
+<div style="height: 68px;">
+    @if (!showSubcatButtons){
+    <h4 class="t-inline-block t-mr-1">Existing Categories: </h4>
+    @for (catNameOption of filteredCatNames; track catNameOption){
+    <button mat-raised-button class="btn-sm t-mx-1" (click)="clickCatName(catNameOption)">{{catNameOption}}</button>
+    }
+    } @else if (showSubcatButtons) {
+    <h4 class="t-inline-block t-mr-1">Existing Subcategories of {{catNameInput}}: </h4>
+    @for (subcat of filteredSubcats; track subcat){
+    <button mat-raised-button class="btn-sm t-mx-1" (click)="clickSubcat(subcat.subcatName)">{{subcat.subcatName}}</button>
+    }
+    }
+</div>

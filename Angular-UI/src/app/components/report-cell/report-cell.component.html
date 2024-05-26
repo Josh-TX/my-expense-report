@@ -1,6 +1,6 @@
-<div class="t-relative t-my-5 t-mx-6">
-    <h1 style="position: absolute; top: 0; left: 0;">{{title}}</h1>
-    <h2 style="position: absolute; top: 0; right: 0;">
+<div class="t-flex t-justify-between t-mt-5 t-mx-6">
+    <h1 class="t-mb-0">{{title}}</h1>
+    <h2 class="t-mb-0">
         {{sum | currency}} 
         <small class="text-muted">(${{getDiff() | number:'.0-0'}} {{(sum >= avg ? 'above' : 'below')}} average)</small>
     </h2>

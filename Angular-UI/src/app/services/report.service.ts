@@ -29,6 +29,7 @@ export type ReportSummary = {
 
 export type ReportRow = {
     date: Date;
+    extrapolated: boolean;
     cells: ReportCell[];
     totalCell: ReportCell;
 }
@@ -73,6 +74,7 @@ export class ReportService {
             var rowTotal = getSum(statMonthGroup.items.map(z => z.sumAmount));
             rows.push({
                 date: statMonthGroup.key,
+                extrapolated: false,
                 cells: cells,
                 totalCell: {
                     amount: rowTotal,
@@ -115,6 +117,7 @@ export class ReportService {
             rows.push({
                 date: statYearGroup.key,
                 cells: cells,
+                extrapolated: rowTotal != extRowTotal,
                 totalCell: {
                     amount: rowTotal,
                     deviation: this.getDeviation(extRowTotal, totalStat.extrapolatedAmount / totalStat.yearCount, totalStat.extrapolatedSD)
@@ -162,6 +165,7 @@ export class ReportService {
             rows.push({
                 date: statMonthGroup.key,
                 cells: cells,
+                extrapolated: false,
                 totalCell: {
                     amount: rowTotal,
                     deviation: this.getDeviation(rowTotal, recentTotalStat.sumAmount / recentTotalStat.monthCount, recentTotalStat.monthSD)
@@ -210,6 +214,7 @@ export class ReportService {
             rows.push({
                 date: statYearGroup.key,
                 cells: cells,
+                extrapolated: rowTotal != extRowTotal,
                 totalCell: {
                     amount: rowTotal,
                     deviation: this.getDeviation(extRowTotal, totalStat.extrapolatedAmount / totalStat.yearCount, totalStat.extrapolatedSD)

@@ -81,10 +81,10 @@ export class StatService {
         ) {
         this.catMonthStats$ = signal([]);
         this.subcatMonthStats$ = signal([]);
-        var monthStatsContainer$ = computed(() => this.createMonthStatsContainer(this.transactionsService.getTransactions(), this.settingsService.getSettings()));
+        var monthStatsContainer$ = computed(() => this.createMonthStatsContainer(this.transactionsService.getTransactions(), this.settingsService.getSettings(), true));
         this.catMonthStats$ = computed(() => monthStatsContainer$().catMonthStats);
         this.subcatMonthStats$ = computed(() => monthStatsContainer$().subcatMonthStats);
-        var yearStatsContainer$ = computed(() => this.createYearStatsContainer(monthStatsContainer$().subcatMonthStats));
+        var yearStatsContainer$ = computed(() => this.createYearStatsContainer(this.transactionsService.getTransactions(), this.settingsService.getSettings()));
         this.catYearStats$ = computed(() => yearStatsContainer$().catYearStats);
         this.subcatYearStats$ = computed(() => yearStatsContainer$().subcatYearStats);
     }
@@ -106,7 +106,7 @@ export class StatService {
     getRecentCutoff(): Date | undefined{
         if (this.catMonthStats$().length){
             var recentCutoff = new Date(this.catMonthStats$()[0].month);
-            recentCutoff.setMonth(recentCutoff.getMonth() - this.settingsService.getSettings().recentMonthCount);
+            recentCutoff.setMonth(recentCutoff.getMonth() - Math.max(0, this.settingsService.getSettings().recentMonthCount - 1));
             return recentCutoff;
         }
         return undefined
@@ -240,7 +240,10 @@ export class StatService {
         return output;
     }
 
-    private createYearStatsContainer(subcatMonthStats: SubcatMonthStat[]): YearStatsContainer {
+    private createYearStatsContainer(transactions: Transaction[], settings: Settings): YearStatsContainer {
+        //I don't use monthStatsContainer$().subcatMonthStats because it can exclude the most recent month depending on settings.requiredDaysForLatestMonth
+        //despite being ineffecient, for the sake of accuracy I'll recompute the subcatMonthStats without filtering by requiredDaysForLatestMonth. 
+        var subcatMonthStats = this.createMonthStatsContainer(transactions, settings, false).subcatMonthStats;
         //first compute subcatYearStats from the subcatMonthStats
         var subcatYearGroups = groupBy(subcatMonthStats, z => ({subcategory: z.subcategory, year: z.month.getFullYear()}));
         var subcatYearStats: SubcatYearStat[] = [];
@@ -248,7 +251,7 @@ export class StatService {
             var stat = this.getCombinedStat(subcatYearGroup.items);
             subcatYearStats.push({
                 year: new Date(subcatYearGroup.key.year, 0,1), 
-                extrapolatedAmount: stat.sumAmount * 12 / subcatYearGroup.items.length,
+                extrapolatedAmount: stat.sumAmount * 12 / subcatYearGroup.items.length, //this will be a slight underestimate if the most recent month is incomplete
                 monthCount: subcatYearGroup.items.length,
                 subcategory: subcatYearGroup.key.subcategory, 
                 ...stat
@@ -274,8 +277,10 @@ export class StatService {
         };
     }
 
-    private createMonthStatsContainer(transactions: Transaction[], settings: Settings): MonthStatsContainer {
-        var transactions = this.filterOutNewTransactions(transactions);
+    private createMonthStatsContainer(transactions: Transaction[], settings: Settings, filterToRecent: boolean): MonthStatsContainer {
+        if (filterToRecent){
+            var transactions = this.filterOutNewTransactions(transactions, settings);
+        }
         if (!transactions.length) {
             return {
                 catMonthStats: [],
@@ -348,12 +353,12 @@ export class StatService {
     }
 
 
-    private filterOutNewTransactions(transactions: Transaction[]): Transaction[] {
+    private filterOutNewTransactions(transactions: Transaction[], settings: Settings): Transaction[] {
         //transactions are already sorted from recent to oldest
         if (!transactions.length) {
             return [];
         }
-        if (transactions[0].date.getDate() < this.settingsService.getSettings().requiredDaysForLatestMonth) {
+        if (transactions[0].date.getDate() < settings.requiredDaysForLatestMonth) {
             var tooNewCuttoff = getStartOfMonth(transactions[0].date);
             transactions = transactions.filter(z => z.date.getTime() < tooNewCuttoff.getTime());
         }

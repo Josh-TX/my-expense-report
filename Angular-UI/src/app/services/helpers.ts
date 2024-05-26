@@ -22,6 +22,7 @@ export function getSD(nums: number[], sum?: number | undefined): number | undefi
 }
 
 export function getCombinedSet(sets: Array<{n: number, sum: number, sd?: number | undefined}>): {n: number, sum: number, sd?: number | undefined} {
+    sets = sets.filter(z => z.n > 0);
     if (!sets.length){
         return {
             n: 0,
@@ -35,7 +36,7 @@ export function getCombinedSet(sets: Array<{n: number, sum: number, sd?: number 
     var combinedSum = getSum(sets.map(z => z.sum));
     var combinedMean = combinedSum/combinedN;
     var weightedSumVariance = getSum(sets.map(z => z.sd == null ? 0 : z.n * z.sd * z.sd)) / combinedN;
-    var weightedSumSquaredDeviation = getSum(sets.map(z => z.n * Math.pow(z.n / z.sum - combinedMean, 2))) / combinedN;
+    var weightedSumSquaredDeviation = getSum(sets.map(z => z.n * Math.pow(z.sum / z.n - combinedMean, 2))) / combinedN;
     var combinedSd = Math.sqrt(weightedSumVariance + weightedSumSquaredDeviation);
     return {
         n: combinedN,

@@ -28,7 +28,7 @@ export class CategoryColorService {
             var theme = this.themeService.getTheme();
             var map: CatColorSetMap = {};
             map["income"] = theme.incomeColorSet;
-            for (var i = 0; i < catNames.length; i++){
+            for (var i = 0; i < Math.min(catNames.length, maxCategories); i++){
                 map[catNames[i]] = theme.colorSets[i % theme.colorSets.length];
             }
             return map;

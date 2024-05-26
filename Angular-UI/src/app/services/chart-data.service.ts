@@ -210,20 +210,19 @@ export class chartDataService {
         var maxCategories = this.settingsService.getSettings().maxGraphCategories;
         var ringss: DonutDataRing[][] = [donutData.innerRings, donutData.outerRings];
         for (var rings of ringss){
-            if (rings[0].items.length <= maxCategories){
+            var nonOtherCatRing = rings[0].items.filter(z => z.catName != "other");
+            if (nonOtherCatRing.length <= maxCategories){
                 continue;
             }
-            var catRing = rings[0].items;
-            var subcatRing = rings[1].items;
-            var otherCatItem = catRing.find(z => z.catName == "other");
-            var otherSubcatItems = subcatRing.filter(z => z.catName == "other");
+            //var catRing = rings[0].items;
+            var nonOtherSubcatRing = rings[1].items.filter(z => z.catName != "other");
+            var otherCatItem = rings[0].items.find(z => z.catName == "other");
+            var otherSubcatItems = rings[1].items.filter(z => z.catName == "other");
             var removedCatNames: string[] = [];
-            for (var i = maxCategories - 1; i < catRing.length; i++){
-                catRing[i].colorSet = otherColorSet
-                if (catRing[i].catName != "other"){
-                    otherSubcatItems.push({ ...catRing[i], movedToOther: true });
-                }
-                removedCatNames.push(catRing[i].catName);
+            for (var i = maxCategories; i < nonOtherCatRing.length; i++){
+                nonOtherCatRing[i].colorSet = otherColorSet
+                otherSubcatItems.push({ ...nonOtherCatRing[i], movedToOther: true });
+                removedCatNames.push(nonOtherCatRing[i].catName);
             }
             if (!otherCatItem){
                 otherCatItem = {
@@ -238,8 +237,8 @@ export class chartDataService {
                 otherCatItem.amount = getSum(otherSubcatItems.map(z => z.amount))
                 otherCatItem.containsMoveToOtherCatNames = otherSubcatItems.filter(z => z.movedToOther).map(z => z.catName);
             }
-            catRing = [...catRing.slice(0, maxCategories-1), otherCatItem];
-            subcatRing = [...subcatRing.filter(z => !removedCatNames.includes(z.catName)), ...otherSubcatItems]
+            var catRing = [...nonOtherCatRing.slice(0, maxCategories), otherCatItem];
+            var subcatRing = [...nonOtherSubcatRing.filter(z => !removedCatNames.includes(z.catName)), ...otherSubcatItems]
             rings[0].items = catRing;
             rings[1].items = subcatRing;
         }
@@ -270,8 +269,9 @@ export class chartDataService {
                     colorSet: this.categoryColorService.getColorSet(catName)
                 }
             });
-            if (catItems.length > maxCategories){
-                catItems = [...catItems.slice(0, maxCategories - 1), {
+            var nonOtherCatItems = catItems.filter(z => z.catName != "other");
+            if (nonOtherCatItems.length > maxCategories){
+                catItems = [...nonOtherCatItems.slice(0, maxCategories), {
                     label: "other",
                     catName: "other",
                     subcatName: undefined,

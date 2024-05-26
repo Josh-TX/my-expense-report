@@ -17,11 +17,12 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { SubcategorySelectComponent } from '@components/subcategory-select/subcategory-select.component';
 import { CategoryService, Subcategory } from '@services/category.service';
 import { getDistinct, getDistinctBy, getSum, sortBy } from '@services/helpers';
+import { SubcategoryQuickselectComponent } from '@components/subcategory-select/subcategory-quickselect.component';
 
 @Component({
     standalone: true,
     imports: [CommonModule, FormsModule, MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose, 
-        MatButtonModule, MatInputModule, SubcategorySelectComponent, MatSlideToggleModule],
+        MatButtonModule, MatInputModule, SubcategorySelectComponent, SubcategoryQuickselectComponent, MatSlideToggleModule],
     templateUrl: './fix-uncategorized.component.html'
 })
 export class FixUncategorizedComponent {
@@ -37,10 +38,6 @@ export class FixUncategorizedComponent {
     isManual: boolean = false;
     finished: boolean = false;
     catNames: string[] = [];
-    filteredCatNames: string[] = [];
-    subcats: Subcategory[] = [];
-    filteredSubcats: Subcategory[] = [];
-    showSubcatButtons: boolean = false;
     allowMismatchText: boolean = false;
 
     catName: string = "";
@@ -65,13 +62,8 @@ export class FixUncategorizedComponent {
         this.currentUncatTransaction = undefined;
         this.catName = "";
         this.subcatName = "";
-        this.subcats = this.categoryService.getSubcategories();
         this.currentSuggestionInfo = undefined;
         this.suggestionInfos = [];
-        this.filteredSubcats = this.subcats;
-        this.showSubcatButtons = false;
-        this.catNames = getDistinct(this.subcats.map(z => z.catName));
-        this.filteredCatNames = this.catNames;
         var allTransactions = this.transactionService.getTransactions();
         this.catTransactions = allTransactions.filter(z => !this.isUncategorized(z));
         this.uncatTransactions = allTransactions.filter(z => this.isUncategorized(z) && !this.skippedTransactions.some(zz => zz.name == z.name));
@@ -213,32 +205,6 @@ export class FixUncategorizedComponent {
     startAddingRule(){
         this.finished = false;
         this.isFixingUncat = false;
-    }
-
-    updateCategoryButtons(){
-        this.showSubcatButtons = false;
-        this.filteredCatNames = this.catNames;
-        this.filteredSubcats = this.subcats
-        if (this.catName){
-            this.filteredCatNames = this.catNames.filter(z => z.toLowerCase().includes(this.catName.toLowerCase()));
-            this.filteredSubcats = this.subcats.filter(z => z.catName.toLowerCase() == this.catName.toLowerCase());
-            if (this.filteredSubcats.length){
-                this.showSubcatButtons = true;
-                if (this.subcatName){
-                    this.filteredSubcats = this.filteredSubcats.filter(z => z.subcatName.toLowerCase().includes(this.subcatName.toLowerCase()))
-                }
-            }
-        }
-    }
-
-    clickCatName(catName: string){
-        this.catName = catName
-        this.updateCategoryButtons();
-    }
-
-    clickSubcat(subcat: Subcategory){
-        this.subcatName = subcat.subcatName;
-        this.updateCategoryButtons();
     }
 
     private isUncategorized(subcategory: Subcategory): boolean{

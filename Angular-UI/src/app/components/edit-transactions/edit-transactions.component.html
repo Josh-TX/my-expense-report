@@ -1,5 +1,5 @@
 <h2 mat-dialog-title>Edit Transactions</h2>
-<mat-dialog-content class="mat-typography">
+<mat-dialog-content class="mat-typography" style="width: 80vw;">
 
     <div class="t-flex t-flex-col t-mb-3" style="height: 160px;">
         @if (transactions.length){
@@ -20,11 +20,62 @@
         </div>
         }
     </div>
-    <button mat-raised-button (click)="negateAmounts()">Flip Income/Expense</button>
-    <button mat-raised-button (click)="hideTransactions()">Hide Transactions</button>
-    <button mat-raised-button (click)="deleteTransactions()">Delete Transactions</button>
-    <button mat-raised-button (click)="removeManualCats()">Remove Manual Categorization</button>
+    <div>What would you like to do?</div>
+    <button class="t-mr-2" mat-raised-button (click)="mode = 'flip'" [class.border-primary]="mode == 'flip'">Flip
+        Income/Expense</button>
+    <button class="t-mr-2" mat-raised-button (click)="mode = 'hide'" [class.border-primary]="mode == 'hide'">Hide
+        Transactions</button>
+    <button class="t-mr-2" mat-raised-button (click)="mode = 'delete'" [class.border-primary]="mode == 'delete'">Delete
+        Transactions</button>
+    <button class="t-mr-2" mat-raised-button (click)="mode = 'assign-cat'"
+        [class.border-primary]="mode == 'assign-cat'">Assign Manual Category</button>
+    @if(anyManualCats){
+    <button class="t-mr-2" mat-raised-button (click)="mode = 'remove-cat'"
+        [class.border-primary]="mode == 'remove-cat'">Remove Manual Category</button>
+    }
+
+
+    <div class="t-mt-4">
+        @if (!mode){
+        <div class="text-muted t-text-center">no edit operation selected</div>
+        }
+        @if (mode == 'flip'){
+        {{eachTransaction}} will have it's amount flipped. Positive amounts (expenses) will become negative (income),
+        and vice versa. Duplicate detection uses the absolute value of the amount, so the import process should still detect potential duplicates
+        }
+        @if (mode == 'hide'){
+        {{eachTransaction}} will be hidden, causing it to not appear in reports or visualizations. It will still be used
+        to flag imported transactions as potential duplicates.
+        }
+        @if (mode == 'delete'){
+        {{eachTransaction}} will be deleted, causing it to be completed removed from storage. Typically this would be
+        done for transactions imported by mistake, otherwise hiding the transactions is usually a better option.
+        }
+        @if (mode == 'remove-cat'){
+        {{eachTransaction}} will have its manually category removed. This will free up the transaction to instead be
+        categorized by Category-Rules instead.
+        }
+        @if (mode == 'assign-cat'){
+        <div class="t-mb-2">
+            {{eachTransaction}} will be assigned the following manually category, which has higher precedence than
+            Category-Rules:
+        </div>
+
+        <div style="margin-bottom: -25px">
+            <mer-subcategory-select [(catName)]="catName" [(subcatName)]="subcatName"
+                [(isNew)]="isNew"></mer-subcategory-select>
+            <mer-subcategory-quickselect [(catName)]="catName"
+                [(subcatName)]="subcatName"></mer-subcategory-quickselect>
+        </div>
+        @if (isNew){
+        (a new Catogory/Subcategory will be created)
+        }
+        }
+
+    </div>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
     <button mat-raised-button mat-dialog-close>Close</button>
+    <button mat-raised-button color="primary" mat-dialog-close [disabled]="!submitReady()"
+        (click)="submit()">Submit</button>
 </mat-dialog-actions>

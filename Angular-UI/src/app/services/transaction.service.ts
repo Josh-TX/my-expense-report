@@ -102,27 +102,15 @@ export class TransactionService {
         this.updateStoredTransactions(remainingStoredTrxns);
     }
 
-    assignManualCats(trxns: Transaction[], subcategory: Subcategory){
+    assignManualCats(trxns: Transaction[], subcategory: Subcategory | undefined){
         var storedTrxns = trxns.map(trxn => this.storedTransactions$().find(z => z.tempId == trxn.tempId)!);
         storedTrxns.forEach(z => { z.manualSubcategory = this.getSubcategoryIfValid(subcategory) });
-        this.updateStoredTransactions([...this.storedTransactions$()]);
-    }
-
-    removeManualCats(trxns: Transaction[]){
-        var storedTrxns = trxns.map(trxn => this.storedTransactions$().find(z => z.tempId == trxn.tempId)!);
-        storedTrxns.forEach(z => { z.manualSubcategory = undefined });
         this.updateStoredTransactions([...this.storedTransactions$()]);
     }
 
     negateAmounts(trxns: Transaction[]){
         var storedTrxns = trxns.map(trxn => this.storedTransactions$().find(z => z.tempId == trxn.tempId)!);
         storedTrxns.forEach(z => z.amount = -z.amount);
-        this.updateStoredTransactions([...this.storedTransactions$()]);
-    }
-
-    editSubcategories(trxns: Transaction[], subcategory: Subcategory){
-        var storedTrxns = trxns.map(trxn => this.storedTransactions$().find(z => z.tempId == trxn.tempId)!);
-        storedTrxns.forEach(z => z.manualSubcategory = subcategory);
         this.updateStoredTransactions([...this.storedTransactions$()]);
     }
 

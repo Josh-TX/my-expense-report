@@ -55,7 +55,7 @@
         <tr>
             @if (isYearly){
             <td class="clickable-cell" [class.selected-cell]="row == selectedDate" (click)="dateClicked(row)">{{row.date
-                | date:'y'}}
+                | date:'y'}}{{row.extrapolated ? '*' : ''}}
             </td>
             } @else {
             <td class="clickable-cell" [class.selected-cell]="row == selectedDate" (click)="dateClicked(row)">{{row.date
@@ -76,5 +76,8 @@
         </tr>
         }
     </table>
+    @if (isYearly && anyExtrapolated()){
+        <span class="text-muted">* Year is incomplete. The amounts are correct, but the cell's color is based on extrapolating the amount to a full year</span>
+    }
     }
 </div>

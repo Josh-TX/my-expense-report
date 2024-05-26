@@ -142,10 +142,11 @@ export class CategoryDonutComponent {
         return this.activeItems;
     }
     private innerLabelBeforeDraw(chart: Chart<"doughnut", number[], unknown>, args: { cancelable: true }, options: any): boolean | void {
+        var radius = Math.min(chart.chartArea.height, chart.chartArea.width) / 2;
         var items = this.activeItems.length == 2 
             ? this.activeItems : this.clickedItems;
         var averageType = this.isYearly$() ? "yearly average" : "monthly average";
-        if (this.outerRingCount == 2){
+        if (this.outerRingCount == 2 && radius > 172){
             var innerActive = items.length ? items[0].datasetIndex > 2 : false;
             var mainRing = this.donutData.outerRings[0];
             var otherRing = this.donutData.innerRings[0];
@@ -197,18 +198,79 @@ export class CategoryDonutComponent {
             }
 
             var label6 = !innerActive ? averageType : this.date!;
-            this.drawCenterLabel(chart, label6, 12, +55, this.theme!.mutedText);
+            this.drawCenterLabel(chart, label6, 12, +50, this.theme!.mutedText);
 
             var otherTotalAmount = getSum(otherRing.items.map(z => z.amount));
             var otherAmount = items.length 
                 ? otherRing.items[index].amount
                 : otherTotalAmount;
             var label7 = "$" + new DecimalPipe('en-US').transform(otherAmount, ".0-0")!;
-            this.drawCenterLabel(chart, label7, 20, +75, labelColor);
+            this.drawCenterLabel(chart, label7, 20, +70, labelColor);
 
             if (items.length){
                 var percentStr = this.getPercentStr(otherTotalAmount, otherAmount)
-                this.drawCenterLabel(chart, percentStr, 12, +90, this.theme!.mutedText);
+                this.drawCenterLabel(chart, percentStr, 12, +85, this.theme!.mutedText);
+            }
+        } else if (this.outerRingCount == 2){
+            //if they're on a narrow screen and the radius is small, we need to show a smaller version of the label
+            var innerActive = items.length ? items[0].datasetIndex > 2 : false;
+            var mainRing = this.donutData.outerRings[0];
+            var otherRing = this.donutData.innerRings[0];
+            var index = 0;
+            var labelColor = this.theme!.normalText;
+            var label1 = "Total";
+            if (items.length){
+                if (items[0].datasetIndex == 1){
+                    mainRing = this.donutData.outerRings[1];
+                    otherRing = this.donutData.innerRings[1];
+                } else if (items[0].datasetIndex == 3){
+                    mainRing = this.donutData.innerRings[0];
+                    otherRing = this.donutData.outerRings[0];
+                } else if (items[0].datasetIndex == 4){
+                    mainRing = this.donutData.innerRings[1];
+                    otherRing = this.donutData.outerRings[1];
+                }
+                index = items[0].index;//both activeItems should have the same index
+                labelColor = mainRing.items[index].colorSet.text;
+                if (items.some(z => z.datasetIndex == 0)){
+                    
+                } else {
+                    if (!this.donutData.outerRings[1].items[index].movedToOther){
+                        label1 = this.donutData.outerRings[1].items[index].catName;
+                    }
+                }
+            } 
+
+            if (items.length){
+                if (items[0].datasetIndex == 2){
+                    mainRing = this.donutData.innerRings[0];
+                    otherRing = this.donutData.outerRings[0];
+                }
+                index = items[0].index;//both activeItems should have the same index
+                labelColor = mainRing.items[index].colorSet.text;
+                label1 = mainRing.items[index].label;
+            } 
+            this.drawCenterLabel(chart, label1, 14, -35, labelColor);
+
+            var label3 = innerActive ? averageType : this.date!;
+            this.drawCenterLabel(chart, label3, 12, -17, this.theme!.mutedText);
+
+            var totalAmount = getSum(mainRing.items.map(z => z.amount))
+            var amount = items.length 
+                ? mainRing.items[index].amount
+                : totalAmount;
+
+            var label4 =  "$" + new DecimalPipe('en-US').transform(amount, ".0-0")!;
+            this.drawCenterLabel(chart, label4, 28, 5, labelColor);
+
+            if (items.length){
+                var percentStr = this.getPercentStr(totalAmount, amount)
+                this.drawCenterLabel(chart, percentStr, 12, 25, this.theme!.mutedText);
+            } else {
+                this.drawCenterLabel(chart, averageType, 10, 24, this.theme!.mutedText);
+                var otherTotalAmount = getSum(otherRing.items.map(z => z.amount));
+                var label5 =  "$" + new DecimalPipe('en-US').transform(otherTotalAmount, ".0-0")!;
+                this.drawCenterLabel(chart, label5, 12, 36, this.theme!.normalText);
             }
         } else {
             var innerActive = items.length ? items[0].datasetIndex > 1 : false;

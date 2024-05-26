@@ -83,8 +83,7 @@
             <mat-label>rule text</mat-label>
             <input matInput [(ngModel)]="ruleTextInput" (ngModelChange)="ruleTextChanged()" [disabled]="isManual">
         </mat-form-field>
-        <mer-subcategory-select [(catName)]="catName" [(subcatName)]="subcatName" [(isNew)]="isNew"
-            (catNameChange)="updateCategoryButtons()" (subcatNameChange)="updateCategoryButtons()" class="t-col-span-2">
+        <mer-subcategory-select [(catName)]="catName" [(subcatName)]="subcatName" [(isNew)]="isNew" class="t-col-span-2">
 
         </mer-subcategory-select>
         @if (isNew){
@@ -105,21 +104,8 @@
             <button mat-raised-button color="primary" (click)="startAddingRule()">Add Category-Rule</button>
         </div>
     }
-    @if (catNames.length && !finished){
-    <div style="height: 68px;">
-        @if (!showSubcatButtons){
-        <h4 class="t-inline-block t-mr-1">Existing Categories: </h4>
-        @for (catNameOption of filteredCatNames; track catNameOption){
-        <button mat-raised-button class="btn-sm t-mx-1" (click)="clickCatName(catNameOption)">{{catNameOption}}</button>
-        }
-        } @else if (showSubcatButtons) {
-        <h4 class="t-inline-block t-mr-1">Existing Subcategories of {{catName}}: </h4>
-        @for (subcat of filteredSubcats; track subcat){
-        <button mat-raised-button class="btn-sm t-mx-1" (click)="clickSubcat(subcat)">{{subcat.subcatName}}</button>
-        }
-        }
-
-    </div>
+    @if (!finished){
+    <mer-subcategory-quickselect [(catName)]="catName" [(subcatName)]="subcatName"></mer-subcategory-quickselect>
     }
 </div>
 <mat-dialog-actions align="end">

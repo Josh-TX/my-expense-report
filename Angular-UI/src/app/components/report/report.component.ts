@@ -188,4 +188,8 @@ export class ReportComponent {
     getMaxWidth() {
         return (this.report!.columns.length + 2) * 300;
     }
+
+    anyExtrapolated(): boolean{
+        return this.report!.rows.some(z => z.extrapolated);
+    }
 }

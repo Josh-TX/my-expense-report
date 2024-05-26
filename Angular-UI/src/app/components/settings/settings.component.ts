@@ -10,14 +10,16 @@ import {
 
 } from '@angular/material/dialog';
 import { Settings, SettingsService } from '@services/settings.service';
+import { CommonModule } from '@angular/common';
 
 @Component({
     standalone: true,
-    imports: [MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose, MatButtonModule, FormsModule, MatInputModule],
+    imports: [CommonModule, MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose, MatButtonModule, FormsModule, MatInputModule],
     templateUrl: './settings.component.html'
 })
 export class SettingsComponent {
     settings: Settings;
+    now: Date = new Date();
 
     constructor(private settingsService: SettingsService) {
         this.settings = settingsService.getSettings();
