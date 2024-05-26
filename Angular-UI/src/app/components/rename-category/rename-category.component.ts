@@ -95,8 +95,11 @@ export class RenameCategoryComponent {
         }
         if (!this.selectedSubcatName){
             //just renaming category
-            this.categoryRuleService.renameCats(this.selectedCatName, this.newCatName);
-            this.transactionService.renameCats(this.selectedCatName, this.newCatName);
+            var promise1 = this.categoryRuleService.renameCats(this.selectedCatName, this.newCatName);
+            var promise2 = this.transactionService.renameCats(this.selectedCatName, this.newCatName);
+            Promise.all([promise1, promise2]).then(() => {
+                this.snackBar.open(`category renamed`, "", {duration: 3000});
+            });
         } else {
             if (!this.newSubcatName){
                 this.snackBar.open("new subcategory name required", "", { panelClass: "snackbar-error", duration: 3000 });
@@ -105,8 +108,11 @@ export class RenameCategoryComponent {
             //renaming the subcategory
             var selectedSubcat = {catName: this.selectedCatName, subcatName: this.selectedSubcatName};
             var newSubcat = {catName: this.newCatName, subcatName: this.newSubcatName};
-            this.categoryRuleService.renameSubcats(selectedSubcat, newSubcat);
-            this.transactionService.renameSubcats(selectedSubcat, newSubcat);
+            var promise1 = this.categoryRuleService.renameSubcats(selectedSubcat, newSubcat);
+            var promise2 = this.transactionService.renameSubcats(selectedSubcat, newSubcat);
+            Promise.all([promise1, promise2]).then(() => {
+                this.snackBar.open(`subcategory renamed`, "", {duration: 3000});
+            });
         }
     }
 }

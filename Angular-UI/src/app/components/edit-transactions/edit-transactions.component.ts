@@ -63,38 +63,43 @@ export class EditTransactionsComponent {
         }
         if (this.mode == "flip"){
             if (this.transactions.length == 1 || confirm(`are you sure you want to flip income/expenses for all ${this.transactions.length} transactions?`)) {
-                this.transactionService.negateAmounts(this.transactions);
-                this.snackBar.open("flipped income/expenses for " + this.transactions.length + " transactions", "", { duration: 3000 });
-                this.dialogRef.close();
+                this.transactionService.negateAmounts(this.transactions).then(() => {
+                    this.snackBar.open("flipped income/expenses for " + this.transactions.length + " transactions", "", { duration: 3000 });
+                    this.dialogRef.close();
+                })
             }
         }
         if (this.mode == "delete"){
             if (this.transactions.length == 1 || confirm(`are you sure you want to delete all ${this.transactions.length} transactions?`)) {
-                this.transactionService.deleteTrxns(this.transactions);
-                this.snackBar.open("deleted " + this.transactions.length + " Transactions", "", { duration: 3000 });
-                this.dialogRef.close();
+                this.transactionService.deleteTrxns(this.transactions).then(() => {                    
+                    this.snackBar.open("deleted " + this.transactions.length + " Transactions", "", { duration: 3000 });
+                    this.dialogRef.close();
+                });
             }
         }
         if (this.mode == "hide"){
             if (this.transactions.length == 1 || confirm(`are you sure you want to hide all ${this.transactions.length} transactions?`)) {
-                this.transactionService.assignManualCats(this.transactions, { catName: "hidden", subcatName: "hidden" });
-                this.snackBar.open("hid " + this.transactions.length + " transactions", "", { duration: 3000 });
-                this.dialogRef.close();
+                this.transactionService.assignManualCats(this.transactions, { catName: "hidden", subcatName: "hidden" }).then(() => {
+                    this.snackBar.open("hid " + this.transactions.length + " transactions", "", { duration: 3000 });
+                    this.dialogRef.close();
+                });
             }
         }
         if (this.mode == "assign-cat"){
             if (this.transactions.length == 1 || confirm(`are you sure you want to assign a manual category to all ${this.transactions.length} transactions?`)) {
-                this.transactionService.assignManualCats(this.transactions, { catName: this.catName, subcatName: this.subcatName });
-                this.snackBar.open("assigned mannual category to " + this.transactions.length + " transactions", "", { duration: 3000 });
-                this.dialogRef.close();
+                this.transactionService.assignManualCats(this.transactions, { catName: this.catName, subcatName: this.subcatName }).then(() => {
+                    this.snackBar.open("assigned mannual category to " + this.transactions.length + " transactions", "", { duration: 3000 });
+                    this.dialogRef.close();
+                })
             }
         }
 
         if (this.mode == "remove-cat"){
             if (this.transactions.length == 1 || confirm(`are you sure you want to assign a manual category to all ${this.transactions.length} transactions?`)) {
-                this.transactionService.assignManualCats(this.transactions, undefined);
-                this.snackBar.open("assigned mannual category to " + this.transactions.length + " transactions", "", { duration: 3000 });
-                this.dialogRef.close();
+                this.transactionService.assignManualCats(this.transactions, undefined).then(() => {
+                    this.snackBar.open("assigned mannual category to " + this.transactions.length + " transactions", "", { duration: 3000 });
+                    this.dialogRef.close();
+                })
             }
         }
     }

@@ -43,33 +43,33 @@ export class CategoryRuleService {
         return this.rules$();
     }
 
-    addRules(rules: CategoryRule[]) {
+    addRules(rules: CategoryRule[]): Promise<any> {
         rules.forEach(z => this._addRule(z));
         this.rules$.set([...this.rules$()]);
-        this.storageService.store("category-rules.json", this.rules$());
+        return this.storageService.store("category-rules.json", this.rules$());
     }
 
-    replaceRules(rules: CategoryRule[]) {
+    replaceRules(rules: CategoryRule[]): Promise<any> {
         this.categoryService.clearFromCategoryRules();
         this.rules$.set([]);
-        this.addRules(rules);
+        return this.addRules(rules);
     }
 
-    renameCats(exisingCatname: string, newCatName: string) {
+    renameCats(exisingCatname: string, newCatName: string): Promise<any> {
         var allRules = this.rules$();
         var rulesToEdit = allRules.filter(z => z.catName == exisingCatname);
         rulesToEdit.forEach(z => z.catName = newCatName);
-        this.replaceRules(allRules);
+        return this.replaceRules(allRules);
     }
 
-    renameSubcats(existingSubcat: Subcategory, newSubcat: Subcategory) {
+    renameSubcats(existingSubcat: Subcategory, newSubcat: Subcategory): Promise<any> {
         var allRules = this.rules$();
         var rulesToEdit = allRules.filter(z => z.catName == existingSubcat.catName && z.subcatName == existingSubcat.subcatName);
         rulesToEdit.forEach(z => {
             z.catName = newSubcat.catName,
             z.subcatName = newSubcat.subcatName
         });
-        this.replaceRules(allRules);
+        return this.replaceRules(allRules);
     }
 
     private _addRule(newRule: CategoryRule){

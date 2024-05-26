@@ -45,11 +45,13 @@ The container runs an expressjs server that serves the web app, however, the ser
 docker run --name expenseReport -p 3000:3000 -d myVolume:/data joshtxdev/my-expense-report
 ```
 
-Another feature with self-hosted is that you can require an authkey to save data (It's still readable). The idea is that even on a private LAN, you might be ok with your family viewing data but not editing. If an authkey is required, the app will prompt you for it when saving, and if you provide a valid authkey it will be saved to localStorage, basically remembering your device. To set up the authkey, just add an `authkey` environmental variable when running the container, such as
+Another feature with self-hosted is that you can require an WRITE_TOKEN to save data (It's still readable). The idea is that even on a private LAN, you might be ok with your family viewing data but not editing. If an WRITE_TOKEN is required, the app will prompt you for it when saving, and if you provide a valid WRITE_TOKEN, the token will be saved to localStorage, basically remembering your device. To set up the WRITE_TOKEN, just add an `WRITE_TOKEN` environmental variable when running the container, such as
 
 ```
 docker run --name expenseReport -p 3000:3000 -d myVolume:/data -e AUTHKEY=RandomlyGeneratedString joshtxdev/my-expense-report
 ```
+
+There's also a very similar feature with a `READ_TOKEN` environmental variable. When specified, the app that will prompt you for it on load.
 
 ### Recommended Version?
 

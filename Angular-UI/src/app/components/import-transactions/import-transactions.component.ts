@@ -165,10 +165,11 @@ export class ImportTransactionsComponent {
             }
             return trxnToAdd;
         });
-        this.transactionService.addTransactions(trxnsToAdd, this.grid!.filename)
-        this.snackBar.open("Imported " + trxnsToAdd.length + " Transactions", "", { duration: 3000 });
-        this.importedFiles.push(this.currentFile!);
-        this.back();
+        this.transactionService.addTransactions(trxnsToAdd, this.grid!.filename).then(() => {
+            this.snackBar.open("Imported " + trxnsToAdd.length + " Transactions", "", { duration: 3000 });
+            this.importedFiles.push(this.currentFile!);
+            this.back();
+        })
     }
 
     isNumber(value: any): value is number {

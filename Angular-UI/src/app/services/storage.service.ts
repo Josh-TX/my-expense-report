@@ -10,8 +10,8 @@ export class StorageService {
     constructor(private localSettingsService: LocalSettingsService) {
     }
 
-    store(key: string, data: any) {
-        this.setString(key, JSON.stringify(data));
+    store(key: string, data: any): Promise<any> {
+        return this.setString(key, JSON.stringify(data));
     }
 
     retrieve(key: string): Promise<any> {
@@ -29,7 +29,7 @@ export class StorageService {
         } else if (environment.envName == "desktop"){
             return (<any>window).electronBridge.save(key, str);
         } else if (environment.envName == "hosted"){
-            var secret = this.localSettingsService.getValue("authKey") || ""; 
+            var secret = this.localSettingsService.getValue("writeToken") || ""; 
             return this.saveToHosted(key, str, secret);
         } else {
             throw 'unknown envName: ' + environment.envName;
@@ -42,7 +42,8 @@ export class StorageService {
         } else if (environment.envName == "desktop"){
             return (<any>window).electronBridge.load(key);
         } else if (environment.envName == "hosted"){
-            return window.fetch(`/load?filename=${encodeURIComponent(key)}`).then(z => z.text());
+            var secret = this.localSettingsService.getValue("readToken") || ""; 
+            return this.loadFromHosted(key, secret);
         } else {
             throw 'unknown envName: ' + environment.envName;
         }
@@ -59,28 +60,63 @@ export class StorageService {
         return resultObject;
     }
 
-    private saveToHosted(filename: string, data: string, authKey: string): Promise<any>{
+    private saveToHosted(filename: string, data: string, token: string): Promise<any>{
         let headers: any = {'Content-Type': 'text/plain'};
-        if (authKey) {
-            headers.Authorization = authKey;
+        if (token) {
+            headers.Authorization = token;
         }
         return window.fetch(`/save?filename=${encodeURIComponent(filename)}`, { method: 'POST', headers: headers, body: data })
             .then(res => {
                 if (res.status == 401){
-                    let message = authKey 
-                        ? "Failed to save: the provided AUTHKEY didn't work: Enter a new AUTHKEY" 
-                        : "Failed to save: the server requires an AUTHKEY to save. Enter it below";
-                    let newAuthKey = prompt(message)
-                    if (newAuthKey){
-                        return this.saveToHosted(filename, data, newAuthKey)
+                    let message = token 
+                        ? "Failed to save: the provided WRITE_TOKEN was incorrect: Enter a new WRITE_TOKEN" 
+                        : "Failed to save: the server requires an WRITE_TOKEN to save. Enter it below";
+                    let newToken = prompt(message)
+                    if (newToken){
+                        return this.saveToHosted(filename, data, newToken)
+                    } else {
+                        alert("It might look like it saved, but the data will be reverted after a refresh")
                     }
                 }
                 else if (res.status >= 400){
                     alert("Failed to save. The server responded with code " + res.status);
-                } else if (authKey) {
-                    this.localSettingsService.setValue("authKey", authKey); 
+                    alert("Data not saved. It might look like it saved, but the data will be reverted after a refresh")
+                } else if (token) {
+                    this.localSettingsService.setValue("writeToken", token); 
                 }
                 return null;
+            });
+    }
+
+    private loadFromHosted(filename: string, token: string): Promise<string>{
+        let headers: any = {};
+        if (token) {
+            headers.Authorization = token;
+        }
+        return window.fetch(`/load?filename=${encodeURIComponent(filename)}`, { headers: headers })
+            .then(res => {
+                if (res.status == 401){
+                    if (token != (this.localSettingsService.getValue("readToken") || "")){
+                        //since there's often multiple loads happening in parallel, the user may provide the correct token for one load
+                        //By doing this, the user won't even know that other requests got 401ed too, since it'll retry in the background.
+                        return this.loadFromHosted(filename, this.localSettingsService.getValue("readToken")!)
+                    }
+                    let message = token 
+                        ? "Failed to load: the provided READ_TOKEN was incorrect: Enter a new READ_TOKEN" 
+                        : "Failed to load: the server requires an READ_TOKEN to save. Enter it below";
+                    let newToken = prompt(message);
+                    if (newToken){
+                        this.localSettingsService.setValue("readToken", newToken); 
+                    }
+                    //we can infinitely request the read_token if it's required
+                    return this.loadFromHosted(filename, newToken || "");
+                }else if (res.status >= 400){
+                    alert("Failed to load. The server responded with code " + res.status);
+                    return "";
+                } else if (token) {
+                    this.localSettingsService.setValue("readToken", token); 
+                }
+                return res.text();
             });
     }
 }

@@ -112,30 +112,34 @@ export class ManageRulesComponent {
             return;
         }
         rule.text = result.toLowerCase();
-        this.categoryRuleService.replaceRules(this.rules);
-        this.snackBar.open(`rule with text "${originalRuleText}" changed to "${rule.text}"`, "", {duration: 3000})
+        this.categoryRuleService.replaceRules(this.rules).then(() => {
+            this.snackBar.open(`rule with text "${originalRuleText}" changed to "${rule.text}"`, "", {duration: 3000})
+        })
     }
 
     moveToTop(rule: CategoryRule){
         this.rules = this.rules.filter(z => z != rule);
         this.rules.unshift(rule);
-        this.categoryRuleService.replaceRules(this.rules);
-        this.snackBar.open(`rule with text "${rule.text}" moved to top`, "", {duration: 3000});
-        this.filterTextChanged();
+        this.categoryRuleService.replaceRules(this.rules).then(() => {
+            this.snackBar.open(`rule with text "${rule.text}" moved to top`, "", {duration: 3000});
+            this.filterTextChanged();
+        });
     }
 
     moveToBottom(rule: CategoryRule){
         this.rules = this.rules.filter(z => z != rule);
         this.rules.push(rule);
-        this.categoryRuleService.replaceRules(this.rules);
-        this.snackBar.open(`rule with text "${rule.text}" moved to bottom`, "", {duration: 3000});
-        this.filterTextChanged();
+        this.categoryRuleService.replaceRules(this.rules).then(() => {
+            this.snackBar.open(`rule with text "${rule.text}" moved to bottom`, "", {duration: 3000});
+            this.filterTextChanged();
+        })
     }
 
     delete(rule: CategoryRule){
         this.rules = this.rules.filter(z => z != rule);
-        this.categoryRuleService.replaceRules(this.rules);
-        this.snackBar.open(`rule with text "${rule.text}" deleted`, "", {duration: 3000});
-        this.filterTextChanged();
+        this.categoryRuleService.replaceRules(this.rules).then(() => {
+            this.snackBar.open(`rule with text "${rule.text}" deleted`, "", {duration: 3000});
+            this.filterTextChanged();
+        })
     }
 }

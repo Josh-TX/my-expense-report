@@ -27,7 +27,7 @@ export class ThemeService {
     private currentTheme$: Signal<Theme>;
 
     constructor(private localSettingsService: LocalSettingsService) {
-        this.darkMode$ = computed(() => this.getDefaultDarkMode(this.localSettingsService.getValue("darkMode")));
+        this.darkMode$ = computed(() => this.getDefaultDarkMode(this.localSettingsService.getValue$("darkMode")));
         this.currentTheme$ = computed(() => this.darkMode$() ? this.createDarkTheme() : this.createLightTheme());
         effect(() => this.updateCSS(this.darkMode$()));
 

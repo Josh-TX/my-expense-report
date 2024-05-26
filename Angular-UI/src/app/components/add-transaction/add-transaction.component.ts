@@ -86,8 +86,9 @@ export class AddTransactionComponent {
             name: this.name,
             manualSubcategory: subcategory
         }
-        this.transactionService.addTransactions([transactionToAdd], "manually added");
-        this.snackBar.open("Transaction manually added", "", { duration: 3000 });
-        this.dialogRef.close();
+        this.transactionService.addTransactions([transactionToAdd], "manually added").then(() => {
+            this.snackBar.open("Transaction manually added", "", { duration: 3000 });
+            this.dialogRef.close();
+        });
     }
 }

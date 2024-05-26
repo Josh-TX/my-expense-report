@@ -18,8 +18,14 @@ try {
 }
 console.log(`Directory '${basepath}' exists and is writable`)
 
-const READ_TOKEN = process.env.READ_TOKEN;
-const WRITE_TOKEN = process.env.WRITE_TOKEN;
+const READ_TOKEN = (process.env.READ_TOKEN || "").trim();
+const WRITE_TOKEN = (process.env.WRITE_TOKEN || "").trim();
+if (READ_TOKEN){
+    console.log(`Read operations will required an Authorization header of '${READ_TOKEN}'`)
+}
+if (WRITE_TOKEN){
+    console.log(`Write operations will required an Authorization header of '${WRITE_TOKEN}'`)
+}
 
 app.use(express.static('public'));
 app.use(express.text({ limit: '100mb'}));

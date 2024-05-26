@@ -7,7 +7,8 @@ export type LocalSettings = {
     reportAverages?: boolean | undefined,
     trxnsPageSize?: number | undefined,
     largeGraph?: boolean | undefined,
-    authKey?: string | undefined,
+    writeToken?: string | undefined,
+    readToken?: string | undefined,
 }
 
 @Injectable({
@@ -26,17 +27,17 @@ export class LocalSettingsService {
         }
         this.localSettings$ = signal(this.localSettings);
     }
-    setValue<K extends keyof LocalSettings>(key: K, value: LocalSettings[K]){
-        this.localSettings[key] = value;
+    setValue<K extends keyof LocalSettings>(key: K, val: LocalSettings[K]){
+        this.localSettings[key] = val;
         this.localSettings$.set({...this.localSettings});
         localStorage["local-settings"] = JSON.stringify(this.localSettings);
     } 
 
-    // getValue<K extends keyof LocalSettings>(key: K): LocalSettings[K]{
-    //     return this.localSettings[key];
-    // }
+    getValue$<K extends keyof LocalSettings>(key: K): LocalSettings[K]{
+        return this.localSettings$()[key]
+    }
 
     getValue<K extends keyof LocalSettings>(key: K): LocalSettings[K]{
-        return this.localSettings$()[key]
+        return this.localSettings[key]
     }
 }

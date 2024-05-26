@@ -47,9 +47,8 @@ export class TransactionService {
     private _isSampleData: boolean = false;
     private isSampleData$: Signal<boolean>;
     private storedTransactions$: WritableSignal<StoredTransactionPlusId[]>;
-    private storeAttempted: boolean = false;
     private transactionsLoaded$: WritableSignal<boolean>;
-
+    private resolvers: Array<(val: any) => any> = [];
     public loaded: Promise<any>;
 
     constructor(
@@ -62,17 +61,16 @@ export class TransactionService {
         this.transactionsLoaded$ = signal(false);
         this.loaded = this.getStoredTrxns().then(storedTransactions => {
             this.transactionsLoaded$.set(true);
-            this.updateStoredTransactions(storedTransactions);
+            this.updateStoredTransactions(storedTransactions, false);
         });
         this.transactions$ = computed(() => this.getComputedTrxns(this.storedTransactions$(), this.categoryRuleService.getRules()))
-        effect(() => this.setStoredTrxns(this.storedTransactions$()))
     }
 
     isSampleData(): boolean {
         return this.isSampleData$();
     }
 
-    addTransactions(trxns: TransactionToAdd[], filename: string) {
+    addTransactions(trxns: TransactionToAdd[], filename: string): Promise<any> {
         var importDate = new Date();
         importDate.setMilliseconds(0); //needed for filters to work on transactions page when copy-pasting
         var translatedTrxns = trxns.map(z => (<StoredTransactionPlusId>{
@@ -85,7 +83,7 @@ export class TransactionService {
                 manualSubcategory: this.getSubcategoryIfValid(z.manualSubcategory)
             }));
         var storedTransactions = [ ...this.storedTransactions$(), ...translatedTrxns ];
-        this.updateStoredTransactions(storedTransactions);
+        return this.updateStoredTransactions(storedTransactions);
     }
 
     isDuplicate(date: Date, name: string, amount: number) {
@@ -96,41 +94,52 @@ export class TransactionService {
         return this.transactions$();
     }
 
-    deleteTrxns(trxns: Transaction[]){
+    deleteTrxns(trxns: Transaction[]): Promise<any>{
         var trxnIds = trxns.map(z => z.tempId);
         var remainingStoredTrxns = this.storedTransactions$().filter(z => !trxnIds.includes(z.tempId));
-        this.updateStoredTransactions(remainingStoredTrxns);
+        return this.updateStoredTransactions(remainingStoredTrxns);
     }
 
-    assignManualCats(trxns: Transaction[], subcategory: Subcategory | undefined){
+    assignManualCats(trxns: Transaction[], subcategory: Subcategory | undefined): Promise<any>{
         var storedTrxns = trxns.map(trxn => this.storedTransactions$().find(z => z.tempId == trxn.tempId)!);
         storedTrxns.forEach(z => { z.manualSubcategory = this.getSubcategoryIfValid(subcategory) });
-        this.updateStoredTransactions([...this.storedTransactions$()]);
+        return this.updateStoredTransactions([...this.storedTransactions$()]);
     }
 
-    negateAmounts(trxns: Transaction[]){
+    negateAmounts(trxns: Transaction[]): Promise<any>{
         var storedTrxns = trxns.map(trxn => this.storedTransactions$().find(z => z.tempId == trxn.tempId)!);
         storedTrxns.forEach(z => z.amount = -z.amount);
-        this.updateStoredTransactions([...this.storedTransactions$()]);
+        return this.updateStoredTransactions([...this.storedTransactions$()]);
     }
 
-    renameCats(existingCatName: string, newCatName: string){
+    renameCats(existingCatName: string, newCatName: string): Promise<any>{
         var allStoredTrxns = this.storedTransactions$();
         var trxnsToUpdate = allStoredTrxns.filter(z => z.manualSubcategory != null && z.manualSubcategory.catName == existingCatName);
         trxnsToUpdate.forEach(z => z.manualSubcategory!.catName = newCatName);
-        this.updateStoredTransactions([...allStoredTrxns]);
+        return this.updateStoredTransactions([...allStoredTrxns]);
     }
 
-    renameSubcats(existingSubcat: Subcategory, newSubcat: Subcategory){
+    renameSubcats(existingSubcat: Subcategory, newSubcat: Subcategory): Promise<any>{
         var allStoredTrxns = this.storedTransactions$();
         var trxnsToUpdate = allStoredTrxns.filter(z => z.manualSubcategory != null && areValuesSame(z.manualSubcategory, existingSubcat));
         trxnsToUpdate.forEach(z => z.manualSubcategory = {...newSubcat});
-        this.updateStoredTransactions([...allStoredTrxns]);
+        return this.updateStoredTransactions([...allStoredTrxns]);
     }
 
-    private updateStoredTransactions(storedTrxns: StoredTransactionPlusId[]){
+    private updateStoredTransactions(storedTrxns: StoredTransactionPlusId[], store: boolean = true): Promise<any> {
         this.categoryService.clearFromManualCategories(); //this is important because the sample data will initially add categories via manual categories.
         this.storedTransactions$.set(storedTrxns);
+        if (store){
+            return this.setStoredTrxns(storedTrxns);
+        } else {
+            return Promise.resolve(null);
+        }
+    }
+
+    private getStorePromise(): Promise<any>{
+        return new Promise((resolve) => {
+            this.resolvers.push(resolve);
+        });
     }
 
     private getSubcategoryIfValid(subcat: Subcategory | undefined): Subcategory | undefined{
@@ -225,24 +234,19 @@ export class TransactionService {
         })
         
     }
-    private setStoredTrxns(storedTransactions: StoredTransactionPlusId[]){
+    private setStoredTrxns(storedTransactions: StoredTransactionPlusId[]): Promise<any>{
         if (!this.transactionsLoaded$()){
-            return;
+            return Promise.resolve(null);
         }
-        if (this.storeAttempted){ 
-            //after the transactions are loaded, the effect will fire,
-            //but we don't wanna store what we just loaded. So we ignore the first attempt to store trxns
-            var trxnsWithoutId: StoredTransaction[] = storedTransactions.map(z => ({
-                date: z.date,
-                amount: z.amount,
-                name: z.name,
-                importDate: z.importDate,
-                importFrom: z.importFrom,
-                manualSubcategory: z.manualSubcategory
-            }))
-            this.storageService.store("transactions.json", trxnsWithoutId)
-        } 
-        this.storeAttempted = true;
+        var trxnsWithoutId: StoredTransaction[] = storedTransactions.map(z => ({
+            date: z.date,
+            amount: z.amount,
+            name: z.name,
+            importDate: z.importDate,
+            importFrom: z.importFrom,
+            manualSubcategory: z.manualSubcategory
+        }))
+        return this.storageService.store("transactions.json", trxnsWithoutId);
     }
 
     
