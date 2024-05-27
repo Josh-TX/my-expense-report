@@ -1,0 +1,131 @@
+<div class="t-flex t-justify-between">
+    <h2 class="mat-mdc-dialog-title mdc-dialog__title">Manage Transaction Generators</h2>
+    <div class="t-pt-4 t-pr-6">
+        <button mat-raised-button color="primary" (click)="startAdd()" [disabled]="generatorToAdd">Add
+            Generator</button>
+    </div>
+</div>
+<mat-dialog-content class="mat-typography" style="height: 60vh;">
+    @if (generatorToAdd){
+    <h2>Creating a new Transaction Generator</h2>
+    <div class="t-flex t-gap-4">
+        <mat-form-field class="t-grow">
+            <mat-label>Transaction Name</mat-label>
+            <input matInput [(ngModel)]="generatorToAdd.name" (ngModelChange)="updatePreview()">
+        </mat-form-field>
+        <mat-form-field>
+            <mat-label>Amount</mat-label>
+            <input matInput type="number" [(ngModel)]="generatorToAdd.amount" (ngModelChange)="updatePreview()">
+        </mat-form-field>
+
+        <mat-form-field>
+            <mat-label>Start Date</mat-label>
+            <input matInput type="month" [(ngModel)]="generatorToAdd.startMonth" (ngModelChange)="updatePreview()">
+        </mat-form-field>
+
+        <mat-form-field>
+            <mat-label>End Date (optional)</mat-label>
+            <input matInput type="month" [(ngModel)]="generatorToAdd.endMonth" (ngModelChange)="updatePreview()">
+        </mat-form-field>
+
+        <mat-form-field>
+            <mat-label>Day of Month</mat-label>
+            <input matInput type="number" [(ngModel)]="generatorToAdd.dayOfMonth" (ngModelChange)="updatePreview()">
+        </mat-form-field>
+    </div>
+    <div style="margin-bottom: -25px">
+        <mer-subcategory-select [(catName)]="generatorToAdd.catName" [(subcatName)]="generatorToAdd.subcatName"
+            (catNameChange)="updatePreview()" (subcatNameChange)="updatePreview()"></mer-subcategory-select>
+        <mer-subcategory-quickselect [(catName)]="generatorToAdd.catName" [(subcatName)]="generatorToAdd.subcatName"
+            (catNameChange)="updatePreview()" (subcatNameChange)="updatePreview()"></mer-subcategory-quickselect>
+    </div>
+
+    <h3 class="t-my-2">Preview Transactions</h3>
+    @if (previewTransactions){
+    <div class="t-flex t-flex-col" style="height: 160px;">
+        <h5 class="t-mb-1">Generator would immediately create the following transactions
+            ({{previewTransactions.length}})</h5>
+        <div class="t-grow t-overflow-auto">
+            <table class="table table-outline table-sm t-mb-0">
+                @for(previewTransaction of previewTransactions; track previewTransaction){
+                <tr>
+                    <td>{{previewTransaction.date | date:'M/d/yy'}}</td>
+                    <td>{{previewTransaction.amount | currency}}</td>
+                    <td>{{previewTransaction.name}}</td>
+                    <td>{{previewTransaction.manualSubcategory?.catName}}</td>
+                    <td>{{previewTransaction.manualSubcategory?.subcatName}}</td>
+                </tr>
+                }
+            </table>
+        </div>
+    </div>
+    <small>
+        As time passes, the generator will continue generating transactions.
+        @if (generatorToAdd.endMonth){
+        The generator will stop when it creates the final transaction on {{getEndDate() | date:'M/d/yy' }}
+        }
+    </small>
+    } @else {
+    <small>{{previewMessage}}</small>
+    }
+    } @else if (generators.length) {
+        <h3>Existing Generators</h3>
+    <table class="table mat-elevation-z4">
+        <tr>
+            <th>Name</th>
+            <th>Amount</th>
+            <th>Category</th>
+            <th>Subcategory</th>
+            <th>Original Start</th>
+            <th>Next Date</th>
+            <th>End Date</th>
+            <th>Actions</th>
+        </tr>
+        @for(generator of generators; track generator){
+        <tr>
+            <td>{{generator.name}}</td>
+            <td>{{generator.amount}}</td>
+            <td>{{generator.catName}}</td>
+            <td>{{generator.subcatName}}</td>
+            <td>{{generator.startMonth | date:'M/d/yy'}}</td>
+            <td>{{generator.nextMonth | date:'M/d/yy'}}</td>
+            @if (generator.endMonth ){
+            <td>{{generator.endMonth | date:'M/d/yy'}}</td>
+            } @else {
+            <td>--</td>
+            }
+            <td>
+                <button mat-raised-button [matMenuTriggerFor]="deleteMenu">Actions
+                    <mat-icon>arrow_drop_down</mat-icon></button>
+                <mat-menu #deleteMenu="matMenu">
+                    <button mat-menu-item (click)="editAmount(generator)">Edit Amount</button>
+                    <button mat-menu-item (click)="delete(generator)">Delete Generator</button>
+                </mat-menu>
+            </td>
+        </tr>
+        }
+    </table>
+
+    } @else {
+        <div class="t-text-center">No generators created yet. Click "Add Generator" to create one</div>
+    }
+
+    @if (!generatorToAdd){
+        <p class="t-mt-5 text-muted" style="line-height: 1rem;">
+            <small>Generators are a way to automatically create fixed-amount monthly transactions. 
+                Generators can't create future transactions, but they can stay active as time passes and create transactions once the future becomes the present/past.
+                This can be useful if you have a consistent monthly expense that you aren't importing. 
+                Any transactions created by the generator cannot be modified/deleted by the generator, and instead you must use the transactions page for retroactive edits.
+            </small>
+        </p>
+    }
+
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+    @if (generatorToAdd) {
+    <button mat-raised-button (click)="cancelAdd()">Cancel</button>
+    <button mat-raised-button color="primary" (click)="submitAdd()">Submit</button>
+    } @else {
+    <button mat-raised-button mat-dialog-close>Close</button>
+    }
+</mat-dialog-actions>

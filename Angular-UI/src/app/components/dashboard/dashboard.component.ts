@@ -14,6 +14,7 @@ import { TransactionService } from '@services/transaction.service';
 import { environment } from '../../../environments/environment';
 import { StatService } from '@services/stat.service';
 import { CategoryService } from '@services/category.service';
+import { ManageGeneratorsComponent } from '@components/manage-generators/manage-generators.component';
 
 @Component({
     standalone: true,
@@ -48,6 +49,10 @@ export class DashboardComponent {
 
     importTransactions() {
         var dialogRef = this.dialog.open(ImportTransactionsComponent, { panelClass: "dialog-xl", autoFocus: false })
+    }
+
+    manageGenerators() {
+        this.dialog.open(ManageGeneratorsComponent, { panelClass: "dialog-xl", autoFocus: false })
     }
 
     fixUncategorized() {

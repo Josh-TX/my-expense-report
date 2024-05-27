@@ -7,7 +7,7 @@ var basepath = process.argv.length >= 3 ? process.argv[2] : "/data";
 try {
     if (!fs.existsSync(basepath)) {
         console.error(`Directory ${basepath} does not exist. Exiting.`);
-        console.log(`If running as a container, make sure that you've included a volume mounted to /data`);
+        console.log(`If running as a container, make sure that you've included a volume mounted to ${basepath}`);
         process.exit(1);
     }
     // Check if the directory is writable

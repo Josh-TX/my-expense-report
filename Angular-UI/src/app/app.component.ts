@@ -5,6 +5,7 @@ import { NavbarComponent } from './components/navbar/navbar.component';
 import { TransactionService } from '@services/transaction.service';
 import { CategoryRuleService } from '@services/category-rule.service';
 import { SettingsService } from '@services/settings.service';
+import { GeneratorsService } from '@services/generators.service';
 
 @Component({
     selector: 'app-root',
@@ -18,8 +19,9 @@ export class AppComponent {
         private _transactionService: TransactionService, 
         private _categoryRuleService: CategoryRuleService, 
         private _settingsService: SettingsService, 
+        private _generatorService: GeneratorsService, 
     ){
-        Promise.all([this._transactionService.loaded, this._categoryRuleService.loaded, this._settingsService.loaded]).then(() => {
+        Promise.all([this._transactionService.loaded, this._categoryRuleService.loaded, this._settingsService.loaded, this._generatorService.loaded]).then(() => {
             this.loaded = true;
         })
     }

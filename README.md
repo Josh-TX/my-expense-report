@@ -63,14 +63,16 @@ More details about how the app works, regardless of which version you use
 
 ## Importing Transactions
 
-There are 2 ways to add transactions. Import from file (csv) and manually add.
+There are 3 ways to add transactions. Import from file (csv), manually add, and transaction generators.
 
 ### Import from file (csv) 
 This is the most common and quick way to add transactions. Most credit card providers have a way to "export" transactions to a spreadsheet file such as xlsx, ods, or csv. Ideally you can export to csv, but if not you can export it to some other format, open it in Excel, and then save as a csv. Either way, once you have a csv file, you can import it. The import process will then auto-detect which columns are the name, date, and amount column. If the auto-detected columns are wrong, try changing the header (the first row of the CSV) to "name", "date", or "amount" to help it auto-detect correctly. The import process allows "duplicates" within the same file, but will identify & de-select any duplicates transactions whose name, amount, and date matches any existing transation. This allows you to export & import a complete year of transactions even if you already imported some of those same transactions earlier. 
 
-### manually add transactions
+### Manually Add Transactions
 instead of importing from file, you can manually add a transaction via an html form. This is slow, but can be useful if you have a single cash purchase you want to enter. If you have many transactions to manually import, it might be easier to manually enter them into a spreadsheet, export as CSV, and then import from file. 
 
+### Transaction Generators
+a Transaction Generator is similar to manually adding, but instead of it being a one-time thing, it automatically creates a transaction each month. This can be useful if you have income or expenses that consistently occur each month, but you don't want to (or can't) import those transactions from file. The generated transactions will be stored alongside your transaction data. Any transactions created by the generator cannot be modified/deleted by the generator, and instead you must use the transactions page for retroactive edits.
 
 ## Categories
 

@@ -1,1 +1,2 @@
-todo: recent month count doesn't update immediately
+* Reworked how category-rules affect income transactions. Readme describes the new behavior
+* Added Transaction Generators

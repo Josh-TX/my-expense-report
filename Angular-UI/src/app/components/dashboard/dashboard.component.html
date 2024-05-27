@@ -15,6 +15,7 @@
                     @if (trxnCount$() && !isSample$()) {
                     <button mat-menu-item (click)="manageRules()">Manage Category Rules</button>
                     }
+                    <button mat-menu-item (click)="manageGenerators()">Manage Transaction Generators</button>
                     <button mat-menu-item (click)="importTransactions()">Import Transactions</button>
                 </mat-menu>
             </div>
@@ -29,6 +30,7 @@
                 @if (trxnCount$() && !isSample$()) {
                 <button mat-raised-button (click)="manageRules()" class="t-mr-4">Manage Category Rules</button>
                 }
+                <button mat-raised-button (click)="manageGenerators()" class="t-mr-4">Manage Transaction Generators</button>
                 <button mat-raised-button (click)="importTransactions()">Import Transactions</button>
             </div>
         </div>

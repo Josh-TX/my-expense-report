@@ -7,7 +7,15 @@ import { LocalSettingsService } from './local-settings.service';
 })
 export class StorageService {
 
+    private _ignore401: boolean = false;
     constructor(private localSettingsService: LocalSettingsService) {
+    }
+
+    setIgnore401(ms: number){
+        this._ignore401 = true;
+        setTimeout(() => {
+            this._ignore401 = false;
+        }, ms);
     }
 
     store(key: string, data: any): Promise<any> {
@@ -68,6 +76,9 @@ export class StorageService {
         return window.fetch(`/save?filename=${encodeURIComponent(filename)}`, { method: 'POST', headers: headers, body: data })
             .then(res => {
                 if (res.status == 401){
+                    if (this._ignore401){
+                        return;
+                    }
                     let message = token 
                         ? "Failed to save: the provided WRITE_TOKEN was incorrect: Enter a new WRITE_TOKEN" 
                         : "Failed to save: the server requires a WRITE_TOKEN to save. Enter it below";

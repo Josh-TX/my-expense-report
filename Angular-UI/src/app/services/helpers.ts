@@ -124,18 +124,32 @@ export function groupBy<T, U>(items: T[], selectorFunc: (t1: T) => U): Group<T,U
     return groups;
 }
 
+
+
 export function getStartOfMonth(date: Date): Date {
     var d = new Date(date.getTime());
-    d.setHours(0, 0, 0, 0)
+    d.setHours(0, 0, 0, 0);
     d.setDate(1);
     return d;
 }
-
 export function getStartOfYear(date: Date): Date {
     var d = getStartOfMonth(date);
     d.setMonth(0);
     return d;
 }
+export function getNextMonth(date: Date, dayOfMonth: number): Date {
+    var d = new Date(date.getFullYear(), date.getMonth() + 1, 1);
+    //this function is only used by the generators, and we want to ensure that there won't be timezone issues. 
+    d.setHours(8);
+    d.setDate(Math.min(getDaysInMonth(d), dayOfMonth));
+    return d;
+}
+export function getDaysInMonth(date: Date): number {
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    return new Date(year, month, 0).getDate();
+  }
+
 
 export function sortBy<T>(items: T[], selectorFunc: (t:T) => number){
     items.sort((t1, t2) => selectorFunc(t1) - selectorFunc(t2));
