@@ -38,8 +38,8 @@ export class DashboardComponent {
         this.trxnCount$ = computed(() => this.transactionService.getTransactions().length);
         this.isSample$ = computed(() => this.transactionService.isSampleData());
         this.anyStats$ = computed(() => !!this.statService.getCatMonthStats().length);
-        this.anyCategories$ = computed(() => this.categoryService.getSubcategories().length > 3);//other, 
-        this.uncategorizedCount$ = computed(() => this.transactionService.getTransactions().filter(z => z.catName == "other" && z.subcatName == "uncategorized").length);
+        this.anyCategories$ = computed(() => this.categoryService.getSubcategories().length > 3);//other,hidden 
+        this.uncategorizedCount$ = computed(() => this.transactionService.getTransactions().filter(z => z.subcatName == "uncategorized" && (z.catName == "other" || z.catName == "income")).length);
     }
 
     barClicked(event: Date | undefined) {

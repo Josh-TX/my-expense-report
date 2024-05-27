@@ -33,13 +33,11 @@ export class SettingsService {
 
     private createDefault(): Settings {
         return {
-            recentMonthCount: 12,
+            recentMonthCount: 24,
             maxGraphCategories: 8,
             requiredDaysForLatestMonth: 25,
-            maxRenderTransactionRows: 2000,
             reportColorDeadZone: 5,
             reportColorSevereZScore: 2,
-            useIncomeCategory: true
         };
     }
 }
@@ -48,8 +46,6 @@ export type Settings = {
     recentMonthCount: number,
     maxGraphCategories: number,
     requiredDaysForLatestMonth: number,
-    maxRenderTransactionRows: number,
     reportColorDeadZone: number,
     reportColorSevereZScore: number,
-    useIncomeCategory: boolean
 }

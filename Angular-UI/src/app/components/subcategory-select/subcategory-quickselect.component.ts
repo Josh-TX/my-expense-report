@@ -50,12 +50,13 @@ export class SubcategoryQuickselectComponent {
         var catNameFilter = this.catNameBinding || "";
         var subcatNameFilter = this.subcatNameBinding || "";
         this.filteredCatNames = getDistinct(subcats.map(z => z.catName));
-        this.filteredSubcats = subcats
+        this.filteredSubcats = subcats.filter(z => z.subcatName != "uncategorized")
         if (this.catNameBinding){
             this.filteredCatNames = catNames.filter(z => z.toLowerCase().includes(catNameFilter.toLowerCase()));
             this.filteredSubcats = subcats.filter(z => z.catName.toLowerCase() == catNameFilter.toLowerCase());
             if (this.filteredSubcats.length){
                 this.showSubcatButtons = true;
+                this.filteredSubcats = this.filteredSubcats.filter(z => z.subcatName != "uncategorized")
                 if (subcatNameFilter){
                     this.filteredSubcats = this.filteredSubcats.filter(z => z.subcatName.toLowerCase().includes(subcatNameFilter.toLowerCase()))
                 }

@@ -156,42 +156,20 @@ export class TransactionService {
             var lowerName = storedTrxn.name.toLowerCase()
             var catSource = "";
             var subcategory: Subcategory = {
-                catName: "other",
+                catName: storedTrxn.amount < 0 ? "income" : "other",
                 subcatName: "uncategorized"
             };
-            if (storedTrxn.amount < 0) {
-                var allowedNegativeCatNames = ["hidden", "income"]
-                if (storedTrxn.manualSubcategory != null && allowedNegativeCatNames.includes(storedTrxn.manualSubcategory.catName)){
-                    subcategory = this.categoryService.registerManualCategory(storedTrxn.manualSubcategory);
-                    catSource = `manual category`;
-                } else {
-                    var eligibleRules = rules.filter(z => allowedNegativeCatNames.includes(z.catName));
-                    var foundRule = eligibleRules.find(rule => lowerName.startsWith(rule.text));
-                    foundRule = foundRule || eligibleRules.find(rule => lowerName.includes(rule.text));
-                    if (foundRule){
-                        catSource = `matched rule "${foundRule.text}"`;
-                        subcategory = foundRule
-                    } else {
-                        catSource = `automatic because negative amount`;
-                        subcategory = {
-                            catName: "income",
-                            subcatName: "income"
-                        };
-                    }
-                }
+            if (storedTrxn.manualSubcategory != null){
+                subcategory = this.categoryService.registerManualCategory(storedTrxn.manualSubcategory);
+                catSource = `manual category`;
             } else {
-                if (storedTrxn.manualSubcategory != null){
-                    subcategory = this.categoryService.registerManualCategory(storedTrxn.manualSubcategory);
-                    catSource = `manual category`;
+                var foundRule = rules.find(rule => lowerName.startsWith(rule.text));
+                foundRule = foundRule || rules.find(rule => lowerName.includes(rule.text));
+                if (foundRule){
+                    catSource = `matched rule "${foundRule.text}"`;
+                    subcategory = foundRule
                 } else {
-                    var foundRule = rules.find(rule => lowerName.startsWith(rule.text));
-                    foundRule = foundRule || rules.find(rule => lowerName.includes(rule.text));
-                    if (foundRule){
-                        catSource = `matched rule "${foundRule.text}"`;
-                        subcategory = foundRule
-                    } else {
-                        //subcategory was initially set to uncategorized
-                    }
+                    //subcategory was initially set to uncategorized
                 }
             }
             output.push({

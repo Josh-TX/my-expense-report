@@ -90,7 +90,7 @@ There are 3 category names which have special behavior. Note that the category h
 
 #### Other
 
-The "other" category will always be last in reports & visualizations. Uncategorized transactions will have a category of "other" and subcategory of "uncategorized". So by assigning a transaction to a category of "other", the transaction will be grouped with uncategorized transactions (unless the graph/report is grouped by subcategory, in which case they'll be separate).
+The "other" category will always be last in reports & visualizations. Uncategorized transactions will have a category of "other" and subcategory of "uncategorized" (unless its income). So by assigning a transaction to a category of "other", the transaction will be grouped with uncategorized transactions (unless the graph/report is grouped by subcategory, in which case they'll be separate).
 
 There's also a limit (adjustable in the settings) for how many different categories to display within a visualization. If that limit is exceeded, those excess categories will be displayed as a subcategory of "other".
 
@@ -102,12 +102,10 @@ Another advantage to the "hidden" category is that you can set up a category-rul
 
 #### income
 
-All transactions with a negative amount will be automatically assigned the income category (unless they're assigned "hidden"). Think of it as a built-in category-rule with special precedence. If you have a category-rule for the "income" category, this can take precedence over the autoomatica behavior, allowing an alternate subcategory name. 
-
-It's permissible to assign transactions with a positive amount to the "income" category, and this might be desired for work-related expenses that offset income.
+If an uncategorized transaction has a negative amount, it will have a category of "income" and a subcategory of "uncategorized". It's highly recommended to keep income (negative amount) transactions as either the "income" or "hidden" category (along with whatever subcategory you choose), The donut and bar graphs don't display negative amounts well, and the "income" category doesn't show up on those graphs. If the transaction is a cancellation/refund that offsets an expense, it'd make sense to give it a normal category like shopping, but otherwise it should stay as "income" or "hidden".
 
 ## Average*
 
-Whenever the app displays a category's Average amount, there's a big caveat to that. It really should say "Recent Average" of the last N months (with a default N of 12). You can change how many months count as "Recent" in the settings. 
+Whenever the app displays a category's Average amount, there's a big caveat to that. It really should say "Recent Average" of the last N months (with a default N of 24). You can change how many months count as "Recent" in the settings. 
 
 The reason for this behavior is that most users will want to compare their most recent month with their "normal spending", but our "normal spending" likely changes over the years as markets change and our cicumstances change (marriage, kids etc). By reducing the average to just recent months, it allows us to do more relevant comparisons. And if you don't like this behavior, just set the recent months to 99999 and it'll be a true average. 

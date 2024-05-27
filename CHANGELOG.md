@@ -1,1 +1,1 @@
-* Hosted Version now supports both a WRITE_TOKEN and a READ_TOKEN environmental variables.  
+todo: recent month count doesn't update immediately

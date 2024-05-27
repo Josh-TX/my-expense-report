@@ -28,7 +28,7 @@ export class CategoryService {
     private getDefaults(): Subcategory[]{
         return [
             {catName: "other", subcatName: "uncategorized"},
-            {catName: "income", subcatName: "income"},
+            {catName: "income", subcatName: "uncategorized"},
             {catName: "hidden", subcatName: "hidden"},
         ];
     }

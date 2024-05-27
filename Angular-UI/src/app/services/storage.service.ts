@@ -70,7 +70,7 @@ export class StorageService {
                 if (res.status == 401){
                     let message = token 
                         ? "Failed to save: the provided WRITE_TOKEN was incorrect: Enter a new WRITE_TOKEN" 
-                        : "Failed to save: the server requires an WRITE_TOKEN to save. Enter it below";
+                        : "Failed to save: the server requires a WRITE_TOKEN to save. Enter it below";
                     let newToken = prompt(message)
                     if (newToken){
                         return this.saveToHosted(filename, data, newToken)
@@ -103,7 +103,7 @@ export class StorageService {
                     }
                     let message = token 
                         ? "Failed to load: the provided READ_TOKEN was incorrect: Enter a new READ_TOKEN" 
-                        : "Failed to load: the server requires an READ_TOKEN to save. Enter it below";
+                        : "Failed to load: the server requires a READ_TOKEN to save. Enter it below";
                     let newToken = prompt(message);
                     if (newToken){
                         this.localSettingsService.setValue("readToken", newToken); 

@@ -40,12 +40,14 @@ export class ReportComponent {
         private exportService: ExportService,
         private settingsService: SettingsService
     ) {
-        var signal1 = computed(() => this.settingsService.getSettings().reportColorDeadZone);
-        var signal2 = computed(() => this.settingsService.getSettings().reportColorSevereZScore);
+        var signal1 = computed(() => this.settingsService.getSettings().recentMonthCount);
+        var signal2 = computed(() => this.settingsService.getSettings().reportColorDeadZone);
+        var signal3 = computed(() => this.settingsService.getSettings().reportColorSevereZScore);
         var timeoutId: any;
         effect(() => {
             signal1(); 
             signal2();
+            signal3();
             clearTimeout(timeoutId);
             if (this.effectRun){
                 timeoutId = setTimeout(() => {

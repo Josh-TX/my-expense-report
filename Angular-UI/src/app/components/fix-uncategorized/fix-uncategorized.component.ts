@@ -76,10 +76,10 @@ export class FixUncategorizedComponent {
         }
         this.currentUncatTransaction = this.uncatTransactions[0];
         var maxAmount = 0;
-        //sort the uncategorized transactions based on the total amount that the suggested rule would match.
+        //find the transaction who's suggestion results in the most amount affected. 
         for (var uncatTransaction of this.uncatTransactions){
             var bestSuggestion = this.getBestSuggestion(this.getSuggestions(uncatTransaction.name));
-            var amount = getSum(bestSuggestion.matches.map(z => z.amount));
+            var amount = Math.abs(getSum(bestSuggestion.matches.map(z => z.amount)));
             if (amount > maxAmount){
                 maxAmount = amount; 
                 this.currentUncatTransaction = uncatTransaction;
@@ -208,7 +208,7 @@ export class FixUncategorizedComponent {
     }
 
     private isUncategorized(subcategory: Subcategory): boolean{
-        return subcategory.catName == "other" && subcategory.subcatName == "uncategorized"
+        return subcategory.subcatName == "uncategorized" && (subcategory.catName == "other" || subcategory.catName == "income")
     }
 }
 

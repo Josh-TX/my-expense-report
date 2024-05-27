@@ -101,7 +101,7 @@ export class chartDataService {
                     label: recentSubcatStat.subcategory.subcatName,
                     catName: recentSubcatStat.subcategory.catName,
                     subcatName: recentSubcatStat.subcategory.subcatName,
-                    amount: recentSubcatStat.sumAmount / recentSubcatStat.monthCount,
+                    amount: Math.max(0, recentSubcatStat.sumAmount) / recentSubcatStat.monthCount,
                     colorSet: colorSet
                 });
                 var currentMonthSubcatStat = matchingCurrentMonthSubcatStats[j];
@@ -109,10 +109,14 @@ export class chartDataService {
                     label: currentMonthSubcatStat.subcategory.subcatName,
                     catName: currentMonthSubcatStat.subcategory.catName,
                     subcatName: currentMonthSubcatStat.subcategory.subcatName,
-                    amount: currentMonthSubcatStat.sumAmount,
+                    amount: Math.max(0, currentMonthSubcatStat.sumAmount),
                     colorSet: colorSet
                 });
             }
+            //if there's subcats with negative amounts, they get adjusted to $0 instead of negative.
+            //we then need to proportionally update the category's amount, otherwise the cat & subcat will be misaligned
+            outerItemCatRing.forEach(ring => ring.amount = getSum(outerItemSubcatRing.filter(z => z.catName == ring.catName).map(z => z.amount)));
+            innerItemCatRing.forEach(ring => ring.amount = getSum(innerItemSubcatRing.filter(z => z.catName == ring.catName).map(z => z.amount)));
         }
 
         
@@ -177,7 +181,7 @@ export class chartDataService {
                     label: totalSubcatStat.subcategory.subcatName,
                     catName: totalSubcatStat.subcategory.catName,
                     subcatName: totalSubcatStat.subcategory.subcatName,
-                    amount: totalSubcatStat.sumAmount / totalSubcatStat.yearCount,
+                    amount: Math.max(0, totalSubcatStat.sumAmount) / totalSubcatStat.yearCount,
                     colorSet: colorSet
                 });
                 var currentYearSubcatStat = matchingCurrentYearSubcatStats[j];
@@ -185,10 +189,14 @@ export class chartDataService {
                     label: currentYearSubcatStat.subcategory.subcatName,
                     catName: currentYearSubcatStat.subcategory.catName,
                     subcatName: currentYearSubcatStat.subcategory.subcatName,
-                    amount: currentYearSubcatStat.sumAmount,
+                    amount: Math.max(0, currentYearSubcatStat.sumAmount),
                     colorSet: colorSet
                 });
             }
+            //if there's subcats with negative amounts, they get adjusted to $0 instead of negative.
+            //we then need to proportionally update the category's amount, otherwise the cat & subcat will be misaligned
+            outerItemCatRing.forEach(ring => ring.amount = getSum(outerItemSubcatRing.filter(z => z.catName == ring.catName).map(z => z.amount)));
+            innerItemCatRing.forEach(ring => ring.amount = getSum(innerItemSubcatRing.filter(z => z.catName == ring.catName).map(z => z.amount)));
         }
         var output = {
             isYearly: false,
@@ -252,30 +260,31 @@ export class chartDataService {
         if (!stats.length) {
             return
         }
-        var invertAmount = catName == "income" ? -1 : 1;
+        //var invertAmount = catName == "income" ? -1 : 1;
         var dateItems: BarDateItem[] = [];
         var monthGroups = groupBy<SubcatMonthStat | CatMonthStat, Date>(stats, z => z.month);
         for (var monthGroup of monthGroups) {
             var catItems: BarCategoryItem[] = monthGroup.items.map(eitherMonthStat => {
-                var catName = (<any>eitherMonthStat).subcategory
+                var tempCatName = (<any>eitherMonthStat).subcategory
                      ? (<any>eitherMonthStat).subcategory.catName
                      : (<any>eitherMonthStat).catName;
-                var subcatName = (<any>eitherMonthStat).subcategory?.subcatName
+                var tempSubcatName = (<any>eitherMonthStat).subcategory?.subcatName
                 return {
-                    label: subcatName ?? catName,
-                    catName: catName,
-                    subcatName: subcatName,
-                    amount: eitherMonthStat.sumAmount * invertAmount,
-                    colorSet: this.categoryColorService.getColorSet(catName)
+                    label: tempSubcatName ?? tempCatName,
+                    catName: tempCatName,
+                    subcatName: tempSubcatName,
+                    amount: catName != null ? eitherMonthStat.sumAmount : Math.max(0, eitherMonthStat.sumAmount),//when showing data for a single catagory, I'm fine with negatives
+                    colorSet: this.categoryColorService.getColorSet(tempCatName)
                 }
             });
             var nonOtherCatItems = catItems.filter(z => z.catName != "other");
             if (nonOtherCatItems.length > maxCategories){
+                var otherAmount = getSum(nonOtherCatItems.slice(maxCategories).concat(catItems.filter(z => z.catName == "other")).map(z => z.amount));
                 catItems = [...nonOtherCatItems.slice(0, maxCategories), {
                     label: "other",
                     catName: "other",
                     subcatName: undefined,
-                    amount: getSum(catItems.slice(maxCategories - 1).map(z => z.amount)),
+                    amount: Math.max(0, otherAmount),
                     colorSet: this.categoryColorService.getColorSet("other")
                 }];
             }
@@ -284,7 +293,11 @@ export class chartDataService {
                 items: catItems
             });
         }
-        //the bar chart displays the 1st item on the left side, but stats are sorted newest to oldest, hence the reverse:
+        if (dateItems.every(z => z.items.every(z => z.amount <= 0))){
+            dateItems.forEach(dataItem => dataItem.items.forEach(z => z.amount = -z.amount));
+        }
+        //the bar chart displays the 1st item on the left side, but stats are sorted newest to oldest.
+        //since we want newest on the right, we need to reverse the dataItems
         dateItems.reverse();
         return {
             isYearly: false,
@@ -304,24 +317,26 @@ export class chartDataService {
         var yearGroups = groupBy<SubcatYearStat | CatYearStat, Date>(stats, z => z.year);
         for (var yearGroup of yearGroups) {
             var catItems: BarCategoryItem[] = yearGroup.items.map(eitherYearStat => {
-                var catName = (<any>eitherYearStat).subcategory
+                var tempCatName = (<any>eitherYearStat).subcategory
                      ? (<any>eitherYearStat).subcategory.catName
                      : (<any>eitherYearStat).catName;
-                var subcatName = (<any>eitherYearStat).subcategory?.subcatName;
+                var tempSubcatName = (<any>eitherYearStat).subcategory?.subcatName;
                 return {
-                    label: subcatName ?? catName,
-                    catName: catName,
-                    subcatName: subcatName,
-                    amount: eitherYearStat.sumAmount,
-                    colorSet: this.categoryColorService.getColorSet(catName)
+                    label: tempSubcatName ?? tempCatName,
+                    catName: tempCatName,
+                    subcatName: tempSubcatName,
+                    amount:  catName != null ? eitherYearStat.sumAmount : Math.max(0, eitherYearStat.sumAmount),//when showing data for a single catagory, I'm fine with negatives
+                    colorSet: this.categoryColorService.getColorSet(tempCatName)
                 }
             });
-            if (catItems.length > maxCategories){
-                catItems = [...catItems.slice(0, maxCategories - 1), {
+            var nonOtherCatItems = catItems.filter(z => z.catName != "other");
+            if (nonOtherCatItems.length > maxCategories){
+                var otherAmount = getSum(nonOtherCatItems.slice(maxCategories).concat(catItems.filter(z => z.catName == "other")).map(z => z.amount));
+                catItems = [...nonOtherCatItems.slice(0, maxCategories), {
                     label: "other",
                     catName: "other",
                     subcatName: undefined,
-                    amount: getSum(catItems.slice(maxCategories - 1).map(z => z.amount)),
+                    amount: Math.max(0, otherAmount),
                     colorSet: this.categoryColorService.getColorSet("other")
                 }];
             }
@@ -330,6 +345,10 @@ export class chartDataService {
                 items: catItems
             });
         }
+        if (dateItems.every(z => z.items.every(z => z.amount <= 0))){
+            dateItems.forEach(dataItem => dataItem.items.forEach(z => z.amount = -z.amount));
+        }
+
         //the bar chart displays the 1st item on the left side, but stats are sorted newest to oldest, hence the reverse:
         dateItems.reverse();
         return {
