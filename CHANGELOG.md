@@ -1,2 +1,2 @@
-* Reworked how category-rules affect income transactions. Readme describes the new behavior
-* Added Transaction Generators
+* Added ability to edit amount
+* fixed off-by-1 bug with transaction generators

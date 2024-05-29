@@ -6,7 +6,7 @@
 
 # My Expense Report
 
-An app for tracking and analyzing your personal expenses. Available as [a web app hosted on github pages](https://josh-tx.github.io/my-expense-report), a desktop app (see [releases](https://github.com/Josh-TX/my-expense-report/releases/tag/v1.0.0)), and a [docker container](https://hub.docker.com/r/joshtxdev/my-expense-report) that you can self-host.
+An app for tracking and analyzing your personal expenses. Available as [a web app](https://josh-tx.github.io/my-expense-report) hosted on github pages, a desktop app (see [releases](https://github.com/Josh-TX/my-expense-report/releases)), or a [docker container](https://hub.docker.com/r/joshtxdev/my-expense-report) that you can self-host.
 
 ## Where does the data come from?
 
@@ -32,7 +32,7 @@ The web app is hosted on Github Pages and available here:
 
 The desktop app is built with Electron and stores your data on your device (on windows it stores to the user's AppData/Roaming folder). The desktop app isn't signed, so your computer will likely a warn you about possible viruses when your first launch it. 
 
-You can download the desktop app from the [releases page](https://github.com/Josh-TX/my-expense-report/releases/tag/v1.0.0)
+You can download the desktop app from the [releases page](https://github.com/Josh-TX/my-expense-report/releases)
 
 #### Self-Hosted
 
