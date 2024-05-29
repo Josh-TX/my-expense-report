@@ -159,7 +159,7 @@ export class ImportTransactionsComponent {
                     catName: <string>z.cells[this.grid!.catNameColumnIndex],
                     subcatName: <string>z.cells[this.grid!.subcatNameColumnIndex],
                 }
-                if (manualSubcategory.catName && manualSubcategory.subcatName){
+                if (manualSubcategory.catName && manualSubcategory.subcatName && manualSubcategory.subcatName.toLowerCase() != "uncategorized"){
                     trxnToAdd.manualSubcategory = manualSubcategory;
                 }
             }

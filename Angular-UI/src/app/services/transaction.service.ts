@@ -112,6 +112,12 @@ export class TransactionService {
         return this.updateStoredTransactions([...this.storedTransactions$()]);
     }
 
+    editAmounts(trxns: Transaction[], amount: number): Promise<any>{
+        var storedTrxns = trxns.map(trxn => this.storedTransactions$().find(z => z.tempId == trxn.tempId)!);
+        storedTrxns.forEach(z => z.amount = amount);
+        return this.updateStoredTransactions([...this.storedTransactions$()]);
+    }
+
     renameCats(existingCatName: string, newCatName: string): Promise<any>{
         var allStoredTrxns = this.storedTransactions$();
         var trxnsToUpdate = allStoredTrxns.filter(z => z.manualSubcategory != null && z.manualSubcategory.catName == existingCatName);
@@ -245,7 +251,7 @@ export class TransactionService {
             ["Water bill" + randomSuffix(), "utilities", "water", 60, 70, 1,1, 12],
             ["gas bill" + randomSuffix(), "utilities", "gas", 60, 100, 1,1, 20],
             ["shell" + randomSuffix(), "car", "gas", 30, 40, 2,3, null],
-            ["goodyear" + randomSuffix(), "car", "maintainence", 30, 60, 0,1, null],
+            ["goodyear" + randomSuffix(), "car", "maintenance", 30, 60, 0,1, null],
             ["state farm" + randomSuffix(), "car", "insurance", 60, 60, 1,1, null],
             ["Cinemark" + randomSuffix(), "fun", "movie", 15, 30, 0,3, null],
             ["Main Event" + randomSuffix(), "fun", "arcade", 20, 20, 0,2, null],
@@ -253,7 +259,8 @@ export class TransactionService {
             ["American Airlines" + randomSuffix(), "vacation", "travel", 600, 1200, -8, 1, null],
             ["Hotels.com" + randomSuffix(), "vacation", "hotel", 400, 600, -8, 1, null],
             ["Apartment Rent" + randomSuffix(), "housing", "rent", rent, rent, 1, 1, 28],
-            ["Handyman" + randomSuffix(), "housing", "maintainence", 100, 200, -3, 1, null],
+            ["Handyman" + randomSuffix(), "housing", "maintenance", 100, 200, -3, 1, null],
+            ["Lawn Care" + randomSuffix(), "housing", "maintenance", 40, 40, 0, 1, null],
             ["primary care" + randomSuffix(), "health", "doctor", 30, 100, -5, 1, null],
             ["eye specialist" + randomSuffix(), "health", "doctor", 150, 250, -10, 1, null],
             ["health insurance" + randomSuffix(), "health", "insurance", 100, 100, 1, 1, null],
@@ -267,7 +274,7 @@ export class TransactionService {
         maxDate.setDate(0);
         var minDate = getStartOfMonth(maxDate);
         var trxns: Transaction[] = [];
-        for (var i = 0; i < 18; i++){
+        for (var i = 0; i < 30; i++){
             for (var rule of rules){
                 var trxnCount = Math.max(0, randNum(rule[5], rule[6]));
                 var dayOfMonths = new Set<number>();

@@ -171,6 +171,9 @@ export class FixUncategorizedComponent {
         else if (!this.subcatName) {
             error = "subcategory required"
         }
+        else if (this.subcatName.toLowerCase() == "uncategorized") {
+            error = "subcategory required"
+        }
         else if (this.isFixingUncat && !this.isManual && !this.categoryRuleService.doesRuleTextMatch(this.currentUncatTransaction!, this.ruleTextInput) && !this.allowMismatchText) {
             if (confirm("rule text doesn't match current transaction. Create Rule Anyways?")){
                 this.allowMismatchText = true;

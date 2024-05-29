@@ -6,7 +6,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 
 export type StoredGenerator = {
     startMonth: Date,
-    nextMonth: Date,
+    nextMonth: Date | null,
     endMonth: Date | null,
     dayOfMonth: number,
     name: string,
@@ -17,7 +17,7 @@ export type StoredGenerator = {
 
 export type GenerationResult = {
     transactions: TransactionToAdd[];
-    nextMonth: Date,
+    nextMonth: Date | null,
 }
 
 @Injectable({
@@ -51,7 +51,9 @@ export class GeneratorsService {
     addGenerator(generator: StoredGenerator): Promise<number>{
         //set the hours to 8 to reduce the chance of timezone changes causing the date to change. 
         generator.startMonth.setHours(8);
-        generator.nextMonth.setHours(8);
+        if (generator.nextMonth){
+            generator.nextMonth.setHours(8);
+        }
         if (generator.endMonth){
             generator.endMonth.setHours(8);
         }
@@ -76,8 +78,8 @@ export class GeneratorsService {
 
     private applyAllGenerators(ignore401: boolean): Promise<number> | null{
         var generatedTrxns: TransactionToAdd[] = [];
-        for(var gen of this._storedGenerators){
-            var res = this.generateTransactions(gen.nextMonth, gen.endMonth, gen.dayOfMonth, gen.name, gen.amount, gen.catName, gen.subcatName);
+        for(var gen of this._storedGenerators.filter(z => z.nextMonth != null)){
+            var res = this.generateTransactions(gen.nextMonth!, gen.endMonth, gen.dayOfMonth, gen.name, gen.amount, gen.catName, gen.subcatName);
             if (res.transactions.length){
                 generatedTrxns.push(...res.transactions);
                 gen.nextMonth = res.nextMonth;
@@ -103,7 +105,14 @@ export class GeneratorsService {
         var attempts = 0;
         var now = new Date();
         endDate = endDate || now;
-        for (var curr = startDate; curr < endDate && curr < now; curr = getNextMonth(curr, dayOfMonth)){
+        //for (var curr = startDate; curr < endDate && curr < now; curr = getNextMonth(curr, dayOfMonth)){
+        for (var curr = startDate; curr <= now; curr = getNextMonth(curr, dayOfMonth)){
+            if (curr > endDate){
+                return {
+                    transactions: transactions,
+                    nextMonth: null
+                };
+            }
             if (attempts >= 10000){
                 console.error("The transaction generator would've generatored over 10000 transactions")
                 transactions = [];

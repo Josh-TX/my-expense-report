@@ -18,12 +18,14 @@ import { MatCardModule } from '@angular/material/card';
 import { Subcategory } from '@services/category.service';
 import { SubcategorySelectComponent } from '@components/subcategory-select/subcategory-select.component';
 import { ImportTransactionsComponent } from '@components/import-transactions/import-transactions.component';
+import { SubcategoryQuickselectComponent } from '@components/subcategory-select/subcategory-quickselect.component';
+import { ManageGeneratorsComponent } from '@components/manage-generators/manage-generators.component';
 
 @Component({
     standalone: true,
     
     imports: [CommonModule, MatCardModule, FormsModule, MatInputModule, MatDialogTitle, MatDialogContent, MatDialogActions,
-         MatDialogClose, MatButtonModule, SubcategorySelectComponent],
+         MatDialogClose, MatButtonModule, SubcategorySelectComponent, SubcategoryQuickselectComponent],
     templateUrl: './add-transaction.component.html'
 })
 export class AddTransactionComponent {
@@ -47,9 +49,13 @@ export class AddTransactionComponent {
         this.dialog.open(ImportTransactionsComponent, { panelClass: "dialog-xl", autoFocus: false })
     }
 
+    generators(){
+        this.dialogRef.close();
+        this.dialog.open(ManageGeneratorsComponent, { panelClass: "dialog-xl", autoFocus: false })
+    }
+
     submit() {
         var now = new Date();
-        var tooEarly = new Date(2000,1,1);
         var date = this.date instanceof Date ? this.date : new Date(<any>this.date)
         var subcategory: Subcategory | undefined;
         var error = "";
@@ -70,6 +76,9 @@ export class AddTransactionComponent {
                 error = "must provide subcategory when category is provided"
             } else if (!this.catName && this.subcatName){
                 error = "must provide category when subcategory is provided"
+            }
+            if (this.subcatName.toLowerCase() == "uncategorized"){
+                error = "invalid subcategory name";
             }
             subcategory = {
                 catName: this.catName,

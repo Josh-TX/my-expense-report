@@ -102,6 +102,10 @@ export class ManageGeneratorsComponent {
             this.previewMessage = "Start Date must be before end Date";
             return;
         }
+        if (this.generatorToAdd.subcatName.toLowerCase() == "uncategorized") {
+            this.previewMessage = "Invalid subcategory name";
+            return;
+        }
         var res = this.generatorService.generateTransactions(startDate, endDate, this.generatorToAdd.dayOfMonth, this.generatorToAdd.name, 
             this.generatorToAdd.amount, this.generatorToAdd.catName, this.generatorToAdd.subcatName);
         this.previewTransactions = res.transactions;
@@ -109,6 +113,10 @@ export class ManageGeneratorsComponent {
 
     getEndDate() {
         return stringToDate(this.generatorToAdd!.endMonth!, this.generatorToAdd!.dayOfMonth);
+    }
+
+    finishedNow(){
+        return stringToDate(this.generatorToAdd!.endMonth!, this.generatorToAdd!.dayOfMonth) <= new Date();
     }
 
     submitAdd() {

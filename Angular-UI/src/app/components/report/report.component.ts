@@ -70,7 +70,7 @@ export class ReportComponent {
     }
 
     showAveragesChanged(){
-        this.localSettingsService.setValue("reportAverages", this.showSubcategories);
+        this.localSettingsService.setValue("reportAverages", this.showAverages);
     }
 
     export() {

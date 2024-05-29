@@ -23,6 +23,8 @@
     <div>What would you like to do?</div>
     <button class="t-mr-2" mat-raised-button (click)="mode = 'flip'" [class.border-primary]="mode == 'flip'">Flip
         Income/Expense</button>
+    <button class="t-mr-2" mat-raised-button (click)="mode = 'amount'" [class.border-primary]="mode == 'delete'">Edit
+        Amount</button>
     <button class="t-mr-2" mat-raised-button (click)="mode = 'hide'" [class.border-primary]="mode == 'hide'">Hide
         Transactions</button>
     <button class="t-mr-2" mat-raised-button (click)="mode = 'delete'" [class.border-primary]="mode == 'delete'">Delete
@@ -40,8 +42,20 @@
         <div class="text-muted t-text-center">no edit operation selected</div>
         }
         @if (mode == 'flip'){
-        {{eachTransaction}} will have it's amount flipped. Positive amounts (expenses) will become negative (income),
-        and vice versa. Duplicate detection uses the absolute value of the amount, so the import process should still detect potential duplicates
+        {{eachTransaction}} will have its amount flipped. Positive amounts (expenses) will become negative (income),
+        and vice versa. Duplicate detection uses the absolute value of the amount, so the import process should still
+        detect potential duplicates
+        }
+        @if (mode == 'amount'){
+            <div>
+                {{eachTransaction}} will have its amount set to 
+                    @if (editedAmount){{{editedAmount | currency}}} @else {the input below}. 
+                This unfortunately means that the import process won't detect {{transactions.length ? 'this transaction' : 'these transactions'}} as duplicates
+            </div>
+        <mat-form-field class="t-mr-4">
+            <mat-label>amount</mat-label>
+            <input matInput type="number" [(ngModel)]="editedAmount">
+        </mat-form-field>
         }
         @if (mode == 'hide'){
         {{eachTransaction}} will be hidden, causing it to not appear in reports or visualizations. It will still be used
@@ -49,7 +63,8 @@
         }
         @if (mode == 'delete'){
         {{eachTransaction}} will be deleted, causing it to be completed removed from storage. Typically this would be
-        done for transactions imported by mistake, otherwise hiding the transactions is usually a better option.
+        done for transactions imported by mistake, otherwise hiding the transactions is usually a better option, since
+        hidden transactions can prevent duplicate imports
         }
         @if (mode == 'remove-cat'){
         {{eachTransaction}} will have its manually category removed. This will free up the transaction to instead be
@@ -57,8 +72,8 @@
         }
         @if (mode == 'assign-cat'){
         <div class="t-mb-2">
-            {{eachTransaction}} will be assigned the following manually category, which has higher precedence than
-            Category-Rules:
+            {{eachTransaction}} will be assigned the following manually category (which has higher precedence than
+            Category-Rules):
         </div>
 
         <div style="margin-bottom: -25px">

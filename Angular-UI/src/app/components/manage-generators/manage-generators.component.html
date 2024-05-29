@@ -60,16 +60,20 @@
         </div>
     </div>
     <small>
+        @if (finishedNow()){
+        Because the end date is in the past, the generator will basically deactivate after creating the above transactions.
+        } @else {
         As time passes, the generator will continue generating transactions.
         @if (generatorToAdd.endMonth){
         The generator will stop when it creates the final transaction on {{getEndDate() | date:'M/d/yy' }}
+        }
         }
     </small>
     } @else {
     <small>{{previewMessage}}</small>
     }
     } @else if (generators.length) {
-        <h3>Existing Generators</h3>
+    <h3>Existing Generators</h3>
     <table class="table mat-elevation-z4">
         <tr>
             <th>Name</th>
@@ -88,7 +92,11 @@
             <td>{{generator.catName}}</td>
             <td>{{generator.subcatName}}</td>
             <td>{{generator.startMonth | date:'M/d/yy'}}</td>
+            @if (generator.nextMonth ){
             <td>{{generator.nextMonth | date:'M/d/yy'}}</td>
+            } @else {
+            <td>finished</td>
+            }
             @if (generator.endMonth ){
             <td>{{generator.endMonth | date:'M/d/yy'}}</td>
             } @else {
@@ -107,17 +115,19 @@
     </table>
 
     } @else {
-        <div class="t-text-center">No generators created yet. Click "Add Generator" to create one</div>
+    <div class="t-text-center">No generators created yet. Click "Add Generator" to create one</div>
     }
 
     @if (!generatorToAdd){
-        <p class="t-mt-5 text-muted" style="line-height: 1rem;">
-            <small>Generators are a way to automatically create fixed-amount monthly transactions. 
-                Generators can't create future transactions, but they can stay active as time passes and create transactions once the future becomes the present/past.
-                This can be useful if you have a consistent monthly expense that you aren't importing. 
-                Any transactions created by the generator cannot be modified/deleted by the generator, and instead you must use the transactions page for retroactive edits.
-            </small>
-        </p>
+    <p class="t-mt-5 text-muted" style="line-height: 1rem;">
+        <small>Generators are a way to automatically create fixed-amount monthly transactions.
+            Generators can't create future transactions, but they can stay active as time passes and create transactions
+            once the future becomes the present/past.
+            This can be useful if you have a consistent monthly expense that you aren't importing.
+            Any transactions created by the generator cannot be modified/deleted by the generator, and instead you must
+            use the transactions page for retroactive edits.
+        </small>
+    </p>
     }
 
 </mat-dialog-content>

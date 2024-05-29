@@ -15,10 +15,13 @@ import {
 import { MatButtonModule } from '@angular/material/button';
 import { SubcategorySelectComponent } from '@components/subcategory-select/subcategory-select.component';
 import { SubcategoryQuickselectComponent } from '@components/subcategory-select/subcategory-quickselect.component';
+import { MatInputModule } from '@angular/material/input';
+import { FormsModule } from '@angular/forms';
+import { roundToCent } from '@services/helpers';
 
 @Component({
     standalone: true,
-    imports: [CommonModule, MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose, MatButtonModule, SubcategorySelectComponent, SubcategoryQuickselectComponent],
+    imports: [CommonModule, MatDialogTitle, MatDialogContent, MatDialogActions, FormsModule, MatInputModule, MatDialogClose, MatButtonModule, SubcategorySelectComponent, SubcategoryQuickselectComponent],
     templateUrl: './edit-transactions.component.html'
 })
 export class EditTransactionsComponent {
@@ -31,6 +34,8 @@ export class EditTransactionsComponent {
     isNew: boolean | undefined;
     catName: string = "";
     subcatName: string = ""
+
+    editedAmount: number | undefined;
     constructor(
         private transactionService: TransactionService,
         private dialogRef: MatDialogRef<EditTransactionsComponent>,
@@ -50,7 +55,9 @@ export class EditTransactionsComponent {
         }
         switch (this.mode){
             case "assign-cat":
-                return !!this.catName && !!this.subcatName;
+                return !!this.catName && !!this.subcatName && this.subcatName != "uncategorized";
+            case "amount":
+                return !!this.editedAmount;
             default:
                 return true;
         }
@@ -65,6 +72,15 @@ export class EditTransactionsComponent {
             if (this.transactions.length == 1 || confirm(`are you sure you want to flip income/expenses for all ${this.transactions.length} transactions?`)) {
                 this.transactionService.negateAmounts(this.transactions).then(() => {
                     this.snackBar.open("flipped income/expenses for " + this.transactions.length + " transactions", "", { duration: 3000 });
+                    this.dialogRef.close();
+                })
+            }
+        }
+        if (this.mode == "amount"){
+            var amount = roundToCent(this.editedAmount!);
+            if (this.transactions.length == 1 || confirm(`are you sure you want to set the amount to ${amount} for all ${this.transactions.length} transactions?`)) {
+                this.transactionService.editAmounts(this.transactions, amount).then(() => {
+                    this.snackBar.open("edited amount for " + this.transactions.length + " transactions", "", { duration: 3000 });
                     this.dialogRef.close();
                 })
             }

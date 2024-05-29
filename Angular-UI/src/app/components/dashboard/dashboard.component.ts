@@ -15,6 +15,7 @@ import { environment } from '../../../environments/environment';
 import { StatService } from '@services/stat.service';
 import { CategoryService } from '@services/category.service';
 import { ManageGeneratorsComponent } from '@components/manage-generators/manage-generators.component';
+import { SettingsService } from '@services/settings.service';
 
 @Component({
     standalone: true,
@@ -26,6 +27,7 @@ export class DashboardComponent {
     uncategorizedCount$: Signal<number>;
     trxnCount$: Signal<number>;
     anyStats$: Signal<boolean>;
+    monthCount$: Signal<number>;
     isSample$: Signal<boolean>;
     anyCategories$: Signal<boolean>;
     envName: string = environment.envName;
@@ -35,11 +37,13 @@ export class DashboardComponent {
         private transactionService: TransactionService,
         private statService: StatService,
         private categoryService: CategoryService,
+        private settingsService: SettingsService,
         ) {
         this.trxnCount$ = computed(() => this.transactionService.getTransactions().length);
         this.isSample$ = computed(() => this.transactionService.isSampleData());
         this.anyStats$ = computed(() => !!this.statService.getCatMonthStats().length);
         this.anyCategories$ = computed(() => this.categoryService.getSubcategories().length > 3);//other,hidden 
+        this.monthCount$ = computed(() => this.settingsService.getSettings().recentMonthCount);
         this.uncategorizedCount$ = computed(() => this.transactionService.getTransactions().filter(z => z.subcatName == "uncategorized" && (z.catName == "other" || z.catName == "income")).length);
     }
 

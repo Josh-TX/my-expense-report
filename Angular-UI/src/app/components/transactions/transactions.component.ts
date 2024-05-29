@@ -168,7 +168,7 @@ export class TransactionsComponent {
     private sortTransaction(trxn: Transaction, prop: string){
         switch (prop) {
             case 'date': return trxn.date.getTime();
-            case 'importedOn': return trxn.date.getTime();
+            case 'importedOn': return trxn.importDate.getTime();
             case 'amount': return trxn.amount;
             case 'category': return trxn.catName.toLowerCase();
             case 'subcategory': return trxn.subcatName.toLowerCase();

@@ -1,27 +1,31 @@
 <div class="t-py-5 t-px-6 t-flex t-justify-between">
     <h2 class="t-mb-0">Manually Add Transaction</h2>
+    <div class="t-grow"></div>
+    <button mat-raised-button class="t-mr-4" (click)="generators()">Transaction Generators</button>
     <button mat-raised-button (click)="importFromFile()">Import from File</button>
 </div>
+<mat-dialog-content class="mat-typography" style="width: 60vw;">
+    <div class="t-flex">
 
-<mat-dialog-content class="mat-typography">
-    <mat-form-field class="t-mr-4" style="min-width: 360px;">
-        <mat-label>name</mat-label>
-        <input matInput [(ngModel)]="name">
-    </mat-form-field>
-    <mat-form-field class="t-mr-4">
-        <mat-label>amount</mat-label>
-        <input matInput type="number" [(ngModel)]="amount">
-    </mat-form-field>
-    <mat-form-field>
-        <mat-label>date</mat-label>
-        <input matInput [(ngModel)]="date">
-        <mat-hint>MM/DD/YYYY</mat-hint>
-    </mat-form-field>
+        <mat-form-field class="t-mr-4 t-grow" style="min-width: 360px;">
+            <mat-label>name</mat-label>
+            <input matInput [(ngModel)]="name">
+        </mat-form-field>
+        <mat-form-field class="t-mr-4">
+            <mat-label>amount</mat-label>
+            <input matInput type="number" [(ngModel)]="amount">
+        </mat-form-field>
+        <mat-form-field>
+            <mat-label>date</mat-label>
+            <input matInput type="date" [(ngModel)]="date">
+        </mat-form-field>
+    </div>
 
     <mat-card>
         <mat-card-content>
             <div class="t-mb-2">Manual Category (optional)</div>
             <mer-subcategory-select [(catName)]="catName" [(subcatName)]="subcatName" [(isNew)]="isNew"></mer-subcategory-select>
+            <mer-subcategory-quickselect [(catName)]="catName" [(subcatName)]="subcatName"></mer-subcategory-quickselect>
             @if(isNew){
                 <span>this will create a new Category/Subcategory</span>
             }

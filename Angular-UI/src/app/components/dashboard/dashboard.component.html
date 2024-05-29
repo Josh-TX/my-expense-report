@@ -52,6 +52,7 @@
     </h3>
     }
     <div style="margin-top: 100px">
+
         @if (envName == "browser"){
         <p class="t-text-center text-muted">
             This is the "browser-only" version of the app, meaning that all data is stored in the browser's localStorage.
@@ -66,7 +67,12 @@
         </p>
         }
 
-        <div class="t-text-right">
+        <div class="t-flex t-justify-between">
+            <small class="text-muted">
+                @if (monthCount$() <= 60){
+                    "monthly average" is based on the last {{monthCount$()}} months
+                }
+            </small>
             <small>
                 <a href="https://github.com/Josh-TX/my-expense-report" target="_blank">Github</a>
                 <span class="text-muted"> | Created by Josh TX</span>
