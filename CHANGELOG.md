@@ -1,2 +1,1 @@
-* Added ability to edit amount
-* fixed off-by-1 bug with transaction generators
+* Fixed Transaction Page filter not considering the Imported From column

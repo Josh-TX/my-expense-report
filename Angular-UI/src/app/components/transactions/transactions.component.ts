@@ -225,6 +225,7 @@ export class TransactionsComponent {
             || this.stringMatches(trxn.catName.toLowerCase(), filter)
             || this.stringMatches(trxn.subcatName.toLowerCase(), filter)
             || this.amountMatches(trxn.amount, filter)
+            || this.stringMatches(trxn.importFrom, filter)
         ){
             return true;
         }
