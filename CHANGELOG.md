@@ -1,1 +1,1 @@
-* Fixed Transaction Page filter not considering the Imported From column
+* Fixed Duplicate Transaction detection not using absolute value of amount

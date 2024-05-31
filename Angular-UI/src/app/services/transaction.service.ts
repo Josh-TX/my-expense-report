@@ -87,7 +87,11 @@ export class TransactionService {
     }
 
     isDuplicate(date: Date, name: string, amount: number) {
-        return this.storedTransactions$().some(z => z.date.getTime() == date.getTime() && z.amount == amount && z.name.toLowerCase() == name.toLowerCase());
+        return this.storedTransactions$().some(z => Math.abs(z.amount) == Math.abs(amount) && z.name.toLowerCase() == name.toLowerCase() && date.getTime() == z.date.getTime());
+    }
+
+    areDatesSame(d1: Date, d2: Date){
+        return d1.getDate() == d2.getDate() && d1.getMonth() == d2.getMonth() && d1.getFullYear() == d2.getFullYear();
     }
 
     getTransactions(): Transaction[] {
