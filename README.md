@@ -8,6 +8,10 @@
 
 An app for tracking and analyzing your personal expenses. Available as [a web app](https://josh-tx.github.io/my-expense-report) hosted on github pages, a desktop app (see [releases](https://github.com/Josh-TX/my-expense-report/releases)), or a [docker container](https://hub.docker.com/r/joshtxdev/my-expense-report) that you can self-host.
 
+I made a video showcasing the app's behavior:
+[![Watch the video](https://img.youtube.com/vi/uWfAEjNHVPM/0.jpg)](https://www.youtube.com/watch?v=uWfAEjNHVPM)
+
+
 ## Where does the data come from?
 
 This web app doesn't have any way to integrate with financial institutions directly (like Mint), so all data has to be provided by the user. That might sound tedious, however, most financial institutions have a way to export transactions to a file. If so, that file can probably be imported into the web app without any modifications. More info in the Usage Guide below
