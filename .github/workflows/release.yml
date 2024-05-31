@@ -135,7 +135,7 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: angular-desktop
-        path: Angular-UI/dist/browser/
+        path: Angular-UI/dist-desktop/browser/
 
     - name: Setup Node.js
       uses: actions/setup-node@v2
