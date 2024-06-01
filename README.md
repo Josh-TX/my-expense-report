@@ -6,7 +6,7 @@
 
 # My Expense Report
 
-An app for tracking and analyzing your personal expenses. Available as [a web app](https://josh-tx.github.io/my-expense-report) hosted on github pages, ~~a desktop app (see [releases](https://github.com/Josh-TX/my-expense-report/releases))~~ (desktop app broken atm), or a [docker container](https://hub.docker.com/r/joshtxdev/my-expense-report) that you can self-host.
+An app for tracking and analyzing your personal expenses. Available as [a web app](https://josh-tx.github.io/my-expense-report) hosted on github pages, a desktop app (see [releases](https://github.com/Josh-TX/my-expense-report/releases)), or a [docker container](https://hub.docker.com/r/joshtxdev/my-expense-report) that you can self-host.
 
 I made a video showcasing the app's behavior:
 
