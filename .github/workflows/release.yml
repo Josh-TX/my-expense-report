@@ -183,7 +183,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: release-url
-      url: https://github.com/Josh-TX/basic-site/releases/tag/v${{ github.event.inputs.SemVer }}
+      url: https://github.com/Josh-TX/my-expense-report/releases/tag/v${{ github.event.inputs.SemVer }}
     permissions:
       contents: write
     steps:

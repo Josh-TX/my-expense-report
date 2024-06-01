@@ -42,6 +42,12 @@ export class ReportCellComponent {
                 return false;
             }
             if (column) {
+                if (column.special == "Total"){
+                    return true;
+                }
+                if (column.special == "Expenses"){
+                    return trxn.catName != "income";
+                }
                 if (trxn.catName != column.catName) {
                     return false
                 }
@@ -58,12 +64,15 @@ export class ReportCellComponent {
     }
 
     private getCategoryString(column: ReportColumn | null): string {
-        if (!column) {
+        if (!column || column.special == "Total") {
             return "";
         }
-        if (!column.subcatName) {
-            return " - " + column.catName
+        if (column.special == "Expenses"){
+            return ` - All Expenses`
         }
-        return " - " + column.catName + " - " + column.subcatName;
+        if (!column.subcatName) {
+            return ` - ${column.catName}`;
+        }
+        return ` - ${column.catName} - ${column.subcatName}`;
     }
 }

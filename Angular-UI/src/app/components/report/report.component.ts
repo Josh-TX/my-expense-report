@@ -83,12 +83,10 @@ export class ReportComponent {
                     stringHeaders.push("");
                 }
             }
-            stringHeaders.push("total");
             stringHeaderRows.push(stringHeaders);
         }
         if (stringHeaderRows.length == 2){
             stringHeaderRows[0][0] = "";
-            stringHeaderRows[0][stringHeaderRows[0].length - 1] = "";
         }
         var datePipe = new DatePipe('en-US');
         var currencyPipe = new CurrencyPipe('en-US');
@@ -96,10 +94,15 @@ export class ReportComponent {
         var rowData = this.report!.rows.map(row => 
             [
                 datePipe.transform(row.date, dateTransformStr)!, 
-                ...row.cells.map(z => currencyPipe.transform(z.amount)!),
-                currencyPipe.transform(row.totalCell.amount)!
+                ...row.cells.map(z => currencyPipe.transform(z.amount)!)
             ]
         )
+        if (this.showAverages){
+            rowData.unshift([
+                "Average",
+                ...this.report!.columnSummaries.map(z => currencyPipe.transform(z.amountPerPeriod)!)
+            ])
+        }
         var data = [
             ...stringHeaderRows,
             ...rowData
@@ -108,12 +111,11 @@ export class ReportComponent {
         this.exportService.exportData(data, fileName)
     }
 
-    cellClicked(cell: ReportCell, row: ReportRow, index: number | null) {
-        //index is null when it's the total column
+    cellClicked(cell: ReportCell, row: ReportRow, index: number) {
         this.selectedCell = cell;
         var ref = this.dialog.open(ReportCellComponent, {autoFocus: false});
-        var column = index != null ? this.report!.columns[index] : null;
-        var average = index != null ? this.report!.columnSummaries[index].amountPerPeriod : this.report!.totalSummary.amountPerPeriod;
+        var column = this.report!.columns[index];
+        var average = this.report!.columnSummaries[index].amountPerPeriod;
         ref.componentInstance.init(row.date, column, this.isYearly, average);
         ref.afterClosed().subscribe(() => {
             setTimeout(() => {
@@ -146,6 +148,9 @@ export class ReportComponent {
     }
 
     headerClicked(header: ReportHeader) {
+        if (header.special){
+            return;
+        }
         this.selectedHeader = header;
         var ref = this.dialog.open(ReportColumnComponent, {autoFocus: false, panelClass: "dialog-xl"});
         var header0Index = this.report!.headerRows[0].indexOf(header);
@@ -153,7 +158,7 @@ export class ReportComponent {
         if (header0Index >= 0){
             var catName = header.name;
         } else if (header1Index >= 0){
-            var catName = this.report!.columns[header1Index].catName;
+            var catName = this.report!.columns[header1Index].catName!;
             var subcatName = this.report!.columns[header1Index].subcatName;
         } else {
             throw "column not found";

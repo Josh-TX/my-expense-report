@@ -2,23 +2,27 @@ import { Injectable } from '@angular/core';
 import { Settings, SettingsService } from "@services/settings.service";
 import { MonthlyInfo, Stat, StatService, YearlyInfo } from './stat.service';
 import { getSum, groupBy, areValuesSame } from '@services/helpers';
+import { Subcategory } from './category.service';
 
 export type Report = {
     headerRows: ReportHeader[][]
     rows: ReportRow[]
     columns: ReportColumn[],
     columnSummaries: ReportSummary[];
-    totalSummary: ReportSummary;
 }
 
 export type ReportHeader = {
     width: number;
     name: string;
+    special?: ReportSpecialColumn | undefined;
 }
 
+export type ReportSpecialColumn = "Total" | "Expenses"
+
 export type ReportColumn = {
-    catName: string;
+    catName?: string | undefined;
     subcatName?: string | undefined;
+    special?: ReportSpecialColumn | undefined; 
 }
 
 export type ReportSummary = {
@@ -31,7 +35,6 @@ export type ReportRow = {
     date: Date;
     extrapolated: boolean;
     cells: ReportCell[];
-    totalCell: ReportCell;
 }
 
 export type ReportCell = {
@@ -58,36 +61,57 @@ export class ReportService {
         }
         var recentCatStats = this.statService.getRecentCatStatsMonthlyInfo();
         var recentTotalStat = this.statService.getRecentTotalStatMonthlyInfo();
-        var headerRows: ReportHeader[][] = [recentCatStats.map(z => ({ width: 1, name: z.catName }))];
-        var columns: ReportColumn[] = recentCatStats.map(z => ({ catName: z.catName }));
+        var recentExpenseStat = this.statService.getRecentTotalStatMonthlyInfo(true); //excludes income
+        var headerRows = this.getCategoryHeaders(recentCatStats.map(z => z.catName));
+        var columns = this.headersToColumn(headerRows);
         var rows: ReportRow[] = [];
         var statMonthGroups = groupBy(catMonthStats, z => z.month);
         for (var statMonthGroup of statMonthGroups){
             var cells: ReportCell[] = [];
-            for (var recentCatStat of recentCatStats){
-                var cellStat = statMonthGroup.items.find(z => z.catName == recentCatStat.catName)!
-                cells.push({
-                    amount: cellStat.sumAmount,
-                    deviation: this.getDeviation(cellStat.sumAmount, recentCatStat.sumAmount / recentCatStat.monthCount, recentCatStat.monthSD)
-                });
+            for (var column of columns){
+                if (!column.special){
+                    var recentCatStat = recentCatStats.find(z => z.catName == column.catName)!;
+                    var cellStat = statMonthGroup.items.find(z => areValuesSame(z.catName, recentCatStat.catName))!
+                    cells.push({
+                        amount: cellStat.sumAmount,
+                        deviation: this.getDeviation(cellStat.sumAmount, recentCatStat.sumAmount / recentCatStat.monthCount, recentCatStat.monthSD)
+                    });
+                } else if (column.special == "Expenses"){
+                    var nonIncomeStatYearGroups = statMonthGroup.items.filter(z => z.catName != "income");
+                    var expenseTotal = getSum(nonIncomeStatYearGroups.map(z => z.sumAmount));
+                    cells.push({
+                        amount: expenseTotal,
+                        deviation: this.getDeviation(expenseTotal, recentExpenseStat.sumAmount / recentExpenseStat.monthCount, recentExpenseStat.monthSD)
+                    });
+                } else if (column.special == "Total"){
+                    var rowTotal = getSum(statMonthGroup.items.map(z => z.sumAmount));
+                    cells.push({
+                        amount: rowTotal,
+                        deviation: this.getDeviation(rowTotal, recentTotalStat.sumAmount / recentTotalStat.monthCount, recentTotalStat.monthSD)
+                    });
+                } 
             }
-            var rowTotal = getSum(statMonthGroup.items.map(z => z.sumAmount));
             rows.push({
                 date: statMonthGroup.key,
                 extrapolated: false,
-                cells: cells,
-                totalCell: {
-                    amount: rowTotal,
-                    deviation: this.getDeviation(rowTotal, recentTotalStat.sumAmount / recentTotalStat.monthCount, recentTotalStat.monthSD)
-                }
+                cells: cells
             });
         }
+        var summaries = columns.map(column => {
+            if (!column.special){
+                return this.getMonthSummary(recentCatStats.find(z => z.catName == column.catName)!);
+            } else if (column.special == "Expenses"){
+                return this.getMonthSummary(recentExpenseStat);
+            } else if (column.special == "Total"){
+                return this.getMonthSummary(recentTotalStat);
+            }
+            throw "invalid column";
+        });
         var report: Report = {
             headerRows: headerRows,
             rows: rows,
             columns: columns,
-            columnSummaries: recentCatStats.map(this.getMonthSummary),
-            totalSummary: this.getMonthSummary(recentTotalStat)
+            columnSummaries: summaries
         };
         return report;
     }
@@ -99,37 +123,61 @@ export class ReportService {
         }
         var catStats = this.statService.getCatStatsYearlyInfo();
         var totalStat = this.statService.getTotalStatYearlyInfo();
-        var headerRows: ReportHeader[][] = [catStats.map(z => ({ width: 1, name: z.catName }))];
-        var columns: ReportColumn[] = catStats.map(z => ({ catName: z.catName }));
+        var expenseStat = this.statService.getTotalStatYearlyInfo(true); //excludes income
+        var headerRows = this.getCategoryHeaders(catStats.map(z => z.catName));
+        var columns = this.headersToColumn(headerRows);
         var rows: ReportRow[] = [];
         var statYearGroups = groupBy(catYearStats, z => z.year);
         for (var statYearGroup of statYearGroups){
             var cells: ReportCell[] = [];
-            for (var catStat of catStats){
-                var cellStat = statYearGroup.items.find(z => z.catName == catStat.catName)!
-                cells.push({
-                    amount: cellStat.sumAmount,
-                    deviation: this.getDeviation(cellStat.extrapolatedAmount, catStat.extrapolatedAmount / catStat.yearCount, catStat.extrapolatedSD)
-                });
+            var extrapolated = false;
+            for (var column of columns){
+                if (!column.special){
+                    var catStat = catStats.find(z => z.catName == column.catName)!;
+                    var cellStat = statYearGroup.items.find(z => areValuesSame(z.catName, catStat.catName))!
+                    cells.push({
+                        amount: cellStat.sumAmount,
+                        deviation: this.getDeviation(cellStat.extrapolatedAmount, catStat.extrapolatedAmount / catStat.yearCount, catStat.extrapolatedSD)
+                    });
+                } else if (column.special == "Expenses"){
+                    var nonIncomeStatYearGroups = statYearGroup.items.filter(z => z.catName != "income");
+                    var expenseTotal = getSum(nonIncomeStatYearGroups.map(z => z.sumAmount));
+                    var extExpenseTotal = getSum(nonIncomeStatYearGroups.map(z => z.extrapolatedAmount));
+                    cells.push({
+                        amount: expenseTotal,
+                        deviation: this.getDeviation(extExpenseTotal, expenseStat.extrapolatedAmount / expenseStat.yearCount, expenseStat.extrapolatedSD)
+                    });
+                } else if (column.special == "Total"){
+                    var rowTotal = getSum(statYearGroup.items.map(z => z.sumAmount));
+                    var extRowTotal = getSum(statYearGroup.items.map(z => z.extrapolatedAmount));
+                    extrapolated = rowTotal != extRowTotal
+                    cells.push({
+                        amount: rowTotal,
+                        deviation: this.getDeviation(extRowTotal, totalStat.extrapolatedAmount / totalStat.yearCount, totalStat.extrapolatedSD)
+                    });
+                } 
             }
-            var rowTotal = getSum(statYearGroup.items.map(z => z.sumAmount));
-            var extRowTotal = getSum(statYearGroup.items.map(z => z.extrapolatedAmount));
             rows.push({
                 date: statYearGroup.key,
                 cells: cells,
-                extrapolated: rowTotal != extRowTotal,
-                totalCell: {
-                    amount: rowTotal,
-                    deviation: this.getDeviation(extRowTotal, totalStat.extrapolatedAmount / totalStat.yearCount, totalStat.extrapolatedSD)
-                }
+                extrapolated: extrapolated
             });
         }
+        var summaries = columns.map(column => {
+            if (!column.special){
+                return this.getYearSummary(catStats.find(z => z.catName == column.catName)!);
+            } else if (column.special == "Expenses"){
+                return this.getYearSummary(expenseStat);
+            } else if (column.special == "Total"){
+                return this.getYearSummary(totalStat);
+            }
+            throw "invalid column";
+        });
         var report: Report = {
             headerRows: headerRows,
             rows: rows,
             columns: columns,
-            columnSummaries: catStats.map(this.getYearSummary),
-            totalSummary: this.getYearSummary(totalStat)
+            columnSummaries: summaries
         };
         return report;
     }
@@ -140,44 +188,58 @@ export class ReportService {
             return null;
         }
         var recentSubcatStats = this.statService.getRecentSubcatStatsMonthlyInfo();
-        var categoryGroups = groupBy(recentSubcatStats.map(z => z.subcategory), z => z.catName);
         var recentTotalStat = this.statService.getRecentTotalStatMonthlyInfo();
-        var headerFirstRow: ReportHeader[] = categoryGroups.map(z => ({ 
-            width: z.items.length, 
-            name: z.key }));
-        var headerRows: ReportHeader[][] = [
-            headerFirstRow,
-            recentSubcatStats.map(z => ({ width: 1, name: z.subcategory.subcatName }))
-        ];
-        var columns: ReportColumn[] = recentSubcatStats.map(z => ({ catName: z.subcategory.catName, subcatName: z.subcategory.subcatName }));
+        var recentExpenseStat = this.statService.getRecentTotalStatMonthlyInfo(true);
+        var headerRows = this.getSubcategoryHeaders(recentSubcatStats.map(z => z.subcategory));
+        var columns: ReportColumn[] = this.headersToColumn(headerRows);
         var rows: ReportRow[] = [];
         var statMonthGroups = groupBy(subcatMonthStats, z => z.month);
         for (var statMonthGroup of statMonthGroups){
             var cells: ReportCell[] = [];
-            for (var recentSubcatStat of recentSubcatStats){
-                var cellStat = statMonthGroup.items.find(z => areValuesSame(z.subcategory, recentSubcatStat.subcategory))!
-                cells.push({
-                    amount: cellStat.sumAmount,
-                    deviation: this.getDeviation(cellStat.sumAmount, recentSubcatStat.sumAmount / recentSubcatStat.monthCount, recentSubcatStat.monthSD)
-                });
+            for (var column of columns){
+                if (!column.special){
+                    var recentSubcatStat = recentSubcatStats.find(z => z.subcategory.catName == column.catName && z.subcategory.subcatName == column.subcatName)!;
+                    var cellStat = statMonthGroup.items.find(z => areValuesSame(z.subcategory, recentSubcatStat.subcategory))!
+                    cells.push({
+                        amount: cellStat.sumAmount,
+                        deviation: this.getDeviation(cellStat.sumAmount, recentSubcatStat.sumAmount / recentSubcatStat.monthCount, recentSubcatStat.monthSD)
+                    });
+                } else if (column.special == "Expenses"){
+                    var nonIncomeStatYearGroups = statMonthGroup.items.filter(z => z.subcategory.catName != "income");
+                    var expenseTotal = getSum(nonIncomeStatYearGroups.map(z => z.sumAmount));
+                    cells.push({
+                        amount: expenseTotal,
+                        deviation: this.getDeviation(expenseTotal, recentExpenseStat.sumAmount / recentExpenseStat.monthCount, recentExpenseStat.monthSD)
+                    });
+                } else if (column.special == "Total"){
+                    var rowTotal = getSum(statMonthGroup.items.map(z => z.sumAmount));
+                    cells.push({
+                        amount: rowTotal,
+                        deviation: this.getDeviation(rowTotal, recentTotalStat.sumAmount / recentTotalStat.monthCount, recentTotalStat.monthSD)
+                    });
+                } 
             }
-            var rowTotal = getSum(statMonthGroup.items.map(z => z.sumAmount));
             rows.push({
                 date: statMonthGroup.key,
                 cells: cells,
-                extrapolated: false,
-                totalCell: {
-                    amount: rowTotal,
-                    deviation: this.getDeviation(rowTotal, recentTotalStat.sumAmount / recentTotalStat.monthCount, recentTotalStat.monthSD)
-                }
+                extrapolated: false
             });
         }
+        var summaries = columns.map(column => {
+            if (!column.special){
+                return this.getMonthSummary(recentSubcatStats.find(z => z.subcategory.catName == column.catName && z.subcategory.subcatName == column.subcatName)!);
+            } else if (column.special == "Expenses"){
+                return this.getMonthSummary(recentExpenseStat);
+            } else if (column.special == "Total"){
+                return this.getMonthSummary(recentTotalStat);
+            }
+            throw "invalid column";
+        });
         var report: Report = {
             headerRows: headerRows,
             rows: rows,
             columns: columns,
-            columnSummaries: recentSubcatStats.map(this.getMonthSummary),
-            totalSummary: this.getMonthSummary(recentTotalStat)
+            columnSummaries: summaries
         };
         return report;
     }
@@ -188,47 +250,129 @@ export class ReportService {
             return null;
         }
         var subcatStats = this.statService.getSubcatStatsYearlyInfo();
-        var categoryGroups = groupBy(subcatStats.map(z => z.subcategory), z => z.catName);
         var totalStat = this.statService.getTotalStatYearlyInfo();
-        var headerFirstRow: ReportHeader[] = categoryGroups.map(z => ({ 
-            width: z.items.length, 
-            name: z.key }));
-        var headerRows: ReportHeader[][] = [
-            headerFirstRow,
-            subcatStats.map(z => ({ width: 1, name: z.subcategory.subcatName }))
-        ];
-        var columns: ReportColumn[] = subcatStats.map(z => ({ catName: z.subcategory.catName, subcatName: z.subcategory.subcatName }));
+        var expenseStat = this.statService.getTotalStatYearlyInfo(true); //excludes income
+        
+        var headerRows = this.getSubcategoryHeaders(subcatStats.map(z => z.subcategory));
+        var columns = this.headersToColumn(headerRows);
         var rows: ReportRow[] = [];
         var statYearGroups = groupBy(subcatYearStats, z => z.year);
         for (var statYearGroup of statYearGroups){
             var cells: ReportCell[] = [];
-            for (var subcatStat of subcatStats){
-                var cellStat = statYearGroup.items.find(z => areValuesSame(z.subcategory, subcatStat.subcategory))!
-                cells.push({
-                    amount: cellStat.sumAmount,
-                    deviation: this.getDeviation(cellStat.extrapolatedAmount, subcatStat.extrapolatedAmount / subcatStat.yearCount, subcatStat.extrapolatedSD)
-                });
+            var extrapolated = false;
+            for (var column of columns){
+                if (!column.special){
+                    var subcatStat = subcatStats.find(z => z.subcategory.catName == column.catName && z.subcategory.subcatName == column.subcatName)!;
+                    var cellStat = statYearGroup.items.find(z => areValuesSame(z.subcategory, subcatStat.subcategory))!
+                    cells.push({
+                        amount: cellStat.sumAmount,
+                        deviation: this.getDeviation(cellStat.extrapolatedAmount, subcatStat.extrapolatedAmount / subcatStat.yearCount, subcatStat.extrapolatedSD)
+                    });
+                } else if (column.special == "Expenses"){
+                    var nonIncomeStatYearGroups = statYearGroup.items.filter(z => z.subcategory.catName != "income");
+                    var expenseTotal = getSum(nonIncomeStatYearGroups.map(z => z.sumAmount));
+                    var extExpenseTotal = getSum(nonIncomeStatYearGroups.map(z => z.extrapolatedAmount));
+                    cells.push({
+                        amount: expenseTotal,
+                        deviation: this.getDeviation(extExpenseTotal, expenseStat.extrapolatedAmount / expenseStat.yearCount, expenseStat.extrapolatedSD)
+                    });
+                } else if (column.special == "Total"){
+                    
+                    var rowTotal = getSum(statYearGroup.items.map(z => z.sumAmount));
+                    var extRowTotal = getSum(statYearGroup.items.map(z => z.extrapolatedAmount));
+                    extrapolated = rowTotal != extRowTotal
+                    cells.push({
+                        amount: rowTotal,
+                        deviation: this.getDeviation(extRowTotal, totalStat.extrapolatedAmount / totalStat.yearCount, totalStat.extrapolatedSD)
+                    });
+                } 
             }
-            var rowTotal = getSum(statYearGroup.items.map(z => z.sumAmount));
-            var extRowTotal = getSum(statYearGroup.items.map(z => z.extrapolatedAmount));
             rows.push({
                 date: statYearGroup.key,
                 cells: cells,
-                extrapolated: rowTotal != extRowTotal,
-                totalCell: {
-                    amount: rowTotal,
-                    deviation: this.getDeviation(extRowTotal, totalStat.extrapolatedAmount / totalStat.yearCount, totalStat.extrapolatedSD)
-                }
+                extrapolated: extrapolated
             });
         }
+        var summaries = columns.map(column => {
+            if (!column.special){
+                return this.getYearSummary(subcatStats.find(z => z.subcategory.catName == column.catName && z.subcategory.subcatName == column.subcatName)!);
+            } else if (column.special == "Expenses"){
+                return this.getYearSummary(expenseStat);
+            } else if (column.special == "Total"){
+                return this.getYearSummary(totalStat);
+            }
+            throw "invalid column";
+        });
         var report: Report = {
             headerRows: headerRows,
             rows: rows,
             columns: columns,
-            columnSummaries: subcatStats.map(this.getYearSummary),
-            totalSummary: this.getYearSummary(totalStat)
+            columnSummaries: summaries
         };
         return report;
+    }
+
+    private getCategoryHeaders(catNames: string[]): ReportHeader[][]{
+        var headerFirstRow: ReportHeader[] = catNames.map(z => ({ width: 1, name: z }));
+        var headerRows: ReportHeader[][] = [headerFirstRow];
+        var incomeGroup = catNames.find(z => z == "income");
+        var totalName = "total";
+        if (incomeGroup){
+            totalName = "net expenses"
+            var expenseHeader: ReportHeader = { width: 1, name: "sum expenses", special: "Expenses"};
+            headerFirstRow.splice(headerFirstRow.length - 1, 0, expenseHeader);
+        }
+        var totalHeader: ReportHeader = { width: 1, name: totalName, special: "Total"};
+        headerFirstRow.push(totalHeader);
+        return headerRows;
+    }
+
+    private getSubcategoryHeaders(subcats: Subcategory[]): ReportHeader[][]{
+        var catGroups = groupBy(subcats, z => z.catName);
+        var headerFirstRow: ReportHeader[] = catGroups.map(z => ({ 
+            width: z.items.length, 
+            name: z.key 
+        }));
+        var headerRows: ReportHeader[][] = [
+            headerFirstRow,
+            subcats.map(z => ({ width: 1, name: z.subcatName }))
+        ];
+        var incomeGroup = catGroups.find(z => z.key == "income");
+        var totalName = "total";
+        if (incomeGroup){
+            totalName = "net expenses"
+            var expenseHeader: ReportHeader = { width: 1, name: "sum expenses", special: "Expenses"};
+            headerFirstRow.splice(headerFirstRow.length - 1, 0, expenseHeader);
+            headerRows[1].splice(headerRows[1].length - incomeGroup.items.length, 0, expenseHeader)
+        }
+        var totalHeader: ReportHeader = { width: 1, name: totalName, special: "Total"};
+        headerFirstRow.push(totalHeader);
+        headerRows[1].push(totalHeader);
+        return headerRows;
+    }
+
+    private headersToColumn(headers: ReportHeader[][]): ReportColumn[]{
+        var output: ReportColumn[] = [];
+        var subcatPos = 0;
+        for (var catHeader of headers[0]){
+            if (headers[1]){
+                for (var subcatHeader of headers[1].slice(subcatPos, subcatPos + catHeader.width)){
+                    output.push({
+                        catName: catHeader.special ? undefined : catHeader.name,
+                        subcatName: catHeader.special ? undefined : subcatHeader.name,
+                        special: catHeader.special
+                    });
+                }
+                subcatPos += catHeader.width;
+            } else {
+                output.push({
+                    catName: catHeader.special ? undefined : catHeader.name,
+                    subcatName: undefined,
+                    special: catHeader.special
+                });
+            }
+        }
+        return output;
     }
 
     private getMonthSummary(stat: Stat & MonthlyInfo): ReportSummary {

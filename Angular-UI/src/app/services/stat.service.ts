@@ -126,7 +126,7 @@ export class StatService {
         return this.subcatYearStats$();
     }
 
-    getRecentTotalStatMonthlyInfo(): TotalStatMonthlyInfo {
+    getRecentTotalStatMonthlyInfo(excludeIncome = false): TotalStatMonthlyInfo {
         var currentMonth = this.getCurrentMonth();
         if (!currentMonth){
             return {
@@ -135,10 +135,13 @@ export class StatService {
                 sumAmount: 0
             };
         }
-        return this.getTotalStatMonthlyInfo(currentMonth, this.getRecentCutoff());
+        return this.getTotalStatMonthlyInfo(currentMonth, this.getRecentCutoff(), excludeIncome);
     }
-    getTotalStatMonthlyInfo(recentDate: Date, oldestDate?: Date | undefined): TotalStatMonthlyInfo {
+    private getTotalStatMonthlyInfo(recentDate: Date, oldestDate?: Date | undefined, excludeIncome = false): TotalStatMonthlyInfo {
         var catStats = this.getCatStatsMonthlyInfo(recentDate, oldestDate);
+        if (excludeIncome){
+            catStats = catStats.filter(z => z.catName != "income");
+        }
         var combinedStat = this.getCombinedStat(catStats);
         var monthlyCombinedSet = getCombinedSet(catStats.map(z => ({n: z.monthCount, sum: z.sumAmount, sd: z.monthSD})));
         return {
@@ -192,8 +195,11 @@ export class StatService {
     }
 
 
-    getTotalStatYearlyInfo(): TotalStatYearlyInfo {
+    getTotalStatYearlyInfo(excludeIncome = false): TotalStatYearlyInfo {
         var catStats = this.getCatStatsYearlyInfo();
+        if (excludeIncome){
+            catStats = catStats.filter(z => z.catName != "income");
+        }
         var combinedStat = this.getCombinedStat(catStats);
         var yearlyCombinedSet = getCombinedSet(catStats.map(z => ({n: z.yearCount, sum: z.sumAmount, sd: z.yearSD})));
         var extrapolatedCombinedSet = getCombinedSet(catStats.map(z => ({n: z.yearCount, sum: z.extrapolatedAmount, sd: z.extrapolatedSD})));

@@ -70,6 +70,7 @@
     </table>
     }
     @else {
+    <small>Files must be in CSV format. The app will likely infer the correct columns automatically. If doesn't work, try editing the CSV file to have column headers titled "date", "amount", and "description".</small>
     <mer-file-drop (import)="addFiles($event)"></mer-file-drop>
     @if (files.length){
     <table class="table mat-elevation-z4 t-mt-4">
