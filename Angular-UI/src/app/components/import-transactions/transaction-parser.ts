@@ -218,7 +218,10 @@ class DataCell {
         //therefore, by setting this.val to money after parsing dates, such overlap will be interpreted as money
         var date = new Date(str);
         if (!isNaN(<any>date)) {
-            date.setHours(8); //we only display the date component, not the time component. By setting the time to 8am, we reduce the chance of timezones changing the date. 
+            //we only display the date component, not the time component. However, we use midnight for 2 purposes
+            //For duplicate-transaction detection, we assume both dates are midnight
+            //when saving to storage, we check if the date is midnight, and if it is we stringify just the date portion
+            date.setHours(0,0,0,0);
             this.date = date;
             this.val = date;
         }

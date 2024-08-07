@@ -71,6 +71,9 @@ export class TransactionService {
     }
 
     addTransactions(trxns: TransactionToAdd[], filename: string): Promise<any> {
+        //transaction.date should be set to midnight so that duplicate detection works properly, 
+        //but also the storageService will only store the date portion if the date is precisely midnight
+        trxns.forEach(z => z.date.setHours(0,0,0,0));
         var importDate = new Date();
         importDate.setMilliseconds(0); //needed for filters to work on transactions page when copy-pasting
         var translatedTrxns = trxns.map(z => (<StoredTransactionPlusId>{
@@ -87,6 +90,7 @@ export class TransactionService {
     }
 
     isDuplicate(date: Date, name: string, amount: number) {
+        //date param hopefully has already been set to midnight
         return this.storedTransactions$().some(z => Math.abs(z.amount) == Math.abs(amount) && z.name.toLowerCase() == name.toLowerCase() && date.getTime() == z.date.getTime());
     }
 
@@ -144,12 +148,6 @@ export class TransactionService {
         } else {
             return Promise.resolve(null);
         }
-    }
-
-    private getStorePromise(): Promise<any>{
-        return new Promise((resolve) => {
-            this.resolvers.push(resolve);
-        });
     }
 
     private getSubcategoryIfValid(subcat: Subcategory | undefined): Subcategory | undefined{
@@ -214,6 +212,11 @@ export class TransactionService {
                 if (!(z.date instanceof Date)){
                     z.date = new Date(<any>z.date)
                 }
+                //an earlier release didn't manage the dates very well and failed to identify duplicate transactions
+                //the code now expects the transaction.date to always be midnight. 
+                //This assumption is made both when duplicate detection and when storing the transactions.
+                //when loading from storage , they should already be set to midnight, but just in case:
+                z.date.setHours(0,0,0,0);
                 if (!(z.importDate instanceof Date)){
                     z.importDate = new Date(<any>z.importDate)
                 }

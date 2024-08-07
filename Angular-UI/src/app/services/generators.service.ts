@@ -50,12 +50,12 @@ export class GeneratorsService {
 
     addGenerator(generator: StoredGenerator): Promise<number>{
         //set the hours to 8 to reduce the chance of timezone changes causing the date to change. 
-        generator.startMonth.setHours(8);
+        generator.startMonth.setHours(0,0,0,0);
         if (generator.nextMonth){
-            generator.nextMonth.setHours(8);
+            generator.nextMonth.setHours(0,0,0,0);
         }
         if (generator.endMonth){
-            generator.endMonth.setHours(8);
+            generator.endMonth.setHours(0,0,0,0);
         }
         this._storedGenerators.push(generator);
         var promise = this.applyAllGenerators(false);

@@ -139,8 +139,7 @@ export function getStartOfYear(date: Date): Date {
 }
 export function getNextMonth(date: Date, dayOfMonth: number): Date {
     var d = new Date(date.getFullYear(), date.getMonth() + 1, 1);
-    //this function is only used by the generators, and we want to ensure that there won't be timezone issues. 
-    d.setHours(8);
+    d.setHours(0,0,0,0);
     d.setDate(Math.min(getDaysInMonth(d), dayOfMonth));
     return d;
 }
